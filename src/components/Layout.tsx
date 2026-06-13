@@ -16,7 +16,10 @@ export default function Layout() {
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col bg-white shadow-sm">
       {/* Top bar */}
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/90 px-4 py-3 backdrop-blur">
+      <header
+        className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/90 px-4 py-3 backdrop-blur"
+        style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
+      >
         <button
           onClick={() => navigate("/")}
           className="flex items-center gap-2 text-left"
@@ -42,7 +45,10 @@ export default function Layout() {
       </main>
 
       {/* Bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md items-stretch border-t border-slate-100 bg-white/95 backdrop-blur">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md items-stretch border-t border-slate-100 bg-white/95 backdrop-blur"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
         {tabs.map((t) => (
           <NavLink
             key={t.to}

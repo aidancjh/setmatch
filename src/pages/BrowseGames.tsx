@@ -17,7 +17,7 @@ const skillFilters: (SkillLevel | "Any")[] = [
 const typeFilters: (GameType | "Any")[] = ["Any", "Indoor", "Beach", "Grass"];
 
 export default function BrowseGames() {
-  const { games, loading } = useGames();
+  const { games, loading, slow, error, reload } = useGames();
   const me = useProfile();
   const navigate = useNavigate();
 
@@ -97,7 +97,25 @@ export default function BrowseGames() {
 
       {/* Results */}
       {loading ? (
-        <p className="py-10 text-center text-sm text-slate-400">Loading…</p>
+        <div className="py-10 text-center">
+          <p className="text-sm text-slate-400">Loading games…</p>
+          {slow && (
+            <p className="mx-auto mt-3 max-w-xs text-xs leading-relaxed text-slate-400">
+              ⏳ Waking up the server — on the free plan it naps when idle, so the
+              first load can take up to a minute. Hang tight!
+            </p>
+          )}
+        </div>
+      ) : error ? (
+        <div className="rounded-2xl border border-dashed border-rose-200 bg-rose-50 py-12 text-center">
+          <p className="text-sm text-rose-600">{error}</p>
+          <button
+            onClick={reload}
+            className="mt-3 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+          >
+            Try again
+          </button>
+        </div>
       ) : visible.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-center">
           <p className="text-sm text-slate-500">No games match your filters.</p>
