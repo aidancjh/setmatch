@@ -32,9 +32,21 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Don't cache API calls — always hit the network for live data.
+        // Always show the newest version when online: fetch the page and API
+        // from the network first, falling back to cache only when offline.
+        clientsClaim: true,
+        skipWaiting: true,
+        cleanupOutdatedCaches: true,
         navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "pages",
+              networkTimeoutSeconds: 4,
+            },
+          },
           {
             urlPattern: ({ url }) => url.pathname.startsWith("/api"),
             handler: "NetworkOnly",
