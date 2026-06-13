@@ -210,6 +210,29 @@ app.delete(
   })
 );
 
+// --- Notifications --------------------------------------------------------
+
+app.get(
+  "/api/notifications",
+  requireAuth,
+  h(async (req, res) => {
+    const [items, unread] = await Promise.all([
+      repo.listNotifications(req.userId),
+      repo.unreadCount(req.userId),
+    ]);
+    res.json({ items, unreadCount: unread });
+  })
+);
+
+app.post(
+  "/api/notifications/read-all",
+  requireAuth,
+  h(async (req, res) => {
+    await repo.markAllRead(req.userId);
+    res.status(204).end();
+  })
+);
+
 // --- Comments -------------------------------------------------------------
 
 app.get(

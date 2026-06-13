@@ -74,9 +74,22 @@ export async function initSchema() {
       created_at TEXT NOT NULL
     );
 
+    -- game_id is nullable + SET NULL so "your game was cancelled" notifications
+    -- survive after the game is deleted.
+    CREATE TABLE IF NOT EXISTS notifications (
+      id         TEXT PRIMARY KEY,
+      user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type       TEXT NOT NULL,
+      message    TEXT NOT NULL,
+      game_id    TEXT REFERENCES games(id) ON DELETE SET NULL,
+      read       BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_games_date ON games(date);
     CREATE INDEX IF NOT EXISTS idx_members_game ON game_members(game_id);
     CREATE INDEX IF NOT EXISTS idx_comments_game ON game_comments(game_id);
+    CREATE INDEX IF NOT EXISTS idx_notifs_user ON notifications(user_id, created_at);
   `);
 }
 

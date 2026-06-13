@@ -51,6 +51,15 @@ export interface Comment {
   createdAt: string;
 }
 
+export interface AppNotification {
+  id: string;
+  type: string;
+  message: string;
+  gameId: string | null;
+  read: boolean;
+  createdAt: string;
+}
+
 export interface NewGameInput {
   title: string;
   type: GameType;

@@ -51,6 +51,67 @@ export function publicUser(row) {
   };
 }
 
+// --- Notifications --------------------------------------------------------
+
+export async function createNotification(userId, type, message, gameId) {
+  await query(
+    `INSERT INTO notifications (id, user_id, type, message, game_id, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [uid("ntf"), userId, type, message, gameId ?? null, new Date().toISOString()]
+  );
+}
+
+/** Notify several users at once (skips empties and de-dupes). */
+async function notifyUsers(userIds, type, message, gameId) {
+  const unique = [...new Set(userIds.filter(Boolean))];
+  for (const uidv of unique) {
+    await createNotification(uidv, type, message, gameId);
+  }
+}
+
+/** All user_ids that are members (players or waitlist) of a game. */
+async function memberUserIds(gameId) {
+  const { rows } = await query(
+    "SELECT user_id FROM game_members WHERE game_id = $1",
+    [gameId]
+  );
+  return rows.map((r) => r.user_id);
+}
+
+export async function listNotifications(userId) {
+  const { rows } = await query(
+    `SELECT id, type, message, game_id, read, created_at
+       FROM notifications
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT 50`,
+    [userId]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    type: r.type,
+    message: r.message,
+    gameId: r.game_id,
+    read: r.read,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function unreadCount(userId) {
+  const { rows } = await query(
+    "SELECT COUNT(*) AS c FROM notifications WHERE user_id = $1 AND read = FALSE",
+    [userId]
+  );
+  return Number(rows[0].c);
+}
+
+export async function markAllRead(userId) {
+  await query(
+    "UPDATE notifications SET read = TRUE WHERE user_id = $1 AND read = FALSE",
+    [userId]
+  );
+}
+
 // --- Games ----------------------------------------------------------------
 
 async function memberPlayers(gameId, status) {
@@ -162,8 +223,12 @@ async function playerCount(gameId) {
   return Number(rows[0].c);
 }
 
-/** Promote waitlisted players (earliest first) until the game is full. */
+/**
+ * Promote waitlisted players (earliest first) until the game is full.
+ * Returns the user_ids that were promoted, so callers can notify them.
+ */
 async function promoteWaitlistToFill(gameId, totalSlots) {
+  const promoted = [];
   while ((await playerCount(gameId)) < totalSlots) {
     const { rows } = await query(
       `SELECT user_id FROM game_members
@@ -176,7 +241,9 @@ async function promoteWaitlistToFill(gameId, totalSlots) {
       "UPDATE game_members SET status = 'player' WHERE game_id = $1 AND user_id = $2",
       [gameId, rows[0].user_id]
     );
+    promoted.push(rows[0].user_id);
   }
+  return promoted;
 }
 
 export async function joinGame(gameId, userId) {
@@ -194,6 +261,16 @@ export async function joinGame(gameId, userId) {
     "INSERT INTO game_members (game_id, user_id, status, seq) VALUES ($1, $2, $3, $4)",
     [gameId, userId, status, await nextSeq(gameId)]
   );
+  // Tell the host someone joined (unless the host is joining their own game).
+  if (userId !== game.host_id) {
+    const actor = await findUserById(userId);
+    const who = actor ? actor.name : "Someone";
+    const verb =
+      status === "player"
+        ? `${who} joined your game`
+        : `${who} joined the waitlist for`;
+    await createNotification(game.host_id, "join", `${verb} "${game.title}"`, gameId);
+  }
   return getGame(gameId);
 }
 
@@ -204,7 +281,25 @@ export async function leaveGame(gameId, userId) {
     gameId,
     userId,
   ]);
-  await promoteWaitlistToFill(gameId, game.total_slots);
+  const promoted = await promoteWaitlistToFill(gameId, game.total_slots);
+
+  // Notify the host that someone left (unless the host themselves left).
+  if (userId !== game.host_id) {
+    const actor = await findUserById(userId);
+    await createNotification(
+      game.host_id,
+      "leave",
+      `${actor ? actor.name : "Someone"} left "${game.title}"`,
+      gameId
+    );
+  }
+  // Tell anyone promoted off the waitlist that they're now in.
+  await notifyUsers(
+    promoted,
+    "promoted",
+    `A spot opened up in "${game.title}" — you're in!`,
+    gameId
+  );
   return getGame(gameId);
 }
 
@@ -242,7 +337,18 @@ export async function updateGame(gameId, userId, input) {
       gameId,
     ]
   );
-  await promoteWaitlistToFill(gameId, input.totalSlots);
+  const promoted = await promoteWaitlistToFill(gameId, input.totalSlots);
+  await notifyUsers(
+    promoted,
+    "promoted",
+    `A spot opened up in "${input.title}" — you're in!`,
+    gameId
+  );
+
+  // Let everyone in the game know the details changed (except the host editor).
+  const others = (await memberUserIds(gameId)).filter((id) => id !== row.host_id);
+  await notifyUsers(others, "edited", `"${input.title}" was updated by the host`, gameId);
+
   return { ok: true, game: await getGame(gameId) };
 }
 
@@ -269,6 +375,15 @@ export async function deleteGame(gameId, userId) {
   const game = await getGameRow(gameId);
   if (!game) return { ok: false, code: 404 };
   if (game.host_id !== userId) return { ok: false, code: 403 };
+
+  // Notify members BEFORE deleting (game_id will become NULL afterward).
+  const others = (await memberUserIds(gameId)).filter((id) => id !== game.host_id);
+  await notifyUsers(
+    others,
+    "cancelled",
+    `"${game.title}" was cancelled by the host`,
+    gameId
+  );
   await query("DELETE FROM games WHERE id = $1", [gameId]);
   return { ok: true };
 }
@@ -301,6 +416,18 @@ export async function addComment(gameId, userId, body) {
     `INSERT INTO game_comments (id, game_id, user_id, body, created_at)
      VALUES ($1, $2, $3, $4, $5)`,
     [id, gameId, userId, body, new Date().toISOString()]
+  );
+  // Notify everyone in the game (host + members) about the new message,
+  // except whoever wrote it.
+  const actor = await findUserById(userId);
+  const recipients = [game.host_id, ...(await memberUserIds(gameId))].filter(
+    (id2) => id2 !== userId
+  );
+  await notifyUsers(
+    recipients,
+    "comment",
+    `${actor ? actor.name : "Someone"} commented on "${game.title}"`,
+    gameId
   );
   return { ok: true, comments: await listComments(gameId) };
 }

@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import NotificationBell from "./NotificationBell";
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -31,12 +32,15 @@ export default function Layout() {
             SetMatch
           </span>
         </button>
-        <button
-          onClick={() => navigate("/create")}
-          className="rounded-full bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700"
-        >
-          + Post game
-        </button>
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <button
+            onClick={() => navigate("/create")}
+            className="rounded-full bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+          >
+            + Post game
+          </button>
+        </div>
       </header>
 
       {/* Page content */}
