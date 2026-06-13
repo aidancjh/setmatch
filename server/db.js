@@ -66,8 +66,17 @@ export async function initSchema() {
       PRIMARY KEY (game_id, user_id)
     );
 
+    CREATE TABLE IF NOT EXISTS game_comments (
+      id         TEXT PRIMARY KEY,
+      game_id    TEXT NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+      user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      body       TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_games_date ON games(date);
     CREATE INDEX IF NOT EXISTS idx_members_game ON game_members(game_id);
+    CREATE INDEX IF NOT EXISTS idx_comments_game ON game_comments(game_id);
   `);
 }
 

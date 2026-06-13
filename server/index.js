@@ -210,6 +210,43 @@ app.delete(
   })
 );
 
+// --- Comments -------------------------------------------------------------
+
+app.get(
+  "/api/games/:id/comments",
+  h(async (req, res) => {
+    res.json(await repo.listComments(req.params.id));
+  })
+);
+
+app.post(
+  "/api/games/:id/comments",
+  requireAuth,
+  h(async (req, res) => {
+    const body = String((req.body && req.body.body) || "").trim();
+    if (!body) return res.status(400).json({ error: "Comment can't be empty." });
+    if (body.length > 1000)
+      return res.status(400).json({ error: "Comment is too long (max 1000 characters)." });
+    const result = await repo.addComment(req.params.id, req.userId, body);
+    if (result.ok) return res.status(201).json(result.comments);
+    res.status(result.code).json({ error: result.error });
+  })
+);
+
+app.delete(
+  "/api/games/:id/comments/:commentId",
+  requireAuth,
+  h(async (req, res) => {
+    const result = await repo.deleteComment(
+      req.params.id,
+      req.params.commentId,
+      req.userId
+    );
+    if (result.ok) return res.json(result.comments);
+    res.status(result.code).json({ error: result.error });
+  })
+);
+
 // --- Serve the built frontend in production -------------------------------
 // In local dev the React app is served by Vite (port 5173) and this block is
 // skipped because there's no dist/ folder. In production `npm run build`

@@ -43,6 +43,14 @@ export interface Profile {
 /** The authenticated user returned by the API (same shape as Profile). */
 export type User = Profile;
 
+export interface Comment {
+  id: string;
+  userId: string;
+  userName: string;
+  body: string;
+  createdAt: string;
+}
+
 export interface NewGameInput {
   title: string;
   type: GameType;

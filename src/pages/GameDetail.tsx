@@ -16,6 +16,7 @@ import { useProfile } from "../hooks/useProfile";
 import { useAuth } from "../auth/AuthContext";
 import { formatDate, formatTime, relativeDay } from "../lib/format";
 import { SkillBadge, SpotsBadge, TypeBadge } from "../components/Badges";
+import GameComments from "../components/GameComments";
 
 export default function GameDetail() {
   const { id = "" } = useParams();
@@ -269,6 +270,9 @@ export default function GameDetail() {
           </div>
         )}
       </div>
+
+      {/* Discussion thread */}
+      <GameComments gameId={game.id} hostId={game.hostId} />
     </div>
   );
 }

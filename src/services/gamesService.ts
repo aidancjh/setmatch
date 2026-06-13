@@ -8,7 +8,7 @@
  * A lightweight subscribe/notify keeps lists fresh after a mutation, since
  * there is no realtime channel yet — components re-fetch on notify().
  */
-import type { Game, NewGameInput } from "../types";
+import type { Comment, Game, NewGameInput } from "../types";
 import { api } from "../lib/api";
 
 type Listener = () => void;
@@ -76,6 +76,26 @@ export async function toggleInterested(id: string): Promise<Game | undefined> {
 export async function deleteGame(id: string): Promise<void> {
   await api.del<void>(`/games/${id}`);
   notify();
+}
+
+// --- Comments -------------------------------------------------------------
+
+export async function getComments(gameId: string): Promise<Comment[]> {
+  return api.get<Comment[]>(`/games/${gameId}/comments`);
+}
+
+export async function addComment(
+  gameId: string,
+  body: string
+): Promise<Comment[]> {
+  return api.post<Comment[]>(`/games/${gameId}/comments`, { body });
+}
+
+export async function deleteComment(
+  gameId: string,
+  commentId: string
+): Promise<Comment[]> {
+  return api.del<Comment[]>(`/games/${gameId}/comments/${commentId}`);
 }
 
 // --- Derived helpers (pure) -----------------------------------------------

@@ -272,3 +272,48 @@ export async function deleteGame(gameId, userId) {
   await query("DELETE FROM games WHERE id = $1", [gameId]);
   return { ok: true };
 }
+
+// --- Comments (per-game discussion) ---------------------------------------
+
+export async function listComments(gameId) {
+  const { rows } = await query(
+    `SELECT c.id, c.user_id, c.body, c.created_at, u.name AS user_name
+       FROM game_comments c
+       JOIN users u ON u.id = c.user_id
+      WHERE c.game_id = $1
+      ORDER BY c.created_at ASC`,
+    [gameId]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    userId: r.user_id,
+    userName: r.user_name,
+    body: r.body,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function addComment(gameId, userId, body) {
+  const game = await getGameRow(gameId);
+  if (!game) return { ok: false, code: 404, error: "Game not found." };
+  const id = uid("cmt");
+  await query(
+    `INSERT INTO game_comments (id, game_id, user_id, body, created_at)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [id, gameId, userId, body, new Date().toISOString()]
+  );
+  return { ok: true, comments: await listComments(gameId) };
+}
+
+export async function deleteComment(gameId, commentId, userId) {
+  const { rows } = await query(
+    "SELECT c.user_id, g.host_id FROM game_comments c JOIN games g ON g.id = c.game_id WHERE c.id = $1 AND c.game_id = $2",
+    [commentId, gameId]
+  );
+  if (rows.length === 0) return { ok: false, code: 404, error: "Comment not found." };
+  // The author or the game's host may delete a comment.
+  if (rows[0].user_id !== userId && rows[0].host_id !== userId)
+    return { ok: false, code: 403, error: "You can't delete this comment." };
+  await query("DELETE FROM game_comments WHERE id = $1", [commentId]);
+  return { ok: true, comments: await listComments(gameId) };
+}
