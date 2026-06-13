@@ -1,18 +1,21 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/AuthContext";
 import NotificationBell from "./NotificationBell";
+import {
+  CalendarIcon,
+  PlusIcon,
+  SearchIcon,
+  UserIcon,
+  VolleyballIcon,
+} from "./icons";
+
+const tabs = [
+  { to: "/", label: "Browse", Icon: SearchIcon, end: true },
+  { to: "/my-games", label: "My Games", Icon: CalendarIcon, end: false },
+  { to: "/profile", label: "Profile", Icon: UserIcon, end: false },
+];
 
 export default function Layout() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  const tabs = [
-    { to: "/", label: "Browse", icon: "🔍", end: true },
-    { to: "/my-games", label: "My Games", icon: "📋", end: false },
-    user
-      ? { to: "/profile", label: "Profile", icon: "👤", end: false }
-      : { to: "/auth", label: "Sign in", icon: "👤", end: false },
-  ];
 
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col bg-white shadow-sm">
@@ -25,9 +28,7 @@ export default function Layout() {
           onClick={() => navigate("/")}
           className="flex items-center gap-2 text-left"
         >
-          <span className="text-xl" aria-hidden>
-            🏐
-          </span>
+          <VolleyballIcon className="h-6 w-6 text-slate-900" />
           <span className="text-lg font-bold tracking-tight text-slate-900">
             SetMatch
           </span>
@@ -36,9 +37,10 @@ export default function Layout() {
           <NotificationBell />
           <button
             onClick={() => navigate("/create")}
-            className="rounded-full bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+            className="flex items-center gap-1 rounded-full bg-slate-900 py-1.5 pl-2.5 pr-3.5 text-sm font-semibold text-white transition hover:bg-slate-700"
           >
-            + Post game
+            <PlusIcon className="h-4 w-4" />
+            Post
           </button>
         </div>
       </header>
@@ -53,21 +55,19 @@ export default function Layout() {
         className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md items-stretch border-t border-slate-100 bg-white/95 backdrop-blur"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        {tabs.map((t) => (
+        {tabs.map(({ to, label, Icon, end }) => (
           <NavLink
-            key={t.to}
-            to={t.to}
-            end={t.end}
+            key={to}
+            to={to}
+            end={end}
             className={({ isActive }) =>
-              `flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition ${
+              `flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition ${
                 isActive ? "text-slate-900" : "text-slate-400"
               }`
             }
           >
-            <span className="text-lg" aria-hidden>
-              {t.icon}
-            </span>
-            {t.label}
+            <Icon className="h-6 w-6" />
+            {label}
           </NavLink>
         ))}
       </nav>

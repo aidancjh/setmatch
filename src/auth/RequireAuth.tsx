@@ -9,7 +9,9 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <p className="py-16 text-center text-sm text-slate-400">Loading…</p>
+      <div className="flex min-h-screen items-center justify-center text-sm text-slate-400">
+        Loading…
+      </div>
     );
   }
   if (!user) {

@@ -4,6 +4,7 @@ import type { AppNotification } from "../types";
 import { getNotifications, markNotificationsRead } from "../services/gamesService";
 import { useAuth } from "../auth/AuthContext";
 import { timeAgo } from "../lib/format";
+import { BellIcon } from "./icons";
 
 const POLL_MS = 45000;
 
@@ -73,10 +74,10 @@ export default function NotificationBell() {
     <div className="relative">
       <button
         onClick={toggle}
-        className="relative flex h-9 w-9 items-center justify-center rounded-full text-lg transition hover:bg-slate-100"
+        className="relative flex h-9 w-9 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100"
         aria-label="Notifications"
       >
-        🔔
+        <BellIcon className="h-5 w-5" />
         {unread > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
             {unread > 9 ? "9+" : unread}
