@@ -78,7 +78,7 @@ export default function GameDetail() {
   const handleShare = async () => {
     const text = `${game.title} — ${formatDate(game.date)} at ${formatTime(
       game.time
-    )}, ${game.location}. ${left} spots left! Join us on SetMatch.`;
+    )}, ${game.location}. ${left} spots left! Join us on Coterie.`;
     try {
       if (navigator.share) {
         await navigator.share({ title: game.title, text });
@@ -217,7 +217,7 @@ export default function GameDetail() {
         {!joined && !waiting && left > 0 && (
           <button
             onClick={handleJoin}
-            className="w-full rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+            className="w-full rounded-xl bg-brand py-3 text-sm font-semibold text-white transition hover:bg-brand-dark"
           >
             Join game — claim 1 of {left} spots
           </button>

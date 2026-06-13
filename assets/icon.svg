@@ -1,15 +1,13 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <!-- Background -->
-  <rect width="512" height="512" rx="112" fill="#0f172a"/>
+  <rect width="512" height="512" rx="112" fill="#f4634e"/>
   <!-- Volleyball -->
   <g transform="translate(256,256)">
     <circle r="150" fill="#ffffff"/>
-    <g fill="none" stroke="#0f172a" stroke-width="13" stroke-linecap="round">
-      <!-- three curved seams radiating from center, evoking a volleyball -->
+    <g fill="none" stroke="#f4634e" stroke-width="14" stroke-linecap="round">
       <path d="M 0 -150 C -55 -70, -55 70, 0 150"/>
       <path d="M 130 -75 C 40 -45, -75 25, -130 75"/>
       <path d="M 130 75 C 40 45, -75 -25, -130 -75"/>
-      <circle r="150"/>
     </g>
   </g>
 </svg>

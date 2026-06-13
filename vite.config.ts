@@ -11,11 +11,11 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
-        name: "SetMatch — Volleyball Pickup Finder",
-        short_name: "SetMatch",
+        name: "Coterie — Find your players",
+        short_name: "Coterie",
         description:
-          "Find players to fill out your volleyball games. Post a game, set your slots, and fill the open spots.",
-        theme_color: "#0f172a",
+          "Coterie helps you find players and fill your volleyball games. Post a game, set your slots, and fill the open spots.",
+        theme_color: "#f4634e",
         background_color: "#f7f8fa",
         display: "standalone",
         orientation: "portrait",

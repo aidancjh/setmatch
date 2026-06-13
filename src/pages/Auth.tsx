@@ -40,9 +40,12 @@ export default function Auth() {
     <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-white px-6 py-12">
       {/* Brand */}
       <div className="mb-8 flex flex-col items-center text-center">
-        <VolleyballIcon className="h-12 w-12 text-slate-900" />
-        <span className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
-          SetMatch
+        <VolleyballIcon className="h-12 w-12 text-brand" />
+        <span className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900">
+          Coterie
+        </span>
+        <span className="mt-1 text-sm text-slate-400">
+          Find your players. Fill your games.
         </span>
       </div>
 
@@ -91,20 +94,20 @@ export default function Auth() {
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-xl bg-slate-900 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+          className="w-full rounded-xl bg-brand py-3.5 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60"
         >
           {busy ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
         </button>
       </form>
 
       <p className="mt-4 text-center text-sm text-slate-500">
-        {mode === "signup" ? "Already have an account? " : "New to SetMatch? "}
+        {mode === "signup" ? "Already have an account? " : "New to Coterie? "}
         <button
           onClick={() => {
             setMode(mode === "signup" ? "login" : "signup");
             setError("");
           }}
-          className="font-semibold text-slate-900 underline"
+          className="font-semibold text-brand underline"
         >
           {mode === "signup" ? "Sign in" : "Create one"}
         </button>

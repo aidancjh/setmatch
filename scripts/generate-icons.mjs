@@ -15,14 +15,13 @@ const svg = readFileSync(join(root, "assets", "icon.svg"));
 // so Android can crop it to any shape without clipping the design.
 const maskable = Buffer.from(`
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" fill="#0f172a"/>
+  <rect width="512" height="512" fill="#f4634e"/>
   <g transform="translate(256,256) scale(0.66)">
     <circle r="150" fill="#ffffff"/>
-    <g fill="none" stroke="#0f172a" stroke-width="13" stroke-linecap="round">
+    <g fill="none" stroke="#f4634e" stroke-width="14" stroke-linecap="round">
       <path d="M 0 -150 C -55 -70, -55 70, 0 150"/>
       <path d="M 130 -75 C 40 -45, -75 25, -130 75"/>
       <path d="M 130 75 C 40 45, -75 -25, -130 -75"/>
-      <circle r="150"/>
     </g>
   </g>
 </svg>`);
@@ -49,15 +48,14 @@ const og = Buffer.from(`
   <rect width="1200" height="630" fill="#0f172a"/>
   <g transform="translate(150,315) scale(1.05)">
     <circle r="150" fill="#ffffff"/>
-    <g fill="none" stroke="#0f172a" stroke-width="13" stroke-linecap="round">
+    <g fill="none" stroke="#f4634e" stroke-width="14" stroke-linecap="round">
       <path d="M 0 -150 C -55 -70, -55 70, 0 150"/>
       <path d="M 130 -75 C 40 -45, -75 25, -130 75"/>
       <path d="M 130 75 C 40 45, -75 -25, -130 -75"/>
-      <circle r="150"/>
     </g>
   </g>
-  <text x="370" y="290" fill="#ffffff" font-family="Arial, sans-serif" font-size="84" font-weight="bold">SetMatch</text>
-  <text x="372" y="360" fill="#94a3b8" font-family="Arial, sans-serif" font-size="38">Pickup volleyball, sorted.</text>
+  <text x="370" y="290" fill="#ffffff" font-family="Arial, sans-serif" font-size="92" font-weight="bold">Coterie</text>
+  <text x="372" y="358" fill="#f4634e" font-family="Arial, sans-serif" font-size="38">Find your players. Fill your games.</text>
 </svg>`);
 await sharp(og).png().toFile(join(pub, "og-image.png"));
 console.log("wrote public/og-image.png");

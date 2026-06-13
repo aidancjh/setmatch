@@ -49,7 +49,7 @@ export default function Profile() {
       </p>
 
       <div className="mb-5 flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-xl font-bold text-white">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand text-xl font-bold text-white">
           {(name.trim() || "Y").charAt(0).toUpperCase()}
         </div>
         <div className="min-w-0">
@@ -83,7 +83,7 @@ export default function Profile() {
                 onClick={() => setSkill(s)}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                   skill === s
-                    ? "bg-slate-900 text-white"
+                    ? "bg-brand text-white"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
@@ -113,7 +113,7 @@ export default function Profile() {
 
         <button
           onClick={handleSave}
-          className="w-full rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+          className="w-full rounded-xl bg-brand py-3 text-sm font-semibold text-white transition hover:bg-brand-dark"
         >
           {saved ? "Saved ✓" : "Save profile"}
         </button>

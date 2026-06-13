@@ -58,7 +58,7 @@ export default function UserProfile() {
 
       {/* Header card */}
       <div className="mb-4 flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 text-2xl font-bold text-white">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand text-2xl font-bold text-white">
           {profile.name.charAt(0).toUpperCase()}
         </div>
         <div className="min-w-0">

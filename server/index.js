@@ -1,4 +1,4 @@
-// SetMatch API server — Express + PostgreSQL.
+// Coterie API server — Express + PostgreSQL.
 // Local dev:  node --env-file=.env server/index.js   (see package.json scripts)
 // Production: node server/index.js                    (host provides env vars)
 import express from "express";
@@ -345,7 +345,7 @@ function buildICS(game, base) {
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//SetMatch//EN",
+    "PRODID:-//Coterie//EN",
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
     `UID:${game.id}@setmatch`,
@@ -418,10 +418,10 @@ function calDate(iso) {
 }
 
 function injectMeta(html, base, title, desc) {
-  const fullTitle = `${title} · SetMatch`;
+  const fullTitle = `${title} · Coterie`;
   const tags = `
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="SetMatch" />
+    <meta property="og:site_name" content="Coterie" />
     <meta property="og:title" content="${esc(fullTitle)}" />
     <meta property="og:description" content="${esc(desc)}" />
     <meta property="og:image" content="${base}/og-image.png" />
@@ -439,7 +439,7 @@ async function start() {
   await initSchema();
   await seedIfEmpty();
   app.listen(PORT, () => {
-    console.log(`[api] SetMatch API listening on http://localhost:${PORT}`);
+    console.log(`[api] Coterie API listening on http://localhost:${PORT}`);
   });
 }
 

@@ -111,7 +111,7 @@ export default function BrowseGames() {
           <p className="text-sm text-rose-600">{error}</p>
           <button
             onClick={reload}
-            className="mt-3 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+            className="mt-3 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white"
           >
             Try again
           </button>
@@ -121,7 +121,7 @@ export default function BrowseGames() {
           <p className="text-sm text-slate-500">No games match your filters.</p>
           <button
             onClick={() => navigate("/create")}
-            className="mt-3 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+            className="mt-3 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white"
           >
             Post your own game
           </button>
@@ -157,7 +157,7 @@ function FilterChips({
           onClick={() => onChange(o)}
           className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium transition ${
             value === o
-              ? "bg-slate-900 text-white"
+              ? "bg-brand text-white"
               : "bg-slate-100 text-slate-600 hover:bg-slate-200"
           }`}
         >

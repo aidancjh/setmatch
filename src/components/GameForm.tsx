@@ -187,7 +187,7 @@ export default function GameForm({
                 onClick={() => setRepeatWeeks(o.weeks)}
                 className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
                   repeatWeeks === o.weeks
-                    ? "bg-slate-900 text-white"
+                    ? "bg-brand text-white"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
@@ -220,7 +220,7 @@ export default function GameForm({
         <button
           type="submit"
           disabled={busy}
-          className="flex-1 rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+          className="flex-1 rounded-xl bg-brand py-3 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60"
         >
           {busy ? "Saving…" : submitLabel}
         </button>
@@ -267,7 +267,7 @@ function Segmented({
           onClick={() => onChange(o)}
           className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
             value === o
-              ? "bg-slate-900 text-white"
+              ? "bg-brand text-white"
               : "bg-slate-100 text-slate-600 hover:bg-slate-200"
           }`}
         >

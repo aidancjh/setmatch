@@ -73,7 +73,7 @@ export default function MyGames() {
           </p>
           <button
             onClick={() => navigate(tab === "hosting" ? "/create" : "/")}
-            className="mt-3 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+            className="mt-3 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white"
           >
             {tab === "hosting" ? "Post a game" : "Browse games"}
           </button>

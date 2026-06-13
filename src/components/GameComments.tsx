@@ -151,7 +151,7 @@ export default function GameComments({
         <button
           type="submit"
           disabled={busy || (!!user && !draft.trim())}
-          className="shrink-0 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50"
+          className="shrink-0 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-50"
         >
           {user ? (busy ? "…" : "Send") : "Sign in"}
         </button>

@@ -28,16 +28,16 @@ export default function Layout() {
           onClick={() => navigate("/")}
           className="flex items-center gap-2 text-left"
         >
-          <VolleyballIcon className="h-6 w-6 text-slate-900" />
-          <span className="text-lg font-bold tracking-tight text-slate-900">
-            SetMatch
+          <VolleyballIcon className="h-6 w-6 text-brand" />
+          <span className="text-lg font-extrabold tracking-tight text-slate-900">
+            Coterie
           </span>
         </button>
         <div className="flex items-center gap-1">
           <NotificationBell />
           <button
             onClick={() => navigate("/create")}
-            className="flex items-center gap-1 rounded-full bg-slate-900 py-1.5 pl-2.5 pr-3.5 text-sm font-semibold text-white transition hover:bg-slate-700"
+            className="flex items-center gap-1 rounded-full bg-brand py-1.5 pl-2.5 pr-3.5 text-sm font-semibold text-white transition hover:bg-brand-dark"
           >
             <PlusIcon className="h-4 w-4" />
             Post
@@ -62,7 +62,7 @@ export default function Layout() {
             end={end}
             className={({ isActive }) =>
               `flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition ${
-                isActive ? "text-slate-900" : "text-slate-400"
+                isActive ? "text-brand" : "text-slate-400"
               }`
             }
           >

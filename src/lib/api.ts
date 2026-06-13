@@ -1,5 +1,5 @@
 /**
- * Tiny fetch wrapper for the SetMatch API.
+ * Tiny fetch wrapper for the Coterie API.
  * - Prefixes /api (Vite proxies this to the Express server in dev).
  * - Attaches the JWT from localStorage when present.
  * - Throws an Error with the server's message on non-2xx responses.
