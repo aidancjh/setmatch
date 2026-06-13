@@ -1,0 +1,16 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.vite
+
+# Environment secrets — never commit these
+.env
+.env.*
+!.env.example
+
+# Legacy SQLite files (superseded by Postgres)
+server/*.sqlite
+server/*.sqlite-shm
+server/*.sqlite-wal
