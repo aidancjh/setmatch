@@ -27,18 +27,27 @@ export const blankGame: NewGameInput = {
  * validation, and styling live in one place. The parent supplies the initial
  * values, the submit-button label, and what happens on submit.
  */
+const repeatOptions = [
+  { label: "One-time", weeks: 1 },
+  { label: "Weekly ×4", weeks: 4 },
+  { label: "Weekly ×8", weeks: 8 },
+];
+
 export default function GameForm({
   initial,
   submitLabel,
   onSubmit,
   onCancel,
+  allowRepeat = false,
 }: {
   initial: NewGameInput;
   submitLabel: string;
-  onSubmit: (input: NewGameInput) => Promise<void>;
+  onSubmit: (input: NewGameInput, repeatWeeks: number) => Promise<void>;
   onCancel: () => void;
+  allowRepeat?: boolean;
 }) {
   const [form, setForm] = useState<NewGameInput>(initial);
+  const [repeatWeeks, setRepeatWeeks] = useState(1);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const today = todayISO();
@@ -65,13 +74,16 @@ export default function GameForm({
     setError("");
     setBusy(true);
     try {
-      await onSubmit({
-        ...form,
-        title: form.title.trim(),
-        location: form.location.trim(),
-        area: form.area.trim() || form.location.trim(),
-        notes: form.notes.trim(),
-      });
+      await onSubmit(
+        {
+          ...form,
+          title: form.title.trim(),
+          location: form.location.trim(),
+          area: form.area.trim() || form.location.trim(),
+          notes: form.notes.trim(),
+        },
+        repeatWeeks
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setBusy(false);
@@ -164,6 +176,32 @@ export default function GameForm({
           className={`${inputCls} resize-none`}
         />
       </Field>
+
+      {allowRepeat && (
+        <Field label="Repeat">
+          <div className="flex flex-wrap gap-1.5">
+            {repeatOptions.map((o) => (
+              <button
+                key={o.weeks}
+                type="button"
+                onClick={() => setRepeatWeeks(o.weeks)}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
+                  repeatWeeks === o.weeks
+                    ? "bg-slate-900 text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+          {repeatWeeks > 1 && (
+            <p className="mt-1.5 text-xs text-slate-400">
+              Creates {repeatWeeks} games, one a week starting on the date above.
+            </p>
+          )}
+        </Field>
+      )}
 
       {error && (
         <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">

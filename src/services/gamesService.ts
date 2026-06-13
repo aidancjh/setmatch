@@ -8,7 +8,13 @@
  * A lightweight subscribe/notify keeps lists fresh after a mutation, since
  * there is no realtime channel yet — components re-fetch on notify().
  */
-import type { AppNotification, Comment, Game, NewGameInput } from "../types";
+import type {
+  AppNotification,
+  Comment,
+  Game,
+  NewGameInput,
+  UserProfile,
+} from "../types";
 import { api } from "../lib/api";
 
 type Listener = () => void;
@@ -40,8 +46,11 @@ export async function getGame(id: string): Promise<Game | undefined> {
 
 // --- Mutations (require auth on the server) --------------------------------
 
-export async function createGame(input: NewGameInput): Promise<Game> {
-  const game = await api.post<Game>("/games", input);
+export async function createGame(
+  input: NewGameInput,
+  repeatWeeks = 1
+): Promise<Game> {
+  const game = await api.post<Game>("/games", { ...input, repeat: repeatWeeks });
   notify();
   return game;
 }
@@ -76,6 +85,12 @@ export async function toggleInterested(id: string): Promise<Game | undefined> {
 export async function deleteGame(id: string): Promise<void> {
   await api.del<void>(`/games/${id}`);
   notify();
+}
+
+// --- User profiles --------------------------------------------------------
+
+export async function getUserProfile(userId: string): Promise<UserProfile> {
+  return api.get<UserProfile>(`/users/${userId}/profile`);
 }
 
 // --- Comments -------------------------------------------------------------

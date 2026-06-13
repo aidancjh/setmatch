@@ -6,6 +6,7 @@ import CreateGame from "./pages/CreateGame";
 import EditGame from "./pages/EditGame";
 import MyGames from "./pages/MyGames";
 import Profile from "./pages/Profile";
+import UserProfile from "./pages/UserProfile";
 import Auth from "./pages/Auth";
 import RequireAuth from "./auth/RequireAuth";
 
@@ -25,6 +26,7 @@ export default function App() {
       >
         <Route path="/" element={<BrowseGames />} />
         <Route path="/game/:id" element={<GameDetail />} />
+        <Route path="/user/:id" element={<UserProfile />} />
         <Route path="/game/:id/edit" element={<EditGame />} />
         <Route path="/create" element={<CreateGame />} />
         <Route path="/my-games" element={<MyGames />} />

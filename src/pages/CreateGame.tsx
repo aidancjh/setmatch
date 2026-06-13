@@ -6,8 +6,8 @@ import GameForm, { blankGame } from "../components/GameForm";
 export default function CreateGame() {
   const navigate = useNavigate();
 
-  const handleSubmit = async (input: NewGameInput) => {
-    const game = await createGame(input);
+  const handleSubmit = async (input: NewGameInput, repeatWeeks: number) => {
+    const game = await createGame(input, repeatWeeks);
     navigate(`/game/${game.id}`);
   };
 
@@ -32,6 +32,7 @@ export default function CreateGame() {
         submitLabel="Post game"
         onSubmit={handleSubmit}
         onCancel={() => navigate(-1)}
+        allowRepeat
       />
     </div>
   );

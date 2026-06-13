@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import type { Comment } from "../types";
 import { addComment, deleteComment, getComments } from "../services/gamesService";
 import { useAuth } from "../auth/AuthContext";
@@ -87,19 +87,25 @@ export default function GameComments({
             const canDelete = user && (user.id === c.userId || user.id === hostId);
             return (
               <li key={c.id} className="flex gap-2.5">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-500">
+                <Link
+                  to={`/user/${c.userId}`}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-500"
+                >
                   {c.userName.charAt(0).toUpperCase()}
-                </div>
+                </Link>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-sm font-semibold text-slate-800">
+                    <Link
+                      to={`/user/${c.userId}`}
+                      className="text-sm font-semibold text-slate-800 underline-offset-2 hover:underline"
+                    >
                       {c.userName}
                       {c.userId === hostId && (
                         <span className="ml-1 text-xs font-medium text-amber-600">
                           ⭐ host
                         </span>
                       )}
-                    </span>
+                    </Link>
                     <span className="text-xs text-slate-400">
                       {timeAgo(c.createdAt)}
                     </span>

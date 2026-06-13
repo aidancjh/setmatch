@@ -42,4 +42,24 @@ for (const j of jobs) {
     .toFile(join(pub, j.out));
   console.log("wrote public/" + j.out);
 }
+
+// Social share image (Open Graph / Twitter) — 1200x630.
+const og = Buffer.from(`
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#0f172a"/>
+  <g transform="translate(150,315) scale(1.05)">
+    <circle r="150" fill="#ffffff"/>
+    <g fill="none" stroke="#0f172a" stroke-width="13" stroke-linecap="round">
+      <path d="M 0 -150 C -55 -70, -55 70, 0 150"/>
+      <path d="M 130 -75 C 40 -45, -75 25, -130 75"/>
+      <path d="M 130 75 C 40 45, -75 -25, -130 -75"/>
+      <circle r="150"/>
+    </g>
+  </g>
+  <text x="370" y="290" fill="#ffffff" font-family="Arial, sans-serif" font-size="84" font-weight="bold">SetMatch</text>
+  <text x="372" y="360" fill="#94a3b8" font-family="Arial, sans-serif" font-size="38">Pickup volleyball, sorted.</text>
+</svg>`);
+await sharp(og).png().toFile(join(pub, "og-image.png"));
+console.log("wrote public/og-image.png");
+
 console.log("done");

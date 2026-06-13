@@ -61,7 +61,7 @@ export default function EditGame() {
   };
 
   const handleSubmit = async (input: NewGameInput) => {
-    const updated = await updateGame(game.id, input);
+    const updated = await updateGame(game!.id, input);
     navigate(`/game/${updated.id}`);
   };
 

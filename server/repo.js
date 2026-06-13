@@ -39,6 +39,40 @@ export async function updateUser(id, { name, skill, homeArea }) {
   return findUserById(id);
 }
 
+/** Public profile of any user: basic info + participation stats. */
+export async function getUserProfile(userId) {
+  const u = await findUserById(userId);
+  if (!u) return null;
+  const hosted = Number(
+    (await query("SELECT COUNT(*) AS c FROM games WHERE host_id = $1", [userId]))
+      .rows[0].c
+  );
+  const played = Number(
+    (
+      await query(
+        "SELECT COUNT(*) AS c FROM game_members WHERE user_id = $1 AND status = 'player'",
+        [userId]
+      )
+    ).rows[0].c
+  );
+  const today = new Date().toISOString().slice(0, 10);
+  const { rows } = await query(
+    "SELECT * FROM games WHERE host_id = $1 AND date >= $2 ORDER BY date ASC LIMIT 10",
+    [userId, today]
+  );
+  const hostedUpcoming = await Promise.all(rows.map(serializeGame));
+  return {
+    id: u.id,
+    name: u.name,
+    skill: u.skill,
+    homeArea: u.home_area,
+    memberSince: u.created_at,
+    gamesHosted: hosted,
+    gamesPlayed: played,
+    hostedUpcoming,
+  };
+}
+
 /** Strip the password hash before sending a user to the client. */
 export function publicUser(row) {
   if (!row) return null;

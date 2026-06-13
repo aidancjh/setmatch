@@ -43,6 +43,17 @@ export interface Profile {
 /** The authenticated user returned by the API (same shape as Profile). */
 export type User = Profile;
 
+export interface UserProfile {
+  id: string;
+  name: string;
+  skill: SkillLevel;
+  homeArea: string;
+  memberSince: string;
+  gamesHosted: number;
+  gamesPlayed: number;
+  hostedUpcoming: Game[];
+}
+
 export interface Comment {
   id: string;
   userId: string;

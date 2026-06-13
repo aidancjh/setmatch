@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import type { Game } from "../types";
 import {
   deleteGame,
@@ -136,7 +136,12 @@ export default function GameDetail() {
           <span className="text-slate-400"> · {game.area}</span>
         </InfoRow>
         <InfoRow icon="👤" label="Host">
-          {game.hostName}
+          <Link
+            to={`/user/${game.hostId}`}
+            className="font-medium text-slate-900 underline-offset-2 hover:underline"
+          >
+            {game.hostName}
+          </Link>
         </InfoRow>
         {game.notes && (
           <InfoRow icon="📝" label="Notes">
@@ -152,9 +157,10 @@ export default function GameDetail() {
         </h2>
         <div className="flex flex-wrap gap-1.5">
           {game.players.map((p) => (
-            <span
+            <Link
               key={p.id}
-              className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+              to={`/user/${p.id}`}
+              className={`rounded-full px-2.5 py-1 text-xs font-medium transition hover:opacity-80 ${
                 p.id === me.id
                   ? "bg-emerald-100 text-emerald-800"
                   : "bg-slate-100 text-slate-700"
@@ -163,7 +169,7 @@ export default function GameDetail() {
               {p.id === game.hostId && "⭐ "}
               {p.name}
               {p.id === me.id && " (you)"}
-            </span>
+            </Link>
           ))}
           {Array.from({ length: left }).map((_, i) => (
             <span
@@ -252,6 +258,13 @@ export default function GameDetail() {
             Share invite
           </button>
         </div>
+
+        <a
+          href={`/api/games/${game.id}/calendar.ics`}
+          className="block rounded-xl border border-slate-200 bg-white py-2.5 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+        >
+          📅 Add to calendar
+        </a>
 
         {isHost && (
           <div className="space-y-2 border-t border-slate-100 pt-3">

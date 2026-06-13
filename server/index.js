@@ -13,6 +13,7 @@ import { seedIfEmpty } from "./seed.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+app.set("trust proxy", true); // behind Railway's proxy — reflect real https host
 app.use(cors());
 app.use(express.json());
 
@@ -148,9 +149,26 @@ app.post(
   h(async (req, res) => {
     const err = validGameInput(req.body);
     if (err) return res.status(400).json({ error: err });
-    res.status(201).json(await repo.createGame(req.userId, gameInputFrom(req.body)));
+    const input = gameInputFrom(req.body);
+    // Recurring: create N weekly occurrences (capped). Return the first one.
+    const repeat = Math.min(Math.max(Number(req.body.repeat) || 1, 1), 12);
+    let first = null;
+    for (let i = 0; i < repeat; i++) {
+      const game = await repo.createGame(req.userId, {
+        ...input,
+        date: addWeeksISO(input.date, i),
+      });
+      if (i === 0) first = game;
+    }
+    res.status(201).json(first);
   })
 );
+
+function addWeeksISO(iso, weeks) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d + weeks * 7));
+  return date.toISOString().slice(0, 10);
+}
 
 app.patch(
   "/api/games/:id",
@@ -270,18 +288,149 @@ app.delete(
   })
 );
 
+// --- User profiles --------------------------------------------------------
+
+app.get(
+  "/api/users/:id/profile",
+  requireAuth,
+  h(async (req, res) => {
+    const profile = await repo.getUserProfile(req.params.id);
+    if (!profile) return res.status(404).json({ error: "Player not found." });
+    res.json(profile);
+  })
+);
+
+// --- Add to calendar (.ics) -----------------------------------------------
+// Public on purpose: the phone's calendar app fetches this without auth.
+
+app.get(
+  "/api/games/:id/calendar.ics",
+  h(async (req, res) => {
+    const game = await repo.getGame(req.params.id);
+    if (!game) return res.status(404).json({ error: "Game not found." });
+    const ics = buildICS(game, `${req.protocol}://${req.get("host")}`);
+    res.setHeader("Content-Type", "text/calendar; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${game.id}.ics"`
+    );
+    res.send(ics);
+  })
+);
+
+function icsTime(dateISO, timeHHMM, addHours = 0) {
+  const [y, m, d] = dateISO.split("-").map(Number);
+  const [hh, mm] = timeHHMM.split(":").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d, hh + addHours, mm));
+  const p = (n) => String(n).padStart(2, "0");
+  return `${dt.getUTCFullYear()}${p(dt.getUTCMonth() + 1)}${p(
+    dt.getUTCDate()
+  )}T${p(dt.getUTCHours())}${p(dt.getUTCMinutes())}00`;
+}
+
+function icsEscape(s) {
+  return String(s)
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r?\n/g, "\\n");
+}
+
+function buildICS(game, base) {
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
+  const desc =
+    `Hosted by ${game.hostName}.` +
+    (game.notes ? ` ${game.notes}` : "") +
+    ` View: ${base}/game/${game.id}`;
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//SetMatch//EN",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${game.id}@setmatch`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART:${icsTime(game.date, game.time)}`,
+    `DTEND:${icsTime(game.date, game.time, 2)}`,
+    `SUMMARY:${icsEscape(game.title)}`,
+    `LOCATION:${icsEscape(`${game.location}, ${game.area}`)}`,
+    `DESCRIPTION:${icsEscape(desc)}`,
+    "BEGIN:VALARM",
+    "TRIGGER:-PT2H",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Volleyball game reminder",
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+}
+
 // --- Serve the built frontend in production -------------------------------
 // In local dev the React app is served by Vite (port 5173) and this block is
 // skipped because there's no dist/ folder. In production `npm run build`
 // creates dist/, and this single service serves both the API and the app.
 const distDir = path.join(__dirname, "..", "dist");
 if (fs.existsSync(path.join(distDir, "index.html"))) {
+  const indexHtml = fs.readFileSync(path.join(distDir, "index.html"), "utf8");
   app.use(express.static(distDir));
-  // SPA fallback: any non-API route returns index.html so React Router works.
+
+  // Game pages get per-game Open Graph tags injected so shared links unfurl
+  // into a rich card (WhatsApp / iMessage / etc.). The SPA still boots normally.
+  app.get("/game/:id", h(async (req, res) => {
+    const game = await repo.getGame(req.params.id);
+    if (!game) return res.send(indexHtml);
+    const base = `${req.protocol}://${req.get("host")}`;
+    const left = Math.max(0, game.totalSlots - game.players.length);
+    const desc =
+      `${calDate(game.date)} · ${prettyTime(game.time)} · ${game.location}` +
+      ` — ${left > 0 ? `${left} spot${left === 1 ? "" : "s"} left` : "full"}`;
+    res.send(injectMeta(indexHtml, base, game.title, desc));
+  }));
+
+  // SPA fallback: any other non-API route returns index.html so routing works.
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api/")) return next();
-    res.sendFile(path.join(distDir, "index.html"));
+    res.send(indexHtml);
   });
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function prettyTime(t) {
+  const [h, m] = t.split(":").map(Number);
+  const ampm = h < 12 ? "AM" : "PM";
+  const hr = h % 12 === 0 ? 12 : h % 12;
+  return `${hr}:${String(m).padStart(2, "0")} ${ampm}`;
+}
+
+function calDate(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return `${days[date.getUTCDay()]}, ${months[m - 1]} ${d}`;
+}
+
+function injectMeta(html, base, title, desc) {
+  const fullTitle = `${title} · SetMatch`;
+  const tags = `
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SetMatch" />
+    <meta property="og:title" content="${esc(fullTitle)}" />
+    <meta property="og:description" content="${esc(desc)}" />
+    <meta property="og:image" content="${base}/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${esc(fullTitle)}" />
+    <meta name="twitter:description" content="${esc(desc)}" />
+    <meta name="twitter:image" content="${base}/og-image.png" />
+  `;
+  return html.replace("</head>", `${tags}</head>`);
 }
 
 // --- Startup --------------------------------------------------------------
