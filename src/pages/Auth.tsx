@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { VolleyballIcon } from "../components/icons";
 
@@ -125,6 +125,14 @@ export default function Auth() {
         >
           a demo account
         </button>
+      </p>
+
+      <p className="mt-4 text-center text-xs text-slate-300">
+        By continuing you agree to our{" "}
+        <Link to="/privacy" className="underline hover:text-slate-400">
+          Privacy Policy
+        </Link>
+        .
       </p>
     </div>
   );

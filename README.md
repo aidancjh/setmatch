@@ -1,88 +1,52 @@
-# SetMatch — Volleyball Pickup Finder
+# Coterie — find your players, fill your games
 
-Find players to fill out your volleyball games. Post a game, set your slot count
-(12 by default), and let people claim the open spots before game day.
+Coterie is a pickup-volleyball app: post a game, set how many slots you need, and
+let players find and claim the open spots. Browse games, join with one tap, chat
+per game, get in-app notifications, follow player profiles, and add games to your
+calendar.
 
-**Stack:** React + TypeScript + Vite + Tailwind (frontend) · Express + PostgreSQL
-(backend) · JWT auth. Designed to scale: stateless API + managed Postgres +
-static frontend.
+**Live:** https://ingenious-eagerness-production-c6e9.up.railway.app
 
-## Run it locally
+## Stack
+React + TypeScript + Vite + Tailwind (frontend, installable PWA) · Express +
+PostgreSQL (backend) · JWT auth with roles · deployed on Railway. Brand: coral
+`#F4634E`, Inter typeface.
 
-You need **Node** and a local **PostgreSQL** database.
-
-1. Create a database called `setmatch` in your local Postgres.
-2. Copy `.env.example` to `.env` and set `DATABASE_URL` to point at it
-   (the default assumes user `postgres` / password `postgres` on port 5432).
-3. Install and run:
-
-   ```powershell
-   npm install
-   npm run dev
-   ```
-
-   This starts the **API** (port 4000) and the **web app** (port 5173) together.
-   Open <http://localhost:5173>.
-
-> On this machine, Node is at `C:\Program Files\nodejs` and may not be on PATH in
-> a fresh shell. If `npm` isn't found, run
-> `$env:Path = "$env:ProgramFiles\nodejs;$env:Path"` first. Or just double-click
-> **`Start SetMatch.bat`**.
-
-### Demo accounts
-The database is seeded with demo games and hosts on first run. Log in as any of
-them with password **`volleyball`** (e.g. `maria@demo.test`), or create your own.
-
-## Deploy it
-
-See **[DEPLOY.md](DEPLOY.md)** for step-by-step instructions (GitHub + Railway).
-The whole app deploys as one service (the Node server serves the API *and* the
-built frontend) plus a managed Postgres database.
-
-## How it's built
-
+## Run locally
+Requires Node and a local PostgreSQL DB named `setmatch`.
+```bash
+cp .env.example .env       # set DATABASE_URL
+npm install
+npm run dev                # API :4000 + web :5173
 ```
-server/                  ← Express + PostgreSQL backend
-  index.js               ← routes, startup, serves frontend in production
-  db.js                  ← pg connection pool + schema (from DATABASE_URL)
-  repo.js                ← all SQL; returns frontend-shaped objects
-  auth.js                ← password hashing + JWT + middleware
-  seed.js                ← demo users & games on first run
+(On this machine Node is at `C:\Program Files\nodejs`; if `npm` isn't found run
+`$env:Path = "$env:ProgramFiles\nodejs;$env:Path"`, or double-click `Start Coterie.bat`.)
 
-src/                     ← React frontend
-  lib/api.ts             ← fetch wrapper (attaches JWT, calls /api)
-  auth/                  ← AuthContext (login/signup), RequireAuth guard
-  services/gamesService.ts ← calls the API
-  components/GameForm.tsx ← shared create/edit form
-  pages/                 ← Browse, GameDetail, Create/EditGame, MyGames, Profile, Auth
-```
+Demo accounts: any `*@demo.test` with password `volleyball`.
 
-### Environment variables
+## Features
+- Browse / search / filter games; post one-time **or recurring (weekly ×4/×8)** games
+- Join, leave, **waitlist** with auto-promotion
+- Per-game **chat**, **interested** marker, **share** with rich link previews
+- **In-app notifications** (join/leave/waitlist/edit/cancel/comment)
+- **Player profiles** with hosted/joined stats; **add to calendar** (.ics + reminder)
+- **Edit/delete** games (host); **admin dashboard** (role-gated)
+- Installable PWA, always-latest-when-online
 
-| Var | Purpose |
+## Docs
+| File | What |
 |---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `DATABASE_SSL` | `true` for cloud databases that require TLS, else `false` |
-| `JWT_SECRET` | secret for signing login tokens (long random string in prod) |
-| `PORT` | API port (host sets this automatically in production) |
+| [DEPLOY.md](DEPLOY.md) | First-time deploy to GitHub + Railway |
+| [OPERATIONS.md](OPERATIONS.md) | Env vars, admin access, migrations, **backups/restore**, monitoring, email |
+| [STORE.md](STORE.md) | App Store / Google Play distribution checklist (Capacitor) |
 
-### API endpoints
+## Project layout
+```
+server/   Express API: index.js (routes/health/errors), db.js (schema+migrations),
+          repo.js (all SQL), auth.js (JWT/bcrypt), seed.js (demo data)
+src/      React app: pages/, components/, services/ (api calls), auth/ (context+guard),
+          lib/api.ts (fetch w/ timeout+retry+idempotency), hooks/
+```
 
-| Method | Path | Auth | Purpose |
-|---|---|---|---|
-| POST | `/api/auth/signup` · `/login` | — | Returns `{token, user}` |
-| GET / PATCH | `/api/auth/me` | ✓ | Current user / update profile |
-| GET | `/api/games` · `/api/games/:id` | — | List / one game |
-| POST | `/api/games` | ✓ | Create (you become host) |
-| PATCH | `/api/games/:id` | ✓ host | Edit game |
-| DELETE | `/api/games/:id` | ✓ host | Delete game |
-| POST | `/api/games/:id/join` · `/leave` · `/interested` | ✓ | Roster actions |
-
-## Roadmap
-
-- **Done:** local prototype → real backend + accounts → edit games →
-  **Postgres + deployable** (here).
-- **Next phases:** notifications, maps/location search, per-game chat.
-- **Scaling:** add a CDN (Vercel/Cloudflare) for the frontend, upgrade the
-  Postgres plan, and run multiple API instances (the API is stateless, so this
-  "just works").
+## Updating
+`git push` → Railway auto-deploys in ~2 min. The PWA picks up changes on next open.
