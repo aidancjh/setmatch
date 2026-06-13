@@ -7,6 +7,7 @@ import EditGame from "./pages/EditGame";
 import MyGames from "./pages/MyGames";
 import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
+import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import RequireAuth from "./auth/RequireAuth";
 
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/create" element={<CreateGame />} />
         <Route path="/my-games" element={<MyGames />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<BrowseGames />} />
       </Route>
     </Routes>

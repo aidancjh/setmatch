@@ -86,11 +86,24 @@ export async function initSchema() {
       created_at TEXT NOT NULL
     );
 
+    -- Idempotency keys so a retried "create game" can't double-post.
+    CREATE TABLE IF NOT EXISTS idempotency_keys (
+      key        TEXT PRIMARY KEY,
+      game_id    TEXT,
+      created_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_games_date ON games(date);
     CREATE INDEX IF NOT EXISTS idx_members_game ON game_members(game_id);
     CREATE INDEX IF NOT EXISTS idx_comments_game ON game_comments(game_id);
     CREATE INDEX IF NOT EXISTS idx_notifs_user ON notifications(user_id, created_at);
   `);
+
+  // --- Migrations (idempotent; safe to run on every startup) ---------------
+  // Role-based authorization: 'user' | 'staff' | 'admin'.
+  await pool.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user'"
+  );
 }
 
 export function uid(prefix = "id") {

@@ -8,7 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { hashPassword, verifyPassword, signToken, requireAuth } from "./auth.js";
 import * as repo from "./repo.js";
-import { initSchema } from "./db.js";
+import { initSchema, query } from "./db.js";
 import { seedIfEmpty } from "./seed.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -18,6 +18,29 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 4000;
+
+// Concise request logging for API calls (method, path, status, duration).
+app.use((req, res, next) => {
+  if (!req.path.startsWith("/api")) return next();
+  const start = Date.now();
+  res.on("finish", () => {
+    console.log(
+      `[api] ${req.method} ${req.path} ${res.statusCode} ${Date.now() - start}ms`
+    );
+  });
+  next();
+});
+
+// Health check for uptime monitors — verifies the DB is reachable.
+app.get("/healthz", async (_req, res) => {
+  try {
+    await query("SELECT 1");
+    res.json({ status: "ok" });
+  } catch (err) {
+    console.error("[health] db check failed:", err);
+    res.status(503).json({ status: "db_unavailable" });
+  }
+});
 
 // --- Validation helpers ---------------------------------------------------
 
@@ -149,6 +172,12 @@ app.post(
   h(async (req, res) => {
     const err = validGameInput(req.body);
     if (err) return res.status(400).json({ error: err });
+    // Idempotency: a retried request with the same key returns the first result
+    // instead of creating duplicate games.
+    const idemKey = req.get("Idempotency-Key");
+    const existing = await repo.getIdempotentGame(idemKey);
+    if (existing) return res.status(201).json(existing);
+
     const input = gameInputFrom(req.body);
     // Recurring: create N weekly occurrences (capped). Return the first one.
     const repeat = Math.min(Math.max(Number(req.body.repeat) || 1, 1), 12);
@@ -160,6 +189,7 @@ app.post(
       });
       if (i === 0) first = game;
     }
+    if (idemKey && first) await repo.saveIdempotentKey(idemKey, first.id);
     res.status(201).json(first);
   })
 );
@@ -288,6 +318,62 @@ app.delete(
   })
 );
 
+// --- Admin (role-enforced on the server, not just the UI) -----------------
+
+async function requireAdmin(req, res, next) {
+  try {
+    const role = await repo.getRole(req.userId);
+    if (role !== "admin")
+      return res.status(403).json({ error: "Admin access required." });
+    next();
+  } catch (err) {
+    console.error("[api] admin check error:", err);
+    res.status(500).json({ error: "Something went wrong on the server." });
+  }
+}
+
+app.get(
+  "/api/admin/stats",
+  requireAuth,
+  requireAdmin,
+  h(async (_req, res) => res.json(await repo.adminStats()))
+);
+
+app.get(
+  "/api/admin/users",
+  requireAuth,
+  requireAdmin,
+  h(async (_req, res) => res.json(await repo.adminListUsers()))
+);
+
+app.patch(
+  "/api/admin/users/:id/role",
+  requireAuth,
+  requireAdmin,
+  h(async (req, res) => {
+    const user = await repo.setUserRole(req.params.id, req.body && req.body.role);
+    if (!user) return res.status(400).json({ error: "Invalid role." });
+    res.json(repo.publicUser(user));
+  })
+);
+
+app.get(
+  "/api/admin/games",
+  requireAuth,
+  requireAdmin,
+  h(async (_req, res) => res.json(await repo.adminListGames()))
+);
+
+app.delete(
+  "/api/admin/games/:id",
+  requireAuth,
+  requireAdmin,
+  h(async (req, res) => {
+    await repo.adminDeleteGame(req.params.id);
+    res.status(204).end();
+  })
+);
+
 // --- User profiles --------------------------------------------------------
 
 app.get(
@@ -394,6 +480,18 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
   });
 }
 
+// Unknown API routes → JSON 404 (never HTML).
+app.use("/api", (_req, res) => {
+  res.status(404).json({ error: "Not found." });
+});
+
+// Last-resort error handler so a thrown error returns clean JSON, not a crash.
+// eslint-disable-next-line no-unused-vars
+app.use((err, _req, res, _next) => {
+  console.error("[api] unhandled error:", err);
+  res.status(500).json({ error: "Something went wrong on the server." });
+});
+
 function esc(s) {
   return String(s)
     .replace(/&/g, "&amp;")
@@ -438,6 +536,7 @@ function injectMeta(html, base, title, desc) {
 async function start() {
   await initSchema();
   await seedIfEmpty();
+  await repo.promoteAdminsFromEnv();
   app.listen(PORT, () => {
     console.log(`[api] Coterie API listening on http://localhost:${PORT}`);
   });

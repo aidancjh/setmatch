@@ -82,7 +82,85 @@ export function publicUser(row) {
     name: row.name,
     skill: row.skill,
     homeArea: row.home_area,
+    role: row.role || "user",
   };
+}
+
+// --- Admin / authorization -------------------------------------------------
+
+/** Promote any emails listed in ADMIN_EMAILS (comma-separated) to admin. */
+export async function promoteAdminsFromEnv() {
+  const list = (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  for (const email of list) {
+    const r = await query(
+      "UPDATE users SET role = 'admin' WHERE email = $1 AND role <> 'admin'",
+      [email]
+    );
+    if (r.rowCount > 0) console.log(`[auth] granted admin to ${email}`);
+  }
+}
+
+export async function getRole(userId) {
+  const u = await findUserById(userId);
+  return u ? u.role || "user" : null;
+}
+
+export async function adminStats() {
+  const one = async (sql, params = []) =>
+    Number((await query(sql, params)).rows[0].c);
+  const today = new Date().toISOString().slice(0, 10);
+  const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  return {
+    users: await one("SELECT COUNT(*) AS c FROM users"),
+    newUsers7d: await one(
+      "SELECT COUNT(*) AS c FROM users WHERE created_at >= $1",
+      [weekAgo]
+    ),
+    games: await one("SELECT COUNT(*) AS c FROM games"),
+    upcomingGames: await one(
+      "SELECT COUNT(*) AS c FROM games WHERE date >= $1",
+      [today]
+    ),
+    comments: await one("SELECT COUNT(*) AS c FROM game_comments"),
+  };
+}
+
+export async function adminListUsers() {
+  const { rows } = await query(
+    `SELECT u.id, u.name, u.email, u.role, u.skill, u.created_at,
+            (SELECT COUNT(*) FROM games g WHERE g.host_id = u.id) AS hosted,
+            (SELECT COUNT(*) FROM game_members m WHERE m.user_id = u.id) AS joined
+       FROM users u
+      ORDER BY u.created_at DESC`
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    email: r.email,
+    role: r.role || "user",
+    skill: r.skill,
+    createdAt: r.created_at,
+    hosted: Number(r.hosted),
+    joined: Number(r.joined),
+  }));
+}
+
+export async function adminListGames() {
+  const { rows } = await query("SELECT * FROM games ORDER BY date DESC");
+  return Promise.all(rows.map(serializeGame));
+}
+
+export async function setUserRole(userId, role) {
+  if (!["user", "staff", "admin"].includes(role)) return null;
+  await query("UPDATE users SET role = $1 WHERE id = $2", [role, userId]);
+  return findUserById(userId);
+}
+
+export async function adminDeleteGame(gameId) {
+  await query("DELETE FROM games WHERE id = $1", [gameId]);
 }
 
 // --- Notifications --------------------------------------------------------
@@ -239,6 +317,25 @@ export async function createGame(hostId, input) {
     [id, hostId]
   );
   return getGame(id);
+}
+
+/** Idempotency: returns a previously-created game for this key, or null. */
+export async function getIdempotentGame(key) {
+  if (!key) return null;
+  const { rows } = await query(
+    "SELECT game_id FROM idempotency_keys WHERE key = $1",
+    [key]
+  );
+  if (rows.length === 0 || !rows[0].game_id) return null;
+  return getGame(rows[0].game_id);
+}
+
+export async function saveIdempotentKey(key, gameId) {
+  if (!key) return;
+  await query(
+    "INSERT INTO idempotency_keys (key, game_id, created_at) VALUES ($1, $2, $3) ON CONFLICT (key) DO NOTHING",
+    [key, gameId, new Date().toISOString()]
+  );
 }
 
 async function nextSeq(gameId) {

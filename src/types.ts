@@ -38,6 +38,26 @@ export interface Profile {
   skill: SkillLevel;
   homeArea: string;
   email?: string;
+  role?: "user" | "staff" | "admin";
+}
+
+export interface AdminStats {
+  users: number;
+  newUsers7d: number;
+  games: number;
+  upcomingGames: number;
+  comments: number;
+}
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: "user" | "staff" | "admin";
+  skill: SkillLevel;
+  createdAt: string;
+  hosted: number;
+  joined: number;
 }
 
 /** The authenticated user returned by the API (same shape as Profile). */

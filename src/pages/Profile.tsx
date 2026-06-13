@@ -118,6 +118,15 @@ export default function Profile() {
           {saved ? "Saved ✓" : "Save profile"}
         </button>
 
+        {user?.role === "admin" && (
+          <button
+            onClick={() => navigate("/admin")}
+            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            🛠 Admin dashboard
+          </button>
+        )}
+
         <button
           onClick={handleLogout}
           className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"

@@ -15,7 +15,7 @@ import type {
   NewGameInput,
   UserProfile,
 } from "../types";
-import { api } from "../lib/api";
+import { api, newIdempotencyKey } from "../lib/api";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -50,7 +50,11 @@ export async function createGame(
   input: NewGameInput,
   repeatWeeks = 1
 ): Promise<Game> {
-  const game = await api.post<Game>("/games", { ...input, repeat: repeatWeeks });
+  const game = await api.post<Game>(
+    "/games",
+    { ...input, repeat: repeatWeeks },
+    { "Idempotency-Key": newIdempotencyKey() }
+  );
   notify();
   return game;
 }
