@@ -265,6 +265,7 @@ async function serializeGame(row) {
     location: row.location,
     area: row.area,
     totalSlots: row.total_slots,
+    preFilled: row.pre_filled || 0,
     hostId: row.host_id,
     hostName: host ? host.name : "Unknown",
     notes: row.notes,
@@ -294,8 +295,8 @@ export async function createGame(hostId, input) {
   const now = new Date().toISOString();
   await query(
     `INSERT INTO games
-       (id, title, type, skill, date, time, location, area, total_slots, host_id, notes, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+       (id, title, type, skill, date, time, location, area, total_slots, pre_filled, host_id, notes, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
     [
       id,
       input.title,
@@ -306,6 +307,7 @@ export async function createGame(hostId, input) {
       input.location,
       input.area,
       input.totalSlots,
+      input.preFilled || 0,
       hostId,
       input.notes || "",
       now,
@@ -561,6 +563,87 @@ export async function addComment(gameId, userId, body) {
     gameId
   );
   return { ok: true, comments: await listComments(gameId) };
+}
+
+// --- Reviews ------------------------------------------------------------------
+
+export async function pendingReviews(userId) {
+  // Games the user played in (not hosted), ended >2h ago, <7 days ago, not yet reviewed.
+  const { rows } = await query(`
+    SELECT g.* FROM games g
+    JOIN game_members m ON m.game_id = g.id AND m.user_id = $1 AND m.status = 'player'
+    WHERE g.host_id <> $1
+      AND CAST(g.date || 'T' || g.time || ':00+00' AS TIMESTAMPTZ) < NOW() - INTERVAL '2 hours'
+      AND CAST(g.date || 'T' || g.time || ':00+00' AS TIMESTAMPTZ) > NOW() - INTERVAL '7 days'
+      AND NOT EXISTS (
+        SELECT 1 FROM game_reviews r
+        WHERE r.game_id = g.id AND r.reviewer_id = $1
+      )
+    ORDER BY g.date DESC
+    LIMIT 5
+  `, [userId]);
+  return Promise.all(rows.map(serializeGame));
+}
+
+export async function createReview(gameId, reviewerId, { rating, comment }) {
+  const game = await getGameRow(gameId);
+  if (!game) return { ok: false, code: 404, error: 'Game not found.' };
+  if (game.host_id === reviewerId) return { ok: false, code: 400, error: "You can't review your own game." };
+  if (rating < 1 || rating > 5) return { ok: false, code: 400, error: 'Rating must be 1–5.' };
+  try {
+    await query(
+      `INSERT INTO game_reviews (id, game_id, reviewer_id, host_id, rating, comment, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (game_id, reviewer_id) DO NOTHING`,
+      [uid('rev'), gameId, reviewerId, game.host_id, rating, String(comment || '').trim(), new Date().toISOString()]
+    );
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, code: 500, error: 'Could not save review.' };
+  }
+}
+
+export async function getGameReviews(gameId) {
+  const { rows } = await query(`
+    SELECT r.*, u.name AS reviewer_name
+      FROM game_reviews r
+      JOIN users u ON u.id = r.reviewer_id
+     WHERE r.game_id = $1
+     ORDER BY r.created_at DESC
+  `, [gameId]);
+  return rows.map(r => ({
+    id: r.id,
+    reviewerId: r.reviewer_id,
+    reviewerName: r.reviewer_name,
+    hostId: r.host_id,
+    rating: r.rating,
+    comment: r.comment,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function getHostRating(hostId) {
+  const { rows } = await query(`
+    SELECT COUNT(*)::int AS count, ROUND(AVG(rating)::numeric, 1)::float AS avg
+      FROM game_reviews WHERE host_id = $1
+  `, [hostId]);
+  return { count: rows[0].count, avg: rows[0].avg };
+}
+
+// --- Feedback -----------------------------------------------------------------
+
+export async function createFeedback(userId, { type, subject, body }) {
+  await query(
+    `INSERT INTO feedback (id, user_id, type, subject, body, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [uid('fb'), userId || null, type, subject || '', body, new Date().toISOString()]
+  );
+}
+
+// --- Account deletion ---------------------------------------------------------
+
+export async function deleteAccount(userId) {
+  await query('DELETE FROM users WHERE id = $1', [userId]);
 }
 
 // --- Highlights ---------------------------------------------------------------

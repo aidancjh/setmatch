@@ -128,6 +128,13 @@ export default function Profile() {
         )}
 
         <button
+          onClick={() => navigate("/settings")}
+          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+        >
+          ⚙️ Settings &amp; Support
+        </button>
+
+        <button
           onClick={handleLogout}
           className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
         >

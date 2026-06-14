@@ -55,6 +55,7 @@ const SKILLS = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 const TYPES = ["Indoor", "Beach", "Grass"];
 
 function validGameInput(b) {
+  // pre_filled is optional — default 0, max totalSlots - 1
   if (!b || typeof b !== "object") return "Invalid request body.";
   if (!b.title || !String(b.title).trim()) return "Title is required.";
   if (!TYPES.includes(b.type)) return "Invalid game type.";
@@ -78,6 +79,7 @@ function gameInputFrom(body) {
     location: String(body.location).trim(),
     area: String(body.area || body.location).trim(),
     totalSlots: Number(body.totalSlots),
+    preFilled: Math.max(0, Math.min(Number(body.preFilled) || 0, Number(body.totalSlots) - 1)),
     notes: String(body.notes || "").trim(),
   };
 }
@@ -136,6 +138,15 @@ app.get(
     const user = await repo.findUserById(req.userId);
     if (!user) return res.status(401).json({ error: "Account not found." });
     res.json({ user: repo.publicUser(user) });
+  })
+);
+
+app.delete(
+  "/api/auth/me",
+  requireAuth,
+  h(async (req, res) => {
+    await repo.deleteAccount(req.userId);
+    res.status(204).end();
   })
 );
 
@@ -390,6 +401,64 @@ app.get(
     const profile = await repo.getUserProfile(req.params.id);
     if (!profile) return res.status(404).json({ error: "Player not found." });
     res.json(profile);
+  })
+);
+
+// --- Reviews --------------------------------------------------------------
+
+app.get(
+  "/api/reviews/pending",
+  requireAuth,
+  h(async (req, res) => {
+    res.json(await repo.pendingReviews(req.userId));
+  })
+);
+
+app.post(
+  "/api/reviews",
+  requireAuth,
+  h(async (req, res) => {
+    const { gameId, rating, comment } = req.body || {};
+    if (!gameId) return res.status(400).json({ error: "gameId is required." });
+    const result = await repo.createReview(gameId, req.userId, {
+      rating: Number(rating),
+      comment,
+    });
+    if (result.ok) return res.status(201).json({ ok: true });
+    res.status(result.code).json({ error: result.error });
+  })
+);
+
+app.get(
+  "/api/games/:id/reviews",
+  h(async (req, res) => {
+    res.json(await repo.getGameReviews(req.params.id));
+  })
+);
+
+app.get(
+  "/api/users/:id/rating",
+  h(async (req, res) => {
+    res.json(await repo.getHostRating(req.params.id));
+  })
+);
+
+// --- Feedback -------------------------------------------------------------
+
+app.post(
+  "/api/feedback",
+  requireAuth,
+  h(async (req, res) => {
+    const { type, subject, body } = req.body || {};
+    if (!body || !String(body).trim()) return res.status(400).json({ error: "Message is required." });
+    if (!["feedback", "bug", "other"].includes(type))
+      return res.status(400).json({ error: "Invalid type." });
+    await repo.createFeedback(req.userId, {
+      type: String(type),
+      subject: String(subject || "").trim().slice(0, 200),
+      body: String(body).trim().slice(0, 2000),
+    });
+    res.status(201).json({ ok: true });
   })
 );
 

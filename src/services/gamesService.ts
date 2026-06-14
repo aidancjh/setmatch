@@ -135,7 +135,31 @@ export async function markNotificationsRead(): Promise<void> {
 // --- Derived helpers (pure) -----------------------------------------------
 
 export function spotsLeft(g: Game): number {
-  return Math.max(0, g.totalSlots - g.players.length);
+  return Math.max(0, g.totalSlots - g.players.length - (g.preFilled ?? 0));
+}
+
+export async function submitReview(
+  gameId: string,
+  rating: number,
+  comment: string
+): Promise<void> {
+  await api.post("/reviews", { gameId, rating, comment });
+}
+
+export async function getPendingReviews(): Promise<Game[]> {
+  return api.get<Game[]>("/reviews/pending");
+}
+
+export async function submitFeedback(
+  type: "feedback" | "bug" | "other",
+  subject: string,
+  body: string
+): Promise<void> {
+  await api.post("/feedback", { type, subject, body });
+}
+
+export async function deleteAccount(): Promise<void> {
+  await api.del("/auth/me");
 }
 
 export function isInGame(g: Game, userId: string): boolean {

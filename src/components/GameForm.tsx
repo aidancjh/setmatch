@@ -19,6 +19,7 @@ export const blankGame: NewGameInput = {
   location: "",
   area: "",
   totalSlots: 12,
+  preFilled: 0,
   notes: "",
 };
 
@@ -48,6 +49,9 @@ export default function GameForm({
 }) {
   const [form, setForm] = useState<NewGameInput>(initial);
   const [repeatWeeks, setRepeatWeeks] = useState(1);
+  const [friendsMode, setFriendsMode] = useState(false);
+  const [alreadyHave, setAlreadyHave] = useState(1); // including yourself
+  const [needMore, setNeedMore] = useState(11);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const today = todayISO();
@@ -74,6 +78,8 @@ export default function GameForm({
     setError("");
     setBusy(true);
     try {
+      const totalSlots = friendsMode ? alreadyHave + needMore : form.totalSlots;
+      const preFilled = friendsMode ? Math.max(0, alreadyHave - 1) : 0; // host occupies 1 slot
       await onSubmit(
         {
           ...form,
@@ -81,6 +87,8 @@ export default function GameForm({
           location: form.location.trim(),
           area: form.area.trim() || form.location.trim(),
           notes: form.notes.trim(),
+          totalSlots,
+          preFilled,
         },
         repeatWeeks
       );
@@ -109,16 +117,76 @@ export default function GameForm({
             onChange={(v) => set("type", v as GameType)}
           />
         </Field>
-        <Field label="Total slots">
-          <input
-            type="number"
-            min={2}
-            max={50}
-            value={form.totalSlots}
-            onChange={(e) => set("totalSlots", Number(e.target.value))}
-            className={inputCls}
-          />
-        </Field>
+        {!friendsMode && (
+          <Field label="Total slots">
+            <input
+              type="number"
+              min={2}
+              max={50}
+              value={form.totalSlots}
+              onChange={(e) => set("totalSlots", Number(e.target.value))}
+              className={inputCls}
+            />
+          </Field>
+        )}
+      </div>
+
+      {/* Friends mode toggle */}
+      <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+        <label className="flex cursor-pointer items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-slate-800">I'm bringing friends</p>
+            <p className="text-xs text-slate-500">
+              {friendsMode
+                ? `Bringing ${alreadyHave} · Need ${needMore} more · Total ${alreadyHave + needMore}`
+                : "Set exactly how many you have and how many you need"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFriendsMode((v) => !v)}
+            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
+              friendsMode ? "bg-brand" : "bg-slate-200"
+            }`}
+          >
+            <span
+              className={`mt-0.5 ml-0.5 inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                friendsMode ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </label>
+
+        {friendsMode && (
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-slate-600">
+                You're bringing (inc. yourself)
+              </span>
+              <input
+                type="number"
+                min={1}
+                max={49}
+                value={alreadyHave}
+                onChange={(e) => setAlreadyHave(Math.max(1, Number(e.target.value)))}
+                className={inputCls}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-slate-600">
+                Still need
+              </span>
+              <input
+                type="number"
+                min={1}
+                max={49}
+                value={needMore}
+                onChange={(e) => setNeedMore(Math.max(1, Number(e.target.value)))}
+                className={inputCls}
+              />
+            </label>
+          </div>
+        )}
       </div>
 
       <Field label="Skill level">

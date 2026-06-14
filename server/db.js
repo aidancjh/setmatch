@@ -105,6 +105,37 @@ export async function initSchema() {
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user'"
   );
 
+  // Pre-filled spots, reviews, feedback, account deletion support.
+  await pool.query(`
+    ALTER TABLE games ADD COLUMN IF NOT EXISTS pre_filled INTEGER NOT NULL DEFAULT 0;
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS game_reviews (
+      id          TEXT PRIMARY KEY,
+      game_id     TEXT NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+      reviewer_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      host_id     TEXT NOT NULL,
+      rating      INT  NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      comment     TEXT NOT NULL DEFAULT '',
+      created_at  TEXT NOT NULL,
+      UNIQUE (game_id, reviewer_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS feedback (
+      id         TEXT PRIMARY KEY,
+      user_id    TEXT REFERENCES users(id) ON DELETE SET NULL,
+      type       TEXT NOT NULL,
+      subject    TEXT NOT NULL DEFAULT '',
+      body       TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_reviews_game ON game_reviews(game_id);
+    CREATE INDEX IF NOT EXISTS idx_reviews_host ON game_reviews(host_id);
+    CREATE INDEX IF NOT EXISTS idx_reviews_reviewer ON game_reviews(reviewer_id);
+  `);
+
   // Sports highlights / clips feed.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS highlights (

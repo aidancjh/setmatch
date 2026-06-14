@@ -12,7 +12,7 @@ export default function GameCard({
   youAreIn?: boolean;
 }) {
   const left = spotsLeft(game);
-  const fillPct = Math.round((game.players.length / game.totalSlots) * 100);
+  const fillPct = Math.round(((game.players.length + (game.preFilled ?? 0)) / game.totalSlots) * 100);
 
   return (
     <Link

@@ -20,6 +20,8 @@ export interface Game {
   /** Free-text area/neighborhood used for search, e.g. "Santa Monica" */
   area: string;
   totalSlots: number;
+  /** Pre-filled spots from friends the host is already bringing (not registered users). */
+  preFilled: number;
   hostId: string;
   hostName: string;
   notes: string;
@@ -112,5 +114,16 @@ export interface NewGameInput {
   location: string;
   area: string;
   totalSlots: number;
+  preFilled: number;
   notes: string;
+}
+
+export interface Review {
+  id: string;
+  reviewerId: string;
+  reviewerName: string;
+  hostId: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
 }
