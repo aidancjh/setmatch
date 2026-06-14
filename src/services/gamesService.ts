@@ -162,6 +162,10 @@ export async function deleteAccount(): Promise<void> {
   await api.del("/auth/me");
 }
 
+export async function getUserHighlights(userId: string): Promise<import("../types").Highlight[]> {
+  return api.get<import("../types").Highlight[]>(`/users/${userId}/highlights`);
+}
+
 export function isInGame(g: Game, userId: string): boolean {
   return g.players.some((p) => p.id === userId);
 }

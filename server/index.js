@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 import { hashPassword, verifyPassword, signToken, requireAuth } from "./auth.js";
 import * as repo from "./repo.js";
 import { initSchema, query } from "./db.js";
-import { seedIfEmpty } from "./seed.js";
+import { seedIfEmpty, syncDemoPasswords } from "./seed.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -799,6 +799,7 @@ function injectMeta(html, base, title, desc) {
 async function start() {
   await initSchema();
   await seedIfEmpty();
+  await syncDemoPasswords();
   await repo.promoteAdminsFromEnv();
   app.listen(PORT, () => {
     console.log(`[api] Coterie API listening on http://localhost:${PORT}`);

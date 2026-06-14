@@ -302,8 +302,8 @@ export default function Auth() {
         <button
           onClick={() => {
             setMode("login");
-            setEmail("maria@demo.test");
-            setPassword("volleyball");
+            setEmail("1@demo.test");
+            setPassword("111111");
           }}
           className="font-medium text-slate-500 underline"
         >
