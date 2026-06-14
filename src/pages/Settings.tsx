@@ -15,7 +15,7 @@ const FAQ = [
   },
   {
     q: "I have 6 friends — do I need to fill in all 12 spots myself?",
-    a: "No. When creating a game, toggle "I'm bringing friends" and enter how many you're already bringing and how many more you need. The game will show the correct number of open spots right away.",
+    a: "No. When creating a game, toggle ‘I’m bringing friends’ and enter how many you’re already bringing and how many more you need. The game will show the correct number of open spots right away.",
   },
   {
     q: "What happens when I leave a game?",
