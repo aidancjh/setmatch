@@ -30,6 +30,7 @@ export default function GameDetail() {
   const [error, setError] = useState("");
   const [ratables, setRatables] = useState<{ id: string; name: string; myRating: number | null }[] | null>(null);
   const [ratingMsg, setRatingMsg] = useState("");
+  const [joinConfirmed, setJoinConfirmed] = useState<"player" | "waitlist" | null>(null);
 
   useEffect(() => {
     const refresh = () => getGame(id).then((g) => setGame(g ?? null));
@@ -70,21 +71,26 @@ export default function GameDetail() {
   const isHost = game.hostId === me.id;
   const interested = game.interestedIds.includes(me.id);
 
-  // Run an action, but bounce guests to sign-in first (remembering this page).
   const guarded = (fn: () => Promise<unknown>) => async () => {
-    if (!user) {
-      navigate("/auth", { state: { from: location.pathname } });
-      return;
-    }
+    if (!user) { navigate("/auth", { state: { from: location.pathname } }); return; }
     setError("");
+    try { await fn(); } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    }
+  };
+
+  const handleJoin = async () => {
+    if (!user) { navigate("/auth", { state: { from: location.pathname } }); return; }
+    setError("");
+    const willBePlayer = left > 0;
     try {
-      await fn();
+      await joinGame(game.id);
+      setJoinConfirmed(willBePlayer ? "player" : "waitlist");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     }
   };
 
-  const handleJoin = guarded(() => joinGame(game.id));
   const handleLeave = guarded(() => leaveGame(game.id));
   const handleInterested = guarded(() => toggleInterested(game.id));
 
@@ -115,8 +121,113 @@ export default function GameDetail() {
     }
   };
 
+  function buildGCalUrl(g: Game): string {
+    const [y, mo, d] = g.date.split("-").map(Number);
+    const [sh, sm] = g.time.split(":").map(Number);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const fmt = (h: number, m: number) => `${y}${pad(mo)}${pad(d)}T${pad(h)}${pad(m)}00`;
+    const start = fmt(sh, sm);
+    const end = g.endTime
+      ? (() => { const [eh, em] = g.endTime.split(":").map(Number); return fmt(eh, em); })()
+      : fmt(sh + 2, sm);
+    const params = new URLSearchParams({
+      action: "TEMPLATE",
+      text: g.title,
+      dates: `${start}/${end}`,
+      details: `Hosted by ${g.hostName}.${g.notes ? " " + g.notes : ""} ${window.location.origin}/game/${g.id}`,
+      location: `${g.location}, ${g.area}`,
+    });
+    return `https://calendar.google.com/calendar/render?${params}`;
+  }
+
   return (
     <div>
+      {/* Join confirmation modal */}
+      {joinConfirmed && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
+          onClick={() => setJoinConfirmed(null)}
+        >
+          <div
+            className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top notch */}
+            <div className="flex justify-center pt-5 pb-2">
+              <div className="h-9 w-9 rounded-full bg-slate-900" />
+            </div>
+            {/* Checkmark */}
+            <div className="flex justify-center py-3">
+              <div className={`flex h-14 w-14 items-center justify-center rounded-full text-3xl text-white ${joinConfirmed === "player" ? "bg-brand" : "bg-amber-500"}`}>
+                ✓
+              </div>
+            </div>
+            {/* Heading */}
+            <div className="px-8 pb-2 text-center">
+              <h2 className="text-3xl font-bold leading-tight text-slate-900">
+                {joinConfirmed === "player" ? "You're In!" : "You're on the List!"}
+              </h2>
+              <p className="mt-2 text-sm text-slate-500">
+                {joinConfirmed === "player"
+                  ? <>Your spot for <strong className="text-slate-700">{game.title}</strong> is confirmed.</>
+                  : <>You're on the waitlist for <strong className="text-slate-700">{game.title}</strong>. We'll notify you if a spot opens.</>}
+              </p>
+            </div>
+            {/* Divider */}
+            <div className="mx-8 my-4 h-px bg-slate-100" />
+            {/* Details */}
+            <div className="space-y-3 px-8">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Date</span>
+                <span className="text-right text-sm font-semibold text-slate-800">{formatDate(game.date)}</span>
+              </div>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Time</span>
+                <span className="text-right text-sm font-semibold text-slate-800">{formatTimeRange(game.time, game.endTime)}</span>
+              </div>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Location</span>
+                <span className="max-w-[60%] text-right text-sm font-semibold leading-snug text-slate-800">{game.location}</span>
+              </div>
+              {game.courtFee && (
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Court fee</span>
+                  <span className="text-sm font-semibold text-slate-800">{game.courtFee}</span>
+                </div>
+              )}
+            </div>
+            {/* Notes */}
+            {game.notes && (
+              <div className="mx-8 mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
+                {game.notes}
+              </div>
+            )}
+            {/* Actions */}
+            <div className="space-y-2 px-8 pb-2 pt-5">
+              {joinConfirmed === "player" && (
+                <a
+                  href={buildGCalUrl(game)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full rounded-2xl bg-brand py-3.5 text-center text-sm font-semibold text-white transition hover:bg-brand-dark"
+                >
+                  Add to Google Calendar
+                </a>
+              )}
+              <button
+                onClick={() => setJoinConfirmed(null)}
+                className="block w-full rounded-2xl border border-slate-200 py-3 text-center text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                Done
+              </button>
+            </div>
+            <p className="py-5 text-center text-[11px] font-semibold uppercase tracking-widest text-slate-300">
+              Coterie
+            </p>
+          </div>
+        </div>
+      )}
+
       <button
         onClick={() => navigate(-1)}
         className="mb-3 text-sm font-medium text-slate-500 hover:text-slate-900"

@@ -482,13 +482,16 @@ app.post(
     const game = await repo.joinGame(req.params.id, req.userId);
     if (!game) return res.status(404).json({ error: "Game not found." });
 
-    // Fire-and-forget: email a calendar invite when user gets a confirmed spot.
+    // Fire-and-forget: send confirmation email when user gets a confirmed spot.
     const user = await repo.findUserById(req.userId);
     const isPlayer = game.players.some((p) => p.id === req.userId);
     const resendKey = process.env.RESEND_API_KEY;
     if (user && isPlayer && resendKey && !user.email.endsWith("@demo.test")) {
       const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
-      const ics = buildICS(game, appUrl);
+      const gcalUrl = buildGCalUrl(game, appUrl);
+      const timeDisplay = game.endTime
+        ? `${prettyTime(game.time)} – ${prettyTime(game.endTime)}`
+        : prettyTime(game.time);
       fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
@@ -496,16 +499,9 @@ app.post(
           from: "Coterie <onboarding@resend.dev>",
           to: [user.email],
           subject: `You're in: ${game.title}`,
-          html: `<p style="font-family:sans-serif">Hi ${user.name},</p>
-                 <p style="font-family:sans-serif">You've claimed your spot for <strong>${game.title}</strong>!</p>
-                 <p style="font-family:sans-serif">📅 ${game.date} at ${game.time}<br>📍 ${game.location}, ${game.area}</p>
-                 ${game.notes ? `<p style="font-family:sans-serif">Notes: ${game.notes}</p>` : ""}
-                 <p style="font-family:sans-serif">The calendar invite is attached — tap it to add to your calendar.</p>
-                 <p style="font-family:sans-serif"><a href="${appUrl}/game/${game.id}" style="color:#E8734A;">View game details</a></p>
-                 <p style="font-family:sans-serif">— The Coterie team</p>`,
-          attachments: [{ filename: "coterie-game.ics", content: Buffer.from(ics).toString("base64") }],
+          html: buildConfirmEmail({ game, userName: user.name, gcalUrl, appUrl, timeDisplay }),
         }),
-      }).catch((e) => console.error("[calendar] email failed:", e));
+      }).catch((e) => console.error("[email] join confirmation failed:", e));
     }
 
     res.json(game);
@@ -816,7 +812,91 @@ app.get(
   })
 );
 
-// --- Calendar ICS builder (used when emailing invites on join) ------------
+// --- Google Calendar URL builder ------------------------------------------
+
+function buildGCalUrl(game, appUrl) {
+  const [y, m, d] = game.date.split("-").map(Number);
+  const [sh, sm] = game.time.split(":").map(Number);
+  const p = (n) => String(n).padStart(2, "0");
+  const fmt = (h, min) => `${y}${p(m)}${p(d)}T${p(h)}${p(min)}00`;
+  const start = fmt(sh, sm);
+  const end = game.endTime
+    ? (() => { const [eh, em] = game.endTime.split(":").map(Number); return fmt(eh, em); })()
+    : fmt(sh + 2, sm);
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: game.title,
+    dates: `${start}/${end}`,
+    details: `Hosted by ${game.hostName}.${game.notes ? " " + game.notes : ""} ${appUrl}/game/${game.id}`,
+    location: `${game.location}, ${game.area}`,
+  });
+  return `https://calendar.google.com/calendar/render?${params}`;
+}
+
+// --- Join confirmation email -----------------------------------------------
+
+function buildConfirmEmail({ game, userName, gcalUrl, appUrl, timeDisplay }) {
+  const brand = "#E8734A";
+  const row = (label, value) => `
+    <tr>
+      <td style="padding:6px 0;font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#9ca3af;">${label}</td>
+      <td style="padding:6px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">${value}</td>
+    </tr>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
+<body style="margin:0;padding:24px 16px;background:#f5ede3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;margin:0 auto;">
+    <tr><td>
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.10);">
+        <!-- top notch -->
+        <tr><td style="text-align:center;padding:20px 0 8px;">
+          <div style="display:inline-block;width:36px;height:36px;background:#111827;border-radius:50%;"></div>
+        </td></tr>
+        <!-- checkmark -->
+        <tr><td style="text-align:center;padding:4px 0 12px;">
+          <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:${brand};border-radius:50%;font-size:26px;color:white;">✓</div>
+        </td></tr>
+        <!-- heading -->
+        <tr><td style="text-align:center;padding:4px 32px 6px;">
+          <h1 style="margin:0;font-size:34px;font-weight:800;color:#111827;letter-spacing:-.5px;">You're In!</h1>
+          <p style="margin:8px 0 0;font-size:14px;color:#6b7280;line-height:1.5;">
+            Hi ${esc(userName)}, your spot for <strong style="color:#374151;">${esc(game.title)}</strong> is confirmed.
+          </p>
+        </td></tr>
+        <!-- divider -->
+        <tr><td style="padding:16px 32px;"><div style="height:1px;background:#f3f4f6;"></div></td></tr>
+        <!-- details table -->
+        <tr><td style="padding:0 32px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${row("Date", calDate(game.date))}
+            ${row("Time", timeDisplay)}
+            ${row("Location", esc(game.location))}
+            ${game.area ? row("Area", esc(game.area)) : ""}
+            ${game.courtFee ? row("Court Fee", esc(game.courtFee)) : ""}
+          </table>
+        </td></tr>
+        ${game.notes ? `<tr><td style="padding:12px 32px 0;"><div style="background:#f9fafb;border-radius:14px;padding:12px 16px;font-size:13px;color:#4b5563;line-height:1.6;">${esc(game.notes)}</div></td></tr>` : ""}
+        <!-- buttons -->
+        <tr><td style="padding:20px 32px 8px;">
+          <a href="${gcalUrl}" style="display:block;background:${brand};color:#ffffff;text-decoration:none;text-align:center;padding:15px 24px;border-radius:14px;font-size:15px;font-weight:700;">
+            Add to Google Calendar
+          </a>
+        </td></tr>
+        <tr><td style="padding:0 32px 24px;">
+          <a href="${appUrl}/game/${game.id}" style="display:block;border:1.5px solid #e5e7eb;color:#374151;text-decoration:none;text-align:center;padding:13px 24px;border-radius:14px;font-size:14px;font-weight:500;">
+            View Game Details
+          </a>
+        </td></tr>
+        <!-- footer -->
+        <tr><td style="text-align:center;padding:12px 0 24px;">
+          <span style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#d1d5db;">COTERIE</span>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+// --- Calendar ICS builder (kept for potential future use) ------------------
 
 function icsTime(dateISO, timeHHMM, addHours = 0) {
   const [y, m, d] = dateISO.split("-").map(Number);

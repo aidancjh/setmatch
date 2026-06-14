@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { api } from "../lib/api";
 import type { Highlight } from "../types";
-import { HeartIcon, TrashIcon, UploadIcon, PlusIcon } from "../components/icons";
+import { HeartIcon, TrashIcon, UploadIcon } from "../components/icons";
 import { HighlightCardSkeleton } from "../components/Skeleton";
 
 // ---------------------------------------------------------------------------
@@ -414,19 +414,9 @@ export default function Highlights() {
   return (
     <div>
       {/* Page header */}
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Highlights</h1>
-          <p className="text-sm text-slate-500">Sports clips from your community.</p>
-        </div>
-        <button
-          onClick={() => setShowUpload(true)}
-          aria-label="Share a highlight"
-          className="flex items-center gap-1.5 rounded-full bg-brand py-1.5 pl-2.5 pr-3.5 text-sm font-semibold text-white transition hover:bg-brand-dark"
-        >
-          <PlusIcon className="h-4 w-4" />
-          Share
-        </button>
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Highlights</h1>
+        <p className="text-sm text-slate-500">Sports clips from your community.</p>
       </div>
 
       {/* Feed */}
