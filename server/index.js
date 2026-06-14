@@ -486,28 +486,36 @@ app.post(
     const user = await repo.findUserById(req.userId);
     const isPlayer = game.players.some((p) => p.id === req.userId);
     const resendKey = process.env.RESEND_API_KEY;
-    if (user && isPlayer && resendKey && !user.email.endsWith("@demo.test")) {
-      const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
-      const gcalUrl = buildGCalUrl(game, appUrl);
-      const timeDisplay = game.endTime
-        ? `${prettyTime(game.time)} – ${prettyTime(game.endTime)}`
-        : prettyTime(game.time);
-      fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: "Coterie <onboarding@resend.dev>",
-          to: [user.email],
-          subject: `You're in: ${game.title}`,
-          html: buildConfirmEmail({ game, userName: user.name, gcalUrl, appUrl, timeDisplay }),
-        }),
-      }).then((r) => {
-        if (r.ok) {
-          console.log(`[email] join confirmation sent to ${user.email}`);
-        } else {
-          r.text().then((t) => console.error(`[email] Resend rejected (${r.status}):`, t));
-        }
-      }).catch((e) => console.error("[email] join confirmation network error:", e));
+    if (!resendKey) {
+      console.warn("[email] RESEND_API_KEY not set — skipping join confirmation email");
+    } else if (user && isPlayer && !user.email.endsWith("@demo.test")) {
+      try {
+        const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+        const gcalUrl = buildGCalUrl(game, appUrl);
+        const timeDisplay = game.endTime
+          ? `${prettyTime(game.time)} – ${prettyTime(game.endTime)}`
+          : prettyTime(game.time);
+        const html = buildConfirmEmail({ game, userName: user.name, gcalUrl, appUrl, timeDisplay });
+        console.log(`[email] sending join confirmation to ${user.email} for "${game.title}"`);
+        fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            from: "Coterie <onboarding@resend.dev>",
+            to: [user.email],
+            subject: `You're in: ${game.title}`,
+            html,
+          }),
+        }).then((r) => {
+          if (r.ok) {
+            console.log(`[email] delivered OK to ${user.email}`);
+          } else {
+            r.text().then((t) => console.error(`[email] Resend error ${r.status}:`, t));
+          }
+        }).catch((e) => console.error("[email] network error:", e));
+      } catch (e) {
+        console.error("[email] failed to build email:", e);
+      }
     }
 
     res.json(game);
@@ -1041,6 +1049,7 @@ async function start() {
   await seedIfEmpty();
   await syncDemoPasswords();
   await repo.promoteAdminsFromEnv();
+  if (!process.env.RESEND_API_KEY) console.warn("[email] RESEND_API_KEY not set — join confirmation emails will be skipped");
   app.listen(PORT, () => {
     console.log(`[api] Coterie API listening on http://localhost:${PORT}`);
   });

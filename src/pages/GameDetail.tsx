@@ -32,6 +32,8 @@ export default function GameDetail() {
   const [ratingMsg, setRatingMsg] = useState("");
   const [joinModal, setJoinModal] = useState<"preview" | "confirmed" | "waitlist" | null>(null);
   const [joining, setJoining] = useState(false);
+  const [leaveModal, setLeaveModal] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     const refresh = () => getGame(id).then((g) => setGame(g ?? null));
@@ -100,7 +102,21 @@ export default function GameDetail() {
     }
   };
 
-  const handleLeave = guarded(() => leaveGame(game.id));
+  const handleLeave = () => setLeaveModal(true);
+
+  const handleConfirmLeave = async () => {
+    setError("");
+    setLeaving(true);
+    try {
+      await leaveGame(game.id);
+      setLeaveModal(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setLeaveModal(false);
+    } finally {
+      setLeaving(false);
+    }
+  };
   const handleInterested = guarded(() => toggleInterested(game.id));
 
   const handleShare = async () => {
@@ -130,25 +146,6 @@ export default function GameDetail() {
     }
   };
 
-  function buildGCalUrl(g: Game): string {
-    const [y, mo, d] = g.date.split("-").map(Number);
-    const [sh, sm] = g.time.split(":").map(Number);
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const fmt = (h: number, m: number) => `${y}${pad(mo)}${pad(d)}T${pad(h)}${pad(m)}00`;
-    const start = fmt(sh, sm);
-    const end = g.endTime
-      ? (() => { const [eh, em] = g.endTime.split(":").map(Number); return fmt(eh, em); })()
-      : fmt(sh + 2, sm);
-    const params = new URLSearchParams({
-      action: "TEMPLATE",
-      text: g.title,
-      dates: `${start}/${end}`,
-      details: `Hosted by ${g.hostName}.${g.notes ? " " + g.notes : ""} ${window.location.origin}/game/${g.id}`,
-      location: `${g.location}, ${g.area}`,
-    });
-    return `https://calendar.google.com/calendar/render?${params}`;
-  }
-
   return (
     <div>
       {/* Join modal — preview ("are you sure?") and post-join confirmation */}
@@ -161,15 +158,10 @@ export default function GameDetail() {
             className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Top notch */}
-            <div className="flex justify-center pt-5 pb-2">
-              <div className="h-9 w-9 rounded-full bg-slate-900" />
-            </div>
-
             {joinModal === "preview" ? (
               <>
                 {/* Heading */}
-                <div className="px-8 pb-2 pt-3 text-center">
+                <div className="px-8 pb-2 pt-7 text-center">
                   <h2 className="text-2xl font-bold leading-tight text-slate-900">Join this game?</h2>
                   <p className="mt-1.5 text-sm text-slate-500">
                     Review the details before claiming your spot.
@@ -228,7 +220,7 @@ export default function GameDetail() {
             ) : (
               <>
                 {/* Checkmark */}
-                <div className="flex justify-center py-3">
+                <div className="flex justify-center pt-7 pb-3">
                   <div className={`flex h-14 w-14 items-center justify-center rounded-full text-3xl text-white ${joinModal === "confirmed" ? "bg-brand" : "bg-amber-500"}`}>
                     ✓
                   </div>
@@ -273,20 +265,10 @@ export default function GameDetail() {
                   </div>
                 )}
                 {/* Actions */}
-                <div className="space-y-2 px-8 pb-2 pt-5">
-                  {joinModal === "confirmed" && (
-                    <a
-                      href={buildGCalUrl(game)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block w-full rounded-2xl bg-brand py-3.5 text-center text-sm font-semibold text-white transition hover:bg-brand-dark"
-                    >
-                      Add to Google Calendar
-                    </a>
-                  )}
+                <div className="px-8 pb-2 pt-5">
                   <button
                     onClick={() => setJoinModal(null)}
-                    className="block w-full rounded-2xl border border-slate-200 py-3 text-center text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                    className="block w-full rounded-2xl bg-brand py-3.5 text-center text-sm font-semibold text-white transition hover:bg-brand-dark"
                   >
                     Done
                   </button>
@@ -294,6 +276,64 @@ export default function GameDetail() {
               </>
             )}
 
+            <p className="py-5 text-center text-[11px] font-semibold uppercase tracking-widest text-slate-300">
+              Coterie
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Leave confirmation modal */}
+      {leaveModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
+          onClick={() => { if (!leaving) setLeaveModal(false); }}
+        >
+          <div
+            className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-8 pb-2 pt-7 text-center">
+              <h2 className="text-2xl font-bold leading-tight text-slate-900">
+                {waiting ? "Leave waitlist?" : "Leave this game?"}
+              </h2>
+              <p className="mt-1.5 text-sm text-slate-500">
+                {waiting
+                  ? "You'll lose your waitlist position."
+                  : "Your spot will open up for someone else."}
+              </p>
+            </div>
+            <div className="mx-8 my-4 h-px bg-slate-100" />
+            <div className="space-y-3 px-8">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Game</span>
+                <span className="max-w-[65%] text-right text-sm font-semibold text-slate-800">{game.title}</span>
+              </div>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Date</span>
+                <span className="text-right text-sm font-semibold text-slate-800">{formatDate(game.date)}</span>
+              </div>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Time</span>
+                <span className="text-right text-sm font-semibold text-slate-800">{formatTimeRange(game.time, game.endTime)}</span>
+              </div>
+            </div>
+            <div className="space-y-2 px-8 pb-2 pt-5">
+              <button
+                onClick={handleConfirmLeave}
+                disabled={leaving}
+                className="w-full rounded-2xl bg-rose-500 py-3.5 text-sm font-semibold text-white transition hover:bg-rose-600 disabled:opacity-60"
+              >
+                {leaving ? "Leaving…" : waiting ? "Yes, leave waitlist" : "Yes, leave game"}
+              </button>
+              <button
+                onClick={() => setLeaveModal(false)}
+                disabled={leaving}
+                className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+            </div>
             <p className="py-5 text-center text-[11px] font-semibold uppercase tracking-widest text-slate-300">
               Coterie
             </p>
