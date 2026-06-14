@@ -1,6 +1,7 @@
 // Repository: all SQL lives here. Returns objects shaped exactly like the
 // frontend's TypeScript types (Game, Player, Profile) so the React app needs no
 // changes to how it reads data. All functions are async (Postgres is networked).
+import crypto from "node:crypto";
 import { query, uid } from "./db.js";
 
 // --- Users ----------------------------------------------------------------
@@ -724,6 +725,64 @@ export async function getUserHighlights(userId) {
     [userId]
   );
   return rows.map(serializeHighlight);
+}
+
+// --------------------------------------------------------------------------
+
+// --- Password reset -----------------------------------------------------------
+
+export async function createPasswordResetToken(userId) {
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  await query("DELETE FROM password_reset_tokens WHERE user_id = $1", [userId]);
+  await query(
+    "INSERT INTO password_reset_tokens (token, user_id, expires_at) VALUES ($1, $2, $3)",
+    [token, userId, expiresAt]
+  );
+  return token;
+}
+
+export async function verifyPasswordResetToken(token) {
+  const { rows } = await query(
+    "SELECT * FROM password_reset_tokens WHERE token = $1 AND expires_at > $2",
+    [token, new Date().toISOString()]
+  );
+  return rows[0] || null;
+}
+
+export async function consumePasswordResetToken(token) {
+  await query("DELETE FROM password_reset_tokens WHERE token = $1", [token]);
+}
+
+export async function updateUserPassword(userId, passwordHash) {
+  await query("UPDATE users SET password_hash = $1 WHERE id = $2", [passwordHash, userId]);
+}
+
+// --- Google OAuth -------------------------------------------------------------
+
+export async function findOrCreateGoogleUser(googleId, email, name) {
+  const { rows: byGoogle } = await query(
+    "SELECT * FROM users WHERE google_id = $1",
+    [googleId]
+  );
+  if (byGoogle[0]) return byGoogle[0];
+
+  const { rows: byEmail } = await query(
+    "SELECT * FROM users WHERE email = $1",
+    [email.toLowerCase()]
+  );
+  if (byEmail[0]) {
+    await query("UPDATE users SET google_id = $1 WHERE id = $2", [googleId, byEmail[0].id]);
+    return byEmail[0];
+  }
+
+  const id = uid("user");
+  await query(
+    `INSERT INTO users (id, email, password_hash, name, skill, home_area, created_at, google_id)
+     VALUES ($1, $2, '', $3, 'Intermediate', '', $4, $5)`,
+    [id, email.toLowerCase(), name, new Date().toISOString(), googleId]
+  );
+  return findUserById(id);
 }
 
 // --------------------------------------------------------------------------

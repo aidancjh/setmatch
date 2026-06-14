@@ -136,6 +136,18 @@ export async function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_reviews_reviewer ON game_reviews(reviewer_id);
   `);
 
+  // Google OAuth + password reset via email.
+  await pool.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT"
+  );
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      token      TEXT PRIMARY KEY,
+      user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at TEXT NOT NULL
+    )
+  `);
+
   // Sports highlights / clips feed.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS highlights (

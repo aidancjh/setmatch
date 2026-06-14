@@ -5,6 +5,7 @@ import {
   CalendarIcon,
   PlusIcon,
   SearchIcon,
+  SettingsIcon,
   UserIcon,
   VideoIcon,
   VolleyballIcon,
@@ -145,8 +146,16 @@ export default function Layout() {
           </span>
         </button>
 
-        {/* Notification bell only — clean, no post button */}
-        <NotificationBell />
+        <div className="flex items-center gap-0.5">
+          <NotificationBell />
+          <button
+            onClick={() => navigate("/settings")}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
+            aria-label="Settings"
+          >
+            <SettingsIcon className="h-5 w-5" />
+          </button>
+        </div>
       </header>
 
       {/* Page content */}

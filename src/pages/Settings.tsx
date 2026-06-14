@@ -31,7 +31,7 @@ const FAQ = [
   },
   {
     q: "Can I reset my password?",
-    a: "Password reset by email is coming soon. For now, if you're locked out please contact support below.",
+    a: "Yes — on the sign-in screen, tap 'Forgot password?' and we'll email you a reset link.",
   },
   {
     q: "How do I delete my account?",
@@ -221,12 +221,6 @@ export default function Settings() {
             />
           </>
         )}
-      </Section>
-
-      {/* Blocked features note */}
-      <Section title="Coming soon">
-        <Row label="Password reset by email" sub="Requires email provider setup" />
-        <Row label="Sign in with Google" sub="OAuth setup required" />
       </Section>
 
       {/* Danger zone */}

@@ -166,6 +166,131 @@ app.patch(
   })
 );
 
+// --- Password reset -------------------------------------------------------
+
+app.post(
+  "/api/auth/forgot-password",
+  h(async (req, res) => {
+    const { email } = req.body || {};
+    if (!email) return res.status(400).json({ error: "Email is required." });
+    const user = await repo.findUserByEmail(email);
+    // Always return OK — never reveal whether an email exists.
+    if (!user) return res.json({ ok: true });
+
+    const token = await repo.createPasswordResetToken(user.id);
+    const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+    const resetLink = `${appUrl}/auth?reset=${token}`;
+    const resendKey = process.env.RESEND_API_KEY;
+
+    if (!resendKey) {
+      console.warn("[auth] RESEND_API_KEY not set — skipping reset email");
+      return res.json({ ok: true });
+    }
+
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Coterie <onboarding@resend.dev>",
+        to: [user.email],
+        subject: "Reset your Coterie password",
+        html: `<p>Hi ${user.name},</p>
+               <p>You requested a password reset.</p>
+               <p><a href="${resetLink}" style="background:#E8734A;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;font-family:sans-serif;">Reset password</a></p>
+               <p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>
+               <p>— The Coterie team</p>`,
+      }),
+    });
+
+    res.json({ ok: true });
+  })
+);
+
+app.post(
+  "/api/auth/reset-password",
+  h(async (req, res) => {
+    const { token, password } = req.body || {};
+    if (!token) return res.status(400).json({ error: "Reset token is required." });
+    if (!password || String(password).length < 6)
+      return res.status(400).json({ error: "Password must be at least 6 characters." });
+
+    const record = await repo.verifyPasswordResetToken(token);
+    if (!record)
+      return res.status(400).json({ error: "This reset link has expired or already been used." });
+
+    await repo.updateUserPassword(record.user_id, hashPassword(password));
+    await repo.consumePasswordResetToken(token);
+
+    const user = await repo.findUserById(record.user_id);
+    res.json({ token: signToken(user.id), user: repo.publicUser(user) });
+  })
+);
+
+// --- Google OAuth ----------------------------------------------------------
+
+app.get("/api/auth/google", (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (!clientId)
+    return res.status(503).json({ error: "Google login is not configured." });
+
+  const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: `${appUrl}/api/auth/google/callback`,
+    response_type: "code",
+    scope: "openid email profile",
+    prompt: "select_account",
+  });
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
+});
+
+app.get(
+  "/api/auth/google/callback",
+  h(async (req, res) => {
+    const { code, error } = req.query;
+    const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+
+    if (error || !code)
+      return res.redirect(`${appUrl}/auth?error=google_cancelled`);
+
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const redirectUri = `${appUrl}/api/auth/google/callback`;
+
+    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: "authorization_code",
+      }),
+    });
+    const tokenData = await tokenRes.json();
+    if (!tokenData.access_token)
+      return res.redirect(`${appUrl}/auth?error=google_failed`);
+
+    const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+    const googleUser = await userRes.json();
+    if (!googleUser.email)
+      return res.redirect(`${appUrl}/auth?error=google_failed`);
+
+    const user = await repo.findOrCreateGoogleUser(
+      googleUser.id,
+      googleUser.email,
+      googleUser.name || googleUser.email.split("@")[0]
+    );
+    res.redirect(`${appUrl}/auth?token=${signToken(user.id)}`);
+  })
+);
+
 // --- Game routes ----------------------------------------------------------
 
 app.get(
