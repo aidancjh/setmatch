@@ -33,14 +33,16 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'"], // Vite inline scripts in prod build
-        styleSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
         mediaSrc: ["'self'", "blob:", "https://res.cloudinary.com"],
         connectSrc: [
           "'self'",
           "https://api.cloudinary.com",
           "https://api.resend.com",
-          "https://ingest.us.sentry.io",
+          "https://*.ingest.sentry.io",
+          "https://*.ingest.us.sentry.io",
         ],
         frameSrc: ["'none'"],
         objectSrc: ["'none'"],
@@ -530,33 +532,60 @@ app.post(
     if (!resendKey) {
       console.warn("[email] RESEND_API_KEY not set — skipping join confirmation email");
     } else if (user && isPlayer && !user.email.endsWith("@demo.test")) {
-      try {
-        const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
-        const gcalUrl = buildGCalUrl(game, appUrl);
-        const timeDisplay = game.endTime
-          ? `${prettyTime(game.time)} – ${prettyTime(game.endTime)}`
-          : prettyTime(game.time);
-        const html = buildConfirmEmail({ game, userName: user.name, gcalUrl, appUrl, timeDisplay });
-        console.log(`[email] sending join confirmation to ${user.email} for "${game.title}"`);
-        fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            from: "Coterie <onboarding@resend.dev>",
-            to: [user.email],
-            subject: `You're in: ${game.title}`,
-            html,
-          }),
-        }).then((r) => {
-          if (r.ok) {
-            console.log(`[email] delivered OK to ${user.email}`);
-          } else {
-            r.text().then((t) => console.error(`[email] Resend error ${r.status}:`, t));
-          }
-        }).catch((e) => console.error("[email] network error:", e));
-      } catch (e) {
-        console.error("[email] failed to build email:", e);
-      }
+      const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+      const calLink = buildGCalUrl(game, appUrl);
+      const timeDisplay = game.endTime
+        ? `${prettyTime(game.time)} – ${prettyTime(game.endTime)}`
+        : prettyTime(game.time);
+      const brand = "#E8734A";
+      const row = (label, value) =>
+        `<tr><td style="padding:6px 0;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#9ca3af;">${label}</td>` +
+        `<td style="padding:6px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">${value}</td></tr>`;
+      const emailHtml = [
+        `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>`,
+        `<body style="margin:0;padding:24px 16px;background:#f5ede3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">`,
+        `<div style="max-width:460px;margin:0 auto;background:#fff;border-radius:24px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">`,
+        `<div style="text-align:center;padding:28px 32px 0;">`,
+        `<div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:${brand};border-radius:50%;font-size:26px;color:#fff;">&#10003;</div>`,
+        `</div>`,
+        `<div style="text-align:center;padding:12px 32px 0;">`,
+        `<h1 style="margin:0;font-size:32px;font-weight:800;color:#111827;">You're In!</h1>`,
+        `<p style="margin:8px 0 0;font-size:14px;color:#6b7280;">Hi ${esc(user.name)}, your spot for <strong style="color:#374151;">${esc(game.title)}</strong> is confirmed.</p>`,
+        `</div>`,
+        `<div style="margin:20px 32px 0;height:1px;background:#f3f4f6;"></div>`,
+        `<div style="padding:16px 32px 0;"><table style="width:100%;border-collapse:collapse;">`,
+        row("Date", calDate(game.date)),
+        row("Time", timeDisplay),
+        row("Location", esc(game.location)),
+        game.courtFee ? row("Court Fee", esc(game.courtFee)) : "",
+        `</table></div>`,
+        game.notes ? `<div style="margin:12px 32px 0;background:#f9fafb;border-radius:12px;padding:12px 16px;font-size:13px;color:#4b5563;line-height:1.6;">${esc(game.notes)}</div>` : "",
+        `<div style="padding:20px 32px 8px;">`,
+        `<a href="${calLink}" style="display:block;background:${brand};color:#fff;text-decoration:none;text-align:center;padding:15px;border-radius:12px;font-size:15px;font-weight:700;">Add to Google Calendar</a>`,
+        `</div>`,
+        `<div style="padding:0 32px 24px;">`,
+        `<a href="${appUrl}/game/${game.id}" style="display:block;border:1.5px solid #e5e7eb;color:#374151;text-decoration:none;text-align:center;padding:13px;border-radius:12px;font-size:14px;font-weight:500;">View Game Details</a>`,
+        `</div>`,
+        `<p style="text-align:center;padding:0 0 20px;margin:0;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#d1d5db;">COTERIE</p>`,
+        `</div></body></html>`,
+      ].join("");
+      console.log(`[email] sending join confirmation to ${user.email} for "${game.title}"`);
+      fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: "Coterie <onboarding@resend.dev>",
+          to: [user.email],
+          subject: `You're in: ${game.title}`,
+          html: emailHtml,
+        }),
+      }).then((r) => {
+        if (r.ok) {
+          console.log(`[email] delivered OK to ${user.email}`);
+        } else {
+          r.text().then((t) => console.error(`[email] Resend error ${r.status}:`, t));
+        }
+      }).catch((e) => console.error("[email] network error:", e));
     }
 
     res.json(game);
