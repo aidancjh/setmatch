@@ -181,15 +181,36 @@ function resolveUserId(entry) {
   return byName ? byName.id : null;
 }
 
-/** Runs every startup — keeps ALL @demo.test accounts at password 111111. */
+/** Runs every startup — keeps ALL @demo.test accounts at password 111111
+ *  and migrates the 5 main demo users to number-based emails. */
 export async function syncDemoPasswords() {
+  // Migrate main demo user emails to the easy-to-remember format
+  const emailMigrations = [
+    { id: "user_maria", email: "1@demo.test", skill: "Intermediate", homeArea: "Santa Monica" },
+    { id: "user_theo",  email: "2@demo.test", skill: "Advanced",     homeArea: "Venice" },
+    { id: "user_grace", email: "3@demo.test", skill: "Beginner",     homeArea: "Downtown LA" },
+    { id: "user_dre",   email: "4@demo.test", skill: "Advanced",     homeArea: "Culver City" },
+    { id: "user_nina",  email: "5@demo.test", skill: "All Levels",   homeArea: "Pasadena" },
+  ];
+  for (const { id, email, skill, homeArea } of emailMigrations) {
+    await query(
+      `UPDATE users SET email = $1, skill = $2, home_area = $3
+       WHERE id = $4 AND email <> $1`,
+      [email, skill, homeArea, id]
+    );
+  }
+
+  // Reset password for ALL @demo.test accounts
   const pw = hashPassword(DEMO_PASSWORD);
   const { rowCount } = await query(
     "UPDATE users SET password_hash = $1 WHERE email LIKE '%@demo.test'",
     [pw]
   );
   if (rowCount > 0) {
-    console.log(`[seed] reset ${rowCount} demo account passwords → "${DEMO_PASSWORD}"`);
+    console.log(
+      `[seed] synced ${rowCount} demo accounts → password: "${DEMO_PASSWORD}"\n` +
+      `[seed] main logins: 1@demo.test … 5@demo.test`
+    );
   }
 }
 
