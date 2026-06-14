@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 import { hashPassword, verifyPassword, signToken, requireAuth } from "./auth.js";
 import * as repo from "./repo.js";
 import { initSchema, query } from "./db.js";
-import { seedIfEmpty, syncDemoPasswords } from "./seed.js";
+import { seedIfEmpty, syncDemoPasswords, seedPastData } from "./seed.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -765,6 +765,16 @@ app.delete(
   h(async (req, res) => {
     await repo.adminDeleteGame(req.params.id);
     res.status(204).end();
+  })
+);
+
+app.post(
+  "/api/admin/seed-past-data",
+  requireAuth,
+  requireAdmin,
+  h(async (_req, res) => {
+    await seedPastData();
+    res.json({ ok: true });
   })
 );
 

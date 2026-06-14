@@ -1,0 +1,80 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Commands
+
+```bash
+npm run dev          # Start both API (port 3001) and Vite dev server (port 5173) concurrently
+npm run dev:api      # API only — node --watch with .env
+npm run dev:web      # Vite only
+npm run build        # TypeScript check + Vite production build
+npm run start        # Production server (Railway uses this)
+npx tsc --noEmit     # Type-check without building
+```
+
+Local dev requires a `DATABASE_URL` in `.env`. The Railway-hosted Postgres is production-only; there is no local DB instance. You can still run `npm run dev:web` to test the frontend UI without the API.
+
+## Architecture
+
+**Full-stack monorepo**: React 18 + TypeScript + Vite 6 (frontend) served by Express 4 + PostgreSQL (backend). In production, Express serves the Vite build as static files and handles `/api/*` routes.
+
+### Backend (`server/`)
+
+| File | Purpose |
+|------|---------|
+| `index.js` | Express app — all API routes, auth middleware, email via Resend |
+| `db.js` | `pg.Pool` connection, `initSchema()` (idempotent, runs on startup), `uid(prefix)` for IDs |
+| `repo.js` | All SQL queries — single data-access layer |
+| `auth.js` | `hashPassword`, `verifyPassword`, `signToken`, `requireAuth` middleware (JWT in `Authorization: Bearer`) |
+| `seed.js` | `seedIfEmpty()` (once, empty DB), `syncDemoPasswords()` (every startup), `seedPastData()` (idempotent, via admin endpoint) |
+
+Schema tables: `users`, `games`, `game_members`, `game_reviews`, `player_ratings`, `comments`, `notifications`, `feedback`, `highlights`, `highlight_likes`, `password_reset_tokens`.
+
+**Two separate rating systems:**
+- `game_reviews` — reviewer rates the HOST after a game they played in (not hosted). `UNIQUE(game_id, reviewer_id)`. Exposed as host star rating on profiles.
+- `player_ratings` — player rates individual teammates. `UNIQUE(game_id, rater_id, rated_id)`. Anonymous, averaged as `playerRating` on profiles.
+
+`pendingReviews(userId)` returns games the user played (not hosted), ended >2 h ago, <7 days ago, not yet reviewed. The `ReviewPrompt` component polls this 3 s after mount and shows a modal.
+
+### Frontend (`src/`)
+
+| Layer | Details |
+|-------|---------|
+| `lib/api.ts` | `api.get/post/patch/del` wrappers — reads JWT from `localStorage`, base URL from `VITE_API_URL` env var |
+| `services/gamesService.ts` | All game mutations + reads; calls `notify()` after mutations so subscribers re-fetch |
+| `auth/AuthContext.tsx` | React context for current user; `useAuth()` hook |
+| `hooks/useProfile.ts` | Returns profile of logged-in user from context |
+| `lib/format.ts` | `formatDate`, `formatTime`, `formatTimeRange`, `isPast`, `relativeDay` |
+
+Pages: `BrowseGames`, `GameDetail`, `CreateGame`, `EditGame`, `MyGames`, `UserProfile`, `Profile`, `Settings`, `Admin`, `Auth`, `Onboarding`, `Highlights`, `Privacy`.
+
+`GameDetail.tsx` fetches `/api/games/:id/ratables` when the game is in the past and the user was a player — renders inline star pickers to rate teammates using `api.post` directly (not via gamesService).
+
+## Demo credentials
+
+| Email | Password | Name | Role |
+|-------|----------|------|------|
+| 1@demo.test | 111111 | Maria L. | Intermediate |
+| 2@demo.test | 111111 | Theo R. | Advanced |
+| 3@demo.test | 111111 | Grace P. | Beginner |
+| 4@demo.test | 111111 | Dre M. | Advanced |
+| 5@demo.test | 111111 | Nina K. | All Levels |
+
+`syncDemoPasswords()` resets all `@demo.test` passwords to `111111` on every server startup.
+
+To seed past games + fake reviews/ratings into an already-populated DB: log in as an admin and call `POST /api/admin/seed-past-data`.
+
+## Deployment
+
+Railway auto-deploys on every push to `main` on GitHub. No manual steps needed — just `git push`. Deploy takes ~2 min. Production URL: `https://coterie.com.de`.
+
+The server calls `initSchema()` → `syncDemoPasswords()` → `seedIfEmpty()` on startup, in that order.
+
+## Key conventions
+
+- **IDs**: `uid(prefix)` generates `prefix_<random>`. Demo/seed records use static IDs (e.g. `game_past_1`, `user_maria`) for idempotency.
+- **Auth**: JWT stored in `localStorage` as `token`. `requireAuth` middleware sets `req.userId`. `requireAdmin` checks `users.role = 'admin'`.
+- **Roles**: `user` (default) | `staff` | `admin`. Only admins can access `/api/admin/*`.
+- **Game time logic**: `date` is ISO date string (`2026-06-20`), `time`/`endTime` are 24h strings (`"18:30"`). `isPast(date)` checks if date < today.
+- **Tailwind**: Using Tailwind CSS 4.0 (Vite plugin, not PostCSS). Brand color is `text-brand` / `bg-brand` (coral `#FF6B6B` defined as CSS variable `--color-brand`).
