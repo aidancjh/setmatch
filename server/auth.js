@@ -2,9 +2,16 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-// In a real deployment this comes from an env var / secret manager.
-// Hardcoded here so local Phase 2 testing works out of the box.
-const JWT_SECRET = process.env.JWT_SECRET || "setmatch-dev-secret-change-me";
+const DEV_SECRET = "setmatch-dev-secret-change-me";
+const JWT_SECRET = process.env.JWT_SECRET || DEV_SECRET;
+
+if (process.env.NODE_ENV === "production" && JWT_SECRET === DEV_SECRET) {
+  console.error(
+    "[auth] FATAL: JWT_SECRET is not set. Set it in Railway environment variables before deploying."
+  );
+  process.exit(1);
+}
+
 const TOKEN_TTL = "30d";
 
 export function hashPassword(plain) {

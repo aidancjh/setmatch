@@ -10,8 +10,11 @@ Sentry.init({
 
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { hashPassword, verifyPassword, signToken, requireAuth } from "./auth.js";
 import * as repo from "./repo.js";
@@ -21,8 +24,78 @@ import { seedIfEmpty, syncDemoPasswords } from "./seed.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.set("trust proxy", true); // behind Railway's proxy — reflect real https host
-app.use(cors());
-app.use(express.json());
+
+// --- Security headers (helmet) --------------------------------------------
+// Content-Security-Policy is relaxed enough for Cloudinary uploads + Sentry.
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"], // Vite inline scripts in prod build
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
+        mediaSrc: ["'self'", "blob:", "https://res.cloudinary.com"],
+        connectSrc: [
+          "'self'",
+          "https://api.cloudinary.com",
+          "https://api.resend.com",
+          "https://ingest.us.sentry.io",
+        ],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    hsts: {
+      maxAge: 31536000, // 1 year
+      includeSubDomains: true,
+      preload: true,
+    },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  })
+);
+
+// --- CORS (lock to the app's own origin in production) --------------------
+const appOrigin = process.env.APP_URL || null;
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Allow same-origin requests (origin is undefined for same-origin / server-to-server)
+      if (!origin) return callback(null, true);
+      // In development allow any localhost
+      if (!appOrigin || origin.startsWith("http://localhost")) return callback(null, true);
+      // In production only allow our own domain
+      if (origin === appOrigin || origin === appOrigin.replace(/\/$/, ""))
+        return callback(null, true);
+      return callback(new Error(`CORS: origin ${origin} not allowed`), false);
+    },
+    credentials: true,
+  })
+);
+
+app.use(express.json({ limit: "100kb" })); // prevent giant JSON payloads
+
+// --- Rate limiters --------------------------------------------------------
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many attempts — please wait 15 minutes and try again." },
+});
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests — slow down." },
+});
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/signup", authLimiter);
+app.use("/api/auth/forgot-password", authLimiter);
+app.use("/api/auth/reset-password", authLimiter);
+app.use("/api", apiLimiter);
 
 const PORT = process.env.PORT || 4000;
 
@@ -255,18 +328,30 @@ app.post(
 
 // --- Google OAuth ----------------------------------------------------------
 
+// In-memory store for OAuth state tokens (TTL 10 min; cleared on use or expiry).
+// Fine for a single-process server. If you ever run multiple replicas, move
+// this to Redis or Postgres.
+const oauthStates = new Map(); // state -> expiry timestamp
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, exp] of oauthStates) if (now > exp) oauthStates.delete(k);
+}, 60_000);
+
 app.get("/api/auth/google", (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId)
     return res.status(503).json({ error: "Google login is not configured." });
 
   const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+  const state = crypto.randomBytes(16).toString("hex");
+  oauthStates.set(state, Date.now() + 10 * 60 * 1000); // expires in 10 min
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: `${appUrl}/api/auth/google/callback`,
     response_type: "code",
     scope: "openid email profile",
     prompt: "select_account",
+    state,
   });
   res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
 });
@@ -274,8 +359,15 @@ app.get("/api/auth/google", (req, res) => {
 app.get(
   "/api/auth/google/callback",
   h(async (req, res) => {
-    const { code, error } = req.query;
+    const { code, error, state } = req.query;
     const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+
+    // Validate CSRF state token before doing anything with the code.
+    if (!state || !oauthStates.has(state) || Date.now() > oauthStates.get(state)) {
+      oauthStates.delete(state);
+      return res.redirect(`${appUrl}/auth?error=google_cancelled`);
+    }
+    oauthStates.delete(state); // one-time use
 
     if (error || !code)
       return res.redirect(`${appUrl}/auth?error=google_cancelled`);
