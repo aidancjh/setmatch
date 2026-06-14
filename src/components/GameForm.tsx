@@ -11,6 +11,8 @@ const netHeightOptions = [
   { value: "Recreational (2.35m)", label: "Recreational (2.35m)" },
   { value: "Venue Standard", label: "Venue standard" },
 ];
+const positions = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist", "Any"];
+const rotationTypes = ["Standard", "No Rotation", "King of the Court", "Round Robin"];
 
 export const blankGame: NewGameInput = {
   title: "",
@@ -18,8 +20,12 @@ export const blankGame: NewGameInput = {
   skill: "All Levels",
   gender: "Open",
   netHeight: "Venue Standard",
+  positionsNeeded: [],
+  rotationType: "Standard",
+  courtFee: "",
   date: "",
   time: "18:00",
+  endTime: "",
   location: "",
   area: "",
   totalSlots: 12,
@@ -249,7 +255,18 @@ export default function GameForm({
             className={inputCls}
           />
         </Field>
-        <Field label="Time">
+        <Field label="Court fee (optional)">
+          <input
+            value={form.courtFee}
+            onChange={(e) => set("courtFee", e.target.value)}
+            placeholder="e.g. $5, free"
+            className={inputCls}
+          />
+        </Field>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Start time">
           <input
             type="time"
             value={form.time}
@@ -257,6 +274,63 @@ export default function GameForm({
             className={inputCls}
           />
         </Field>
+        <Field label="End time (optional)">
+          <input
+            type="time"
+            value={form.endTime}
+            onChange={(e) => set("endTime", e.target.value)}
+            className={inputCls}
+          />
+        </Field>
+      </div>
+
+      <div className="space-y-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700">Positions needed</label>
+          <div className="flex flex-wrap gap-1.5">
+            {positions.map((p) => {
+              const active = form.positionsNeeded.includes(p);
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => {
+                    if (p === "Any") {
+                      set("positionsNeeded", active ? [] : ["Any"]);
+                    } else {
+                      const without = form.positionsNeeded.filter((x) => x !== "Any" && x !== p);
+                      set("positionsNeeded", active ? without : [...without, p]);
+                    }
+                  }}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
+                    active ? "bg-brand text-white" : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                  }`}
+                >
+                  {p}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1.5 text-[11px] text-slate-400">Leave blank if any position is welcome.</p>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">Rotation</label>
+          <div className="flex flex-wrap gap-1.5">
+            {rotationTypes.map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => set("rotationType", r)}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
+                  form.rotationType === r ? "bg-brand text-white" : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <Field label="Venue / location">

@@ -92,6 +92,25 @@ export default function UserProfile() {
             {profile.bio}
           </p>
         )}
+
+        {profile.playerRating && profile.playerRating.count > 0 && (
+          <div className="mt-3 border-t border-slate-50 pt-3 flex items-center gap-2">
+            <span className="text-amber-400 text-sm">{"★".repeat(Math.round(profile.playerRating.avg ?? 0))}</span>
+            <span className="text-sm font-semibold text-slate-800">{(profile.playerRating.avg ?? 0).toFixed(1)}</span>
+            <span className="text-xs text-slate-400">player rating ({profile.playerRating.count} vote{profile.playerRating.count === 1 ? "" : "s"})</span>
+          </div>
+        )}
+
+        {profile.favoritePositions && profile.favoritePositions.length > 0 && (
+          <div className="mt-3 border-t border-slate-50 pt-3">
+            <p className="mb-1.5 text-xs font-medium text-slate-400">Positions</p>
+            <div className="flex flex-wrap gap-1.5">
+              {profile.favoritePositions.map((p) => (
+                <span key={p} className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{p}</span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats */}

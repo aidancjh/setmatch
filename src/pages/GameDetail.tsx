@@ -14,9 +14,10 @@ import {
 } from "../services/gamesService";
 import { useProfile } from "../hooks/useProfile";
 import { useAuth } from "../auth/AuthContext";
-import { formatDate, formatTime, relativeDay } from "../lib/format";
+import { formatDate, formatTime, formatTimeRange, isPast, relativeDay } from "../lib/format";
 import { SkillBadge, SpotsBadge, TypeBadge } from "../components/Badges";
 import GameComments from "../components/GameComments";
+import { api } from "../lib/api";
 
 export default function GameDetail() {
   const { id = "" } = useParams();
@@ -27,12 +28,24 @@ export default function GameDetail() {
   const [game, setGame] = useState<Game | undefined | null>(undefined);
   const [shareMsg, setShareMsg] = useState("");
   const [error, setError] = useState("");
+  const [ratables, setRatables] = useState<{ id: string; name: string; myRating: number | null }[] | null>(null);
+  const [ratingMsg, setRatingMsg] = useState("");
 
   useEffect(() => {
     const refresh = () => getGame(id).then((g) => setGame(g ?? null));
     refresh();
     return subscribe(refresh);
   }, [id]);
+
+  useEffect(() => {
+    if (!game || !me.id || !isPast(game.date)) return;
+    const wasPlayer = isInGame(game, me.id);
+    if (!wasPlayer) return;
+    api.get<typeof ratables>(`/games/${id}/ratables`)
+      .then((data) => setRatables(data))
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game?.id, me.id]);
 
   if (game === undefined) {
     return <p className="py-10 text-center text-sm text-slate-400">Loading…</p>;
@@ -129,7 +142,7 @@ export default function GameDetail() {
       {/* Info card */}
       <div className="mb-4 space-y-2 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-700 shadow-sm">
         <InfoRow icon="📅" label="When">
-          {formatDate(game.date)} · {formatTime(game.time)}
+          {formatDate(game.date)} · {formatTimeRange(game.time, game.endTime)}
         </InfoRow>
         <InfoRow icon="📍" label="Where">
           {game.location}
@@ -151,6 +164,21 @@ export default function GameDetail() {
         {game.netHeight && game.netHeight !== "Venue Standard" && (
           <InfoRow icon="🏐" label="Net height">
             {game.netHeight}
+          </InfoRow>
+        )}
+        {game.rotationType && game.rotationType !== "Standard" && (
+          <InfoRow icon="🔄" label="Rotation">
+            {game.rotationType}
+          </InfoRow>
+        )}
+        {game.positionsNeeded && game.positionsNeeded.length > 0 && (
+          <InfoRow icon="🎯" label="Positions needed">
+            {game.positionsNeeded.join(", ")}
+          </InfoRow>
+        )}
+        {game.courtFee && (
+          <InfoRow icon="💰" label="Court fee">
+            {game.courtFee}
           </InfoRow>
         )}
         {game.notes && (
@@ -286,6 +314,48 @@ export default function GameDetail() {
           </div>
         )}
       </div>
+
+      {/* Rate teammates (only shown after game ends, only for confirmed players) */}
+      {ratables && ratables.length > 0 && (
+        <div className="mb-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+          <h2 className="mb-1 text-sm font-semibold text-slate-900">Rate your teammates</h2>
+          <p className="mb-3 text-xs text-slate-400">Ratings are anonymous and averaged on each player's profile.</p>
+          {ratingMsg && <p className="mb-2 text-xs font-medium text-emerald-600">{ratingMsg}</p>}
+          <div className="space-y-3">
+            {ratables.map((r) => (
+              <div key={r.id} className="flex items-center justify-between gap-3">
+                <Link to={`/user/${r.id}`} className="text-sm font-medium text-slate-700 hover:underline truncate">
+                  {r.name}
+                </Link>
+                <div className="flex shrink-0 gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => {
+                        api.post(`/games/${id}/rate/${r.id}`, { rating: star })
+                          .then(() => {
+                            setRatables((prev) =>
+                              prev ? prev.map((p) => p.id === r.id ? { ...p, myRating: star } : p) : prev
+                            );
+                            setRatingMsg("Rating saved!");
+                            setTimeout(() => setRatingMsg(""), 2000);
+                          })
+                          .catch(() => {});
+                      }}
+                      className={`text-lg leading-none transition ${
+                        r.myRating !== null && star <= r.myRating ? "text-amber-400" : "text-slate-200 hover:text-amber-300"
+                      }`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Discussion thread */}
       <GameComments gameId={game.id} hostId={game.hostId} />

@@ -197,6 +197,43 @@ export async function initSchema() {
   await pool.query(
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS show_gender BOOLEAN NOT NULL DEFAULT TRUE"
   );
+
+  // Feature: positions, rotation, court fee, end time on games; favorite positions on users.
+  await pool.query(
+    "ALTER TABLE games ADD COLUMN IF NOT EXISTS positions_needed TEXT NOT NULL DEFAULT '[]'"
+  );
+  await pool.query(
+    "ALTER TABLE games ADD COLUMN IF NOT EXISTS rotation_type TEXT NOT NULL DEFAULT 'Standard'"
+  );
+  await pool.query(
+    "ALTER TABLE games ADD COLUMN IF NOT EXISTS court_fee TEXT NOT NULL DEFAULT ''"
+  );
+  await pool.query(
+    "ALTER TABLE games ADD COLUMN IF NOT EXISTS end_time TEXT NOT NULL DEFAULT ''"
+  );
+  await pool.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS favorite_positions TEXT NOT NULL DEFAULT '[]'"
+  );
+
+  // Feature: media type on highlights (video or photo).
+  await pool.query(
+    "ALTER TABLE highlights ADD COLUMN IF NOT EXISTS media_type TEXT NOT NULL DEFAULT 'video'"
+  );
+
+  // Feature: player-to-player ratings after games.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS player_ratings (
+      id         TEXT PRIMARY KEY,
+      game_id    TEXT NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+      rater_id   TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      rated_id   TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      rating     INT  NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      created_at TEXT NOT NULL,
+      UNIQUE (game_id, rater_id, rated_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_pr_rated ON player_ratings(rated_id);
+    CREATE INDEX IF NOT EXISTS idx_pr_game  ON player_ratings(game_id);
+  `);
 }
 
 export function uid(prefix = "id") {

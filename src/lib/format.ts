@@ -61,6 +61,12 @@ export function todayISO(): string {
   return `${y}-${m}-${day}`;
 }
 
+/** "6:00 PM – 8:30 PM" or just "6:00 PM" if no endTime */
+export function formatTimeRange(startTime: string, endTime: string): string {
+  if (!endTime) return formatTime(startTime);
+  return `${formatTime(startTime)} – ${formatTime(endTime)}`;
+}
+
 export function isPast(iso: string): boolean {
   const [y, m, d] = iso.split("-").map(Number);
   const target = new Date(y, m - 1, d);

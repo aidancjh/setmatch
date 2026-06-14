@@ -16,10 +16,14 @@ export interface Game {
   skill: SkillLevel;
   gender: GameGender;
   netHeight: string;
+  positionsNeeded: string[];
+  rotationType: string;
+  courtFee: string;
   /** ISO date string, e.g. 2026-06-20 */
   date: string;
   /** 24h time string, e.g. "18:30" */
   time: string;
+  endTime: string;
   location: string;
   /** Free-text area/neighborhood used for search, e.g. "Santa Monica" */
   area: string;
@@ -51,6 +55,8 @@ export interface Profile {
   userGender?: string;
   showAge?: boolean;
   showGender?: boolean;
+  favoritePositions?: string[];
+  playerRating?: { count: number; avg: number | null };
 }
 
 export interface AdminStats {
@@ -88,6 +94,8 @@ export interface UserProfile {
   hostedUpcoming: Game[];
   ageDisplay?: string;
   genderDisplay?: string;
+  favoritePositions?: string[];
+  playerRating?: { count: number; avg: number | null };
 }
 
 export interface Comment {
@@ -114,6 +122,7 @@ export interface Highlight {
   caption: string;
   videoUrl: string;
   thumbUrl: string;
+  mediaType: "video" | "photo";
   createdAt: string;
   likesCount: number;
   likedBy: string[];
@@ -125,8 +134,12 @@ export interface NewGameInput {
   skill: SkillLevel;
   gender: GameGender;
   netHeight: string;
+  positionsNeeded: string[];
+  rotationType: string;
+  courtFee: string;
   date: string;
   time: string;
+  endTime: string;
   location: string;
   area: string;
   totalSlots: number;

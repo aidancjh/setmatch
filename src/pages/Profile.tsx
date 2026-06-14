@@ -7,6 +7,7 @@ import { SkillBadge } from "../components/Badges";
 
 const skills: SkillLevel[] = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 const GENDER_OPTIONS = ["Man", "Woman", "Non-binary", "Prefer not to say"];
+const POSITION_OPTIONS = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist"];
 
 function computeAge(birthdate: string | null | undefined): number | null {
   if (!birthdate) return null;
@@ -76,18 +77,18 @@ function HighlightGrid({
             onClick={() => setPlaying(h)}
             className="relative aspect-square bg-slate-900"
           >
-            {h.thumbUrl ? (
-              <img src={h.thumbUrl} alt={h.caption} className="h-full w-full object-cover" />
+            {h.thumbUrl || h.mediaType === "photo" ? (
+              <img src={h.thumbUrl || h.videoUrl} alt={h.caption} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
                 <span className="text-2xl text-white/60">▶</span>
               </div>
             )}
-            {/* Play overlay */}
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition hover:opacity-100">
-              <span className="text-xl text-white drop-shadow">▶</span>
-            </div>
-            {/* Like count */}
+            {h.mediaType !== "photo" && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition hover:opacity-100">
+                <span className="text-xl text-white drop-shadow">▶</span>
+              </div>
+            )}
             {h.likesCount > 0 && (
               <span className="absolute bottom-1 right-1 rounded bg-black/50 px-1 text-[10px] text-white">
                 ♥ {h.likesCount}
@@ -97,7 +98,7 @@ function HighlightGrid({
         ))}
       </div>
 
-      {/* Video player modal */}
+      {/* Media modal */}
       {playing && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
@@ -107,12 +108,11 @@ function HighlightGrid({
             className="relative mx-4 w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <video
-              src={playing.videoUrl}
-              controls
-              autoPlay
-              className="w-full rounded-2xl"
-            />
+            {playing.mediaType === "photo" ? (
+              <img src={playing.videoUrl} alt={playing.caption} className="w-full rounded-2xl object-contain" />
+            ) : (
+              <video src={playing.videoUrl} controls autoPlay className="w-full rounded-2xl" />
+            )}
             {playing.caption && (
               <p className="mt-2 text-center text-sm text-white/80">{playing.caption}</p>
             )}
@@ -150,6 +150,7 @@ export default function Profile() {
   const [userGender, setUserGender] = useState(user?.userGender ?? "");
   const [showAge, setShowAge] = useState(user?.showAge !== false);
   const [showGender, setShowGender] = useState(user?.showGender !== false);
+  const [favoritePositions, setFavoritePositions] = useState<string[]>(user?.favoritePositions ?? []);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -197,6 +198,7 @@ export default function Profile() {
         userGender,
         showAge,
         showGender,
+        favoritePositions,
       });
       setSaved(true);
       setTimeout(() => { setSaved(false); setEditing(false); }, 1200);
@@ -215,6 +217,7 @@ export default function Profile() {
     setUserGender(user?.userGender ?? "");
     setShowAge(user?.showAge !== false);
     setShowGender(user?.showGender !== false);
+    setFavoritePositions(user?.favoritePositions ?? []);
     setError("");
     setEditing(false);
   };
@@ -320,6 +323,22 @@ export default function Profile() {
             </div>
           </div>
 
+          <div>
+            <span className="mb-1.5 block text-sm font-medium text-slate-700">Favorite positions</span>
+            <div className="flex flex-wrap gap-1.5">
+              {POSITION_OPTIONS.map((p) => {
+                const active = favoritePositions.includes(p);
+                return (
+                  <button key={p} type="button"
+                    onClick={() => setFavoritePositions((prev) => active ? prev.filter((x) => x !== p) : [...prev, p])}
+                    className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${active ? "bg-brand text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Privacy</p>
             <label className="flex cursor-pointer items-center justify-between gap-3">
@@ -422,6 +441,27 @@ export default function Profile() {
             className="mt-3 border-t border-slate-50 pt-3 text-xs text-slate-300 hover:text-brand w-full text-left">
             + Add a bio…
           </button>
+        )}
+
+        {/* Player rating */}
+        {user?.playerRating && user.playerRating.count > 0 && (
+          <div className="mt-3 border-t border-slate-50 pt-3 flex items-center gap-2">
+            <span className="text-amber-400 text-sm">{"★".repeat(Math.round(user.playerRating.avg ?? 0))}</span>
+            <span className="text-sm font-semibold text-slate-800">{(user.playerRating.avg ?? 0).toFixed(1)}</span>
+            <span className="text-xs text-slate-400">player rating ({user.playerRating.count} vote{user.playerRating.count === 1 ? "" : "s"})</span>
+          </div>
+        )}
+
+        {/* Favorite positions */}
+        {user?.favoritePositions && user.favoritePositions.length > 0 && (
+          <div className="mt-3 border-t border-slate-50 pt-3">
+            <p className="mb-1.5 text-xs font-medium text-slate-400">Positions</p>
+            <div className="flex flex-wrap gap-1.5">
+              {user.favoritePositions.map((p) => (
+                <span key={p} className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{p}</span>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 

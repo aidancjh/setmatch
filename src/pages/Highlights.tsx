@@ -18,17 +18,23 @@ function cloudinaryConfigured() {
   return Boolean(CLOUD_NAME && UPLOAD_PRESET);
 }
 
+function getMediaType(file: File): "video" | "photo" {
+  return file.type.startsWith("image/") ? "photo" : "video";
+}
+
 function uploadToCloudinary(
   file: File,
   onProgress: (pct: number) => void
-): Promise<{ videoUrl: string; thumbUrl: string }> {
+): Promise<{ videoUrl: string; thumbUrl: string; mediaType: "video" | "photo" }> {
+  const mediaType = getMediaType(file);
   return new Promise((resolve, reject) => {
     const form = new FormData();
     form.append("file", file);
     form.append("upload_preset", UPLOAD_PRESET!);
 
+    const endpoint = mediaType === "photo" ? "image" : "video";
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`);
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${endpoint}/upload`);
 
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
@@ -45,8 +51,10 @@ function uploadToCloudinary(
         return;
       }
       const data = JSON.parse(xhr.responseText);
-      const thumbUrl = `https://res.cloudinary.com/${CLOUD_NAME}/video/upload/so_0,f_jpg,w_600/${data.public_id}.jpg`;
-      resolve({ videoUrl: data.secure_url as string, thumbUrl });
+      const thumbUrl = mediaType === "photo"
+        ? `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/w_600/${data.public_id}.jpg`
+        : `https://res.cloudinary.com/${CLOUD_NAME}/video/upload/so_0,f_jpg,w_600/${data.public_id}.jpg`;
+      resolve({ videoUrl: data.secure_url as string, thumbUrl, mediaType });
     };
 
     xhr.onerror = () => reject(new Error("Upload failed. Check your connection."));
@@ -87,13 +95,15 @@ function UploadModal({
   const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const isPhoto = file ? file.type.startsWith("image/") : false;
+
   function pickFile(f: File) {
-    if (!f.type.startsWith("video/")) {
-      setError("Please choose a video file.");
+    if (!f.type.startsWith("video/") && !f.type.startsWith("image/")) {
+      setError("Please choose a video or photo file.");
       return;
     }
     if (f.size > 200 * 1024 * 1024) {
-      setError("Video must be under 200 MB.");
+      setError("File must be under 200 MB.");
       return;
     }
     setFile(f);
@@ -104,17 +114,18 @@ function UploadModal({
   async function handleShare() {
     if (!file) return;
     if (!cloudinaryConfigured()) {
-      setError("Video upload is not set up yet. The admin needs to add VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET to the app's environment variables.");
+      setError("Media upload is not set up yet. The admin needs to add VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET to the app's environment variables.");
       return;
     }
     setUploading(true);
     setError("");
     try {
-      const { videoUrl, thumbUrl } = await uploadToCloudinary(file, setProgress);
+      const { videoUrl, thumbUrl, mediaType } = await uploadToCloudinary(file, setProgress);
       const hl = await api.post<Highlight>("/highlights", {
         caption: caption.trim(),
         videoUrl,
         thumbUrl,
+        mediaType,
       });
       onUploaded(hl);
       onClose();
@@ -147,24 +158,19 @@ function UploadModal({
               className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 py-12 text-slate-400 transition hover:border-brand hover:text-brand"
             >
               <UploadIcon className="h-10 w-10" />
-              <span className="text-sm font-medium">Tap to choose a video</span>
-              <span className="text-xs">MP4, MOV · up to 200 MB</span>
+              <span className="text-sm font-medium">Tap to choose a video or photo</span>
+              <span className="text-xs">MP4, MOV, JPG, PNG · up to 200 MB</span>
             </button>
           ) : (
             <div className="relative overflow-hidden rounded-2xl bg-black">
-              <video
-                src={preview}
-                controls
-                playsInline
-                muted
-                className="max-h-64 w-full object-contain"
-              />
+              {isPhoto ? (
+                <img src={preview} alt="preview" className="max-h-64 w-full object-contain" />
+              ) : (
+                <video src={preview} controls playsInline muted className="max-h-64 w-full object-contain" />
+              )}
               {!uploading && (
                 <button
-                  onClick={() => {
-                    setFile(null);
-                    setPreview(null);
-                  }}
+                  onClick={() => { setFile(null); setPreview(null); }}
                   className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white"
                 >
                   Change
@@ -176,7 +182,7 @@ function UploadModal({
           <input
             ref={fileRef}
             type="file"
-            accept="video/*"
+            accept="video/*,image/*"
             className="hidden"
             onChange={(e) => e.target.files?.[0] && pickFile(e.target.files[0])}
           />
@@ -253,17 +259,25 @@ function HighlightCard({
 
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-      {/* Video */}
+      {/* Media */}
       <div className="bg-black">
-        <video
-          src={hl.videoUrl}
-          poster={hl.thumbUrl || undefined}
-          controls
-          playsInline
-          preload="metadata"
-          className="max-h-[70vh] w-full object-contain"
-          aria-label={`Highlight by ${hl.userName}`}
-        />
+        {hl.mediaType === "photo" ? (
+          <img
+            src={hl.videoUrl}
+            alt={hl.caption || `Highlight by ${hl.userName}`}
+            className="max-h-[70vh] w-full object-contain"
+          />
+        ) : (
+          <video
+            src={hl.videoUrl}
+            poster={hl.thumbUrl || undefined}
+            controls
+            playsInline
+            preload="metadata"
+            className="max-h-[70vh] w-full object-contain"
+            aria-label={`Highlight by ${hl.userName}`}
+          />
+        )}
       </div>
 
       {/* Info row */}

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Game } from "../types";
 import { spotsLeft } from "../services/gamesService";
-import { formatDate, formatTime, relativeDay } from "../lib/format";
+import { formatDate, formatTimeRange, relativeDay } from "../lib/format";
 import { SkillBadge, SpotsBadge, TypeBadge } from "./Badges";
 
 export default function GameCard({
@@ -41,13 +41,19 @@ export default function GameCard({
       <dl className="space-y-1 text-sm text-slate-600">
         <div className="flex items-center gap-1.5">
           <span aria-hidden>📅</span>
-          {formatDate(game.date)} · {formatTime(game.time)}
+          {formatDate(game.date)} · {formatTimeRange(game.time, game.endTime)}
         </div>
         <div className="flex items-center gap-1.5">
           <span aria-hidden>📍</span>
           {game.location}
           <span className="text-slate-400">· {game.area}</span>
         </div>
+        {game.courtFee && (
+          <div className="flex items-center gap-1.5">
+            <span aria-hidden>💰</span>
+            <span className="text-slate-500">{game.courtFee} court fee</span>
+          </div>
+        )}
       </dl>
 
       {/* Fill bar */}

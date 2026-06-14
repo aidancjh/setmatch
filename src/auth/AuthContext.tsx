@@ -25,6 +25,7 @@ interface AuthState {
     userGender?: string;
     showAge?: boolean;
     showGender?: boolean;
+    favoritePositions?: string[];
   }) => Promise<void>;
 }
 

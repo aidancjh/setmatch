@@ -28,12 +28,13 @@ export async function createUser({ email, passwordHash, name }) {
   return findUserById(id);
 }
 
-export async function updateUser(id, { name, skill, homeArea, bio, avatarUrl, birthdate, userGender, showAge, showGender }) {
+export async function updateUser(id, { name, skill, homeArea, bio, avatarUrl, birthdate, userGender, showAge, showGender, favoritePositions }) {
   const cur = await findUserById(id);
   if (!cur) return null;
   await query(
     `UPDATE users SET name = $1, skill = $2, home_area = $3, bio = $4, avatar_url = $5,
-      birthdate = $6, user_gender = $7, show_age = $8, show_gender = $9 WHERE id = $10`,
+      birthdate = $6, user_gender = $7, show_age = $8, show_gender = $9,
+      favorite_positions = $10 WHERE id = $11`,
     [
       name ?? cur.name,
       skill ?? cur.skill,
@@ -44,6 +45,9 @@ export async function updateUser(id, { name, skill, homeArea, bio, avatarUrl, bi
       userGender !== undefined ? userGender : (cur.user_gender || ""),
       showAge !== undefined ? showAge : (cur.show_age !== false),
       showGender !== undefined ? showGender : (cur.show_gender !== false),
+      favoritePositions !== undefined
+        ? JSON.stringify(favoritePositions)
+        : (cur.favorite_positions || "[]"),
       id,
     ]
   );
@@ -82,6 +86,7 @@ export async function getUserProfile(userId) {
   );
   const hostedUpcoming = await Promise.all(rows.map(serializeGame));
   const age = computeAge(u.birthdate);
+  const rating = await getPlayerRating(userId);
   return {
     id: u.id,
     name: u.name,
@@ -95,6 +100,8 @@ export async function getUserProfile(userId) {
     hostedUpcoming,
     ageDisplay: u.show_age !== false && age !== null ? String(age) : undefined,
     genderDisplay: u.show_gender !== false && u.user_gender ? u.user_gender : undefined,
+    favoritePositions: parseJsonArr(u.favorite_positions),
+    playerRating: rating,
   };
 }
 
@@ -114,6 +121,7 @@ export function publicUser(row) {
     userGender: row.user_gender || "",
     showAge: row.show_age !== false,
     showGender: row.show_gender !== false,
+    favoritePositions: parseJsonArr(row.favorite_positions),
   };
 }
 
@@ -277,6 +285,11 @@ async function interestedIds(gameId) {
   return rows.map((r) => r.user_id);
 }
 
+function parseJsonArr(val) {
+  if (!val) return [];
+  try { return JSON.parse(val); } catch { return []; }
+}
+
 /** Build the full Game object the frontend expects from a games row. */
 async function serializeGame(row) {
   if (!row) return null;
@@ -293,8 +306,12 @@ async function serializeGame(row) {
     skill: row.skill,
     gender: row.gender || "Open",
     netHeight: row.net_height || "Venue Standard",
+    positionsNeeded: parseJsonArr(row.positions_needed),
+    rotationType: row.rotation_type || "Standard",
+    courtFee: row.court_fee || "",
     date: row.date,
     time: row.time,
+    endTime: row.end_time || "",
     location: row.location,
     area: row.area,
     totalSlots: row.total_slots,
@@ -328,8 +345,9 @@ export async function createGame(hostId, input) {
   const now = new Date().toISOString();
   await query(
     `INSERT INTO games
-       (id, title, type, skill, date, time, location, area, total_slots, pre_filled, host_id, notes, gender, net_height, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+       (id, title, type, skill, date, time, end_time, location, area, total_slots, pre_filled, host_id, notes,
+        gender, net_height, positions_needed, rotation_type, court_fee, created_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
     [
       id,
       input.title,
@@ -337,6 +355,7 @@ export async function createGame(hostId, input) {
       input.skill,
       input.date,
       input.time,
+      input.endTime || "",
       input.location,
       input.area,
       input.totalSlots,
@@ -345,6 +364,9 @@ export async function createGame(hostId, input) {
       input.notes || "",
       input.gender || "Open",
       input.netHeight || "Venue Standard",
+      JSON.stringify(input.positionsNeeded || []),
+      input.rotationType || "Standard",
+      input.courtFee || "",
       now,
     ]
   );
@@ -489,22 +511,27 @@ export async function updateGame(gameId, userId, input) {
 
   await query(
     `UPDATE games
-        SET title = $1, type = $2, skill = $3, date = $4, time = $5,
-            location = $6, area = $7, total_slots = $8, notes = $9,
-            gender = $10, net_height = $11
-      WHERE id = $12`,
+        SET title = $1, type = $2, skill = $3, date = $4, time = $5, end_time = $6,
+            location = $7, area = $8, total_slots = $9, notes = $10,
+            gender = $11, net_height = $12, positions_needed = $13,
+            rotation_type = $14, court_fee = $15
+      WHERE id = $16`,
     [
       input.title,
       input.type,
       input.skill,
       input.date,
       input.time,
+      input.endTime || "",
       input.location,
       input.area,
       input.totalSlots,
       input.notes || "",
       input.gender || "Open",
       input.netHeight || "Venue Standard",
+      JSON.stringify(input.positionsNeeded || []),
+      input.rotationType || "Standard",
+      input.courtFee || "",
       gameId,
     ]
   );
@@ -686,6 +713,55 @@ export async function deleteAccount(userId) {
 
 // --- Highlights ---------------------------------------------------------------
 
+// --- Player-to-player ratings -------------------------------------------------
+
+export async function getPlayerRating(userId) {
+  const { rows } = await query(`
+    SELECT COUNT(*)::int AS count, ROUND(AVG(rating)::numeric, 1)::float AS avg
+      FROM player_ratings WHERE rated_id = $1
+  `, [userId]);
+  return { count: rows[0].count, avg: rows[0].avg };
+}
+
+/** All players (excluding requester) in a game, with whether the requester has already rated them. */
+export async function getRatables(gameId, userId) {
+  const { rows } = await query(
+    `SELECT u.id, u.name
+       FROM game_members m
+       JOIN users u ON u.id = m.user_id
+      WHERE m.game_id = $1 AND m.user_id <> $2 AND m.status = 'player'`,
+    [gameId, userId]
+  );
+  const { rows: rated } = await query(
+    'SELECT rated_id, rating FROM player_ratings WHERE game_id = $1 AND rater_id = $2',
+    [gameId, userId]
+  );
+  const myRatings = Object.fromEntries(rated.map((r) => [r.rated_id, r.rating]));
+  return rows.map((r) => ({ id: r.id, name: r.name, myRating: myRatings[r.id] || null }));
+}
+
+export async function ratePlayer(gameId, raterId, ratedId, rating) {
+  if (raterId === ratedId) return { ok: false, code: 400, error: "Can't rate yourself." };
+  if (rating < 1 || rating > 5) return { ok: false, code: 400, error: 'Rating must be 1–5.' };
+  const { rows: rater } = await query(
+    "SELECT 1 FROM game_members WHERE game_id = $1 AND user_id = $2 AND status = 'player'",
+    [gameId, raterId]
+  );
+  if (!rater.length) return { ok: false, code: 403, error: 'You were not a player in this game.' };
+  const { rows: rated } = await query(
+    "SELECT 1 FROM game_members WHERE game_id = $1 AND user_id = $2 AND status = 'player'",
+    [gameId, ratedId]
+  );
+  if (!rated.length) return { ok: false, code: 404, error: 'That player was not in this game.' };
+  await query(
+    `INSERT INTO player_ratings (id, game_id, rater_id, rated_id, rating, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (game_id, rater_id, rated_id) DO UPDATE SET rating = EXCLUDED.rating`,
+    [uid('pr'), gameId, raterId, ratedId, rating, new Date().toISOString()]
+  );
+  return { ok: true };
+}
+
 function serializeHighlight(row) {
   return {
     id: row.id,
@@ -694,6 +770,7 @@ function serializeHighlight(row) {
     caption: row.caption,
     videoUrl: row.video_url,
     thumbUrl: row.thumb_url,
+    mediaType: row.media_type || 'video',
     createdAt: row.created_at,
     likesCount: Number(row.likes_count || 0),
     likedBy: row.liked_by || [],
@@ -715,12 +792,12 @@ export async function listHighlights(limit = 20, offset = 0) {
   return rows.map(serializeHighlight);
 }
 
-export async function createHighlight(userId, { caption, videoUrl, thumbUrl }) {
+export async function createHighlight(userId, { caption, videoUrl, thumbUrl, mediaType }) {
   const id = uid("hl");
   await query(
-    `INSERT INTO highlights (id, user_id, caption, video_url, thumb_url, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
-    [id, userId, caption || "", videoUrl, thumbUrl || "", new Date().toISOString()]
+    `INSERT INTO highlights (id, user_id, caption, video_url, thumb_url, media_type, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [id, userId, caption || "", videoUrl, thumbUrl || "", mediaType || "video", new Date().toISOString()]
   );
   const { rows } = await query(`${HL_SELECT} WHERE h.id = $1`, [id]);
   return serializeHighlight(rows[0]);

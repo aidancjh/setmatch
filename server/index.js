@@ -55,6 +55,8 @@ const SKILLS = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 const TYPES = ["Indoor", "Beach", "Grass"];
 const GENDERS = ["Men", "Women", "Mixed", "Open"];
 const NET_HEIGHTS = ["Men's (2.43m)", "Women's (2.24m)", "Recreational (2.35m)", "Venue Standard"];
+const POSITIONS = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist", "Any"];
+const ROTATION_TYPES = ["Standard", "No Rotation", "King of the Court", "Round Robin"];
 
 function validGameInput(b) {
   // pre_filled is optional — default 0, max totalSlots - 1
@@ -64,6 +66,7 @@ function validGameInput(b) {
   if (!SKILLS.includes(b.skill)) return "Invalid skill level.";
   if (b.gender && !GENDERS.includes(b.gender)) return "Invalid gender option.";
   if (b.netHeight && !NET_HEIGHTS.includes(b.netHeight)) return "Invalid net height option.";
+  if (b.rotationType && !ROTATION_TYPES.includes(b.rotationType)) return "Invalid rotation type.";
   if (!b.date) return "Date is required.";
   if (!b.time) return "Time is required.";
   if (!b.location || !String(b.location).trim()) return "Location is required.";
@@ -74,14 +77,19 @@ function validGameInput(b) {
 }
 
 function gameInputFrom(body) {
+  const rawPositions = Array.isArray(body.positionsNeeded) ? body.positionsNeeded : [];
   return {
     title: String(body.title).trim(),
     type: body.type,
     skill: body.skill,
     gender: GENDERS.includes(body.gender) ? body.gender : "Open",
     netHeight: NET_HEIGHTS.includes(body.netHeight) ? body.netHeight : "Venue Standard",
+    positionsNeeded: rawPositions.filter((p) => POSITIONS.includes(p)),
+    rotationType: ROTATION_TYPES.includes(body.rotationType) ? body.rotationType : "Standard",
+    courtFee: String(body.courtFee || "").trim().slice(0, 50),
     date: body.date,
     time: body.time,
+    endTime: body.endTime ? String(body.endTime) : "",
     location: String(body.location).trim(),
     area: String(body.area || body.location).trim(),
     totalSlots: Number(body.totalSlots),
@@ -143,7 +151,8 @@ app.get(
   h(async (req, res) => {
     const user = await repo.findUserById(req.userId);
     if (!user) return res.status(401).json({ error: "Account not found." });
-    res.json({ user: repo.publicUser(user) });
+    const playerRating = await repo.getPlayerRating(req.userId);
+    res.json({ user: { ...repo.publicUser(user), playerRating } });
   })
 );
 
@@ -160,7 +169,7 @@ app.patch(
   "/api/auth/me",
   requireAuth,
   h(async (req, res) => {
-    const { name, skill, homeArea, bio, avatarUrl, birthdate, userGender, showAge, showGender } = req.body || {};
+    const { name, skill, homeArea, bio, avatarUrl, birthdate, userGender, showAge, showGender, favoritePositions } = req.body || {};
     if (skill && !SKILLS.includes(skill))
       return res.status(400).json({ error: "Invalid skill level." });
     const user = await repo.updateUser(req.userId, {
@@ -173,6 +182,9 @@ app.patch(
       userGender: userGender !== undefined ? String(userGender) : undefined,
       showAge: showAge !== undefined ? Boolean(showAge) : undefined,
       showGender: showGender !== undefined ? Boolean(showGender) : undefined,
+      favoritePositions: Array.isArray(favoritePositions)
+        ? favoritePositions.filter((p) => POSITIONS.includes(p))
+        : undefined,
     });
     res.json({ user: repo.publicUser(user) });
   })
@@ -440,6 +452,34 @@ app.delete(
   })
 );
 
+// --- Player ratings -------------------------------------------------------
+
+app.get(
+  "/api/games/:id/ratables",
+  requireAuth,
+  h(async (req, res) => {
+    const ratables = await repo.getRatables(req.params.id, req.userId);
+    if (ratables === null) return res.status(404).json({ error: "Game not found." });
+    res.json(ratables);
+  })
+);
+
+app.post(
+  "/api/games/:id/rate/:playerId",
+  requireAuth,
+  h(async (req, res) => {
+    const { rating } = req.body || {};
+    const result = await repo.ratePlayer(
+      req.params.id,
+      req.userId,
+      req.params.playerId,
+      Number(rating)
+    );
+    if (result.ok) return res.status(201).json({ ok: true });
+    res.status(result.code).json({ error: result.error });
+  })
+);
+
 // --- Notifications --------------------------------------------------------
 
 app.get(
@@ -641,15 +681,16 @@ app.post(
   "/api/highlights",
   requireAuth,
   h(async (req, res) => {
-    const { caption, videoUrl, thumbUrl } = req.body || {};
+    const { caption, videoUrl, thumbUrl, mediaType } = req.body || {};
     if (!videoUrl || typeof videoUrl !== "string")
-      return res.status(400).json({ error: "Video URL is required." });
+      return res.status(400).json({ error: "Media URL is required." });
     if (caption && String(caption).length > 300)
       return res.status(400).json({ error: "Caption too long (max 300 characters)." });
     const hl = await repo.createHighlight(req.userId, {
       caption: String(caption || "").trim(),
       videoUrl: String(videoUrl),
       thumbUrl: String(thumbUrl || ""),
+      mediaType: mediaType === "photo" ? "photo" : "video",
     });
     res.status(201).json(hl);
   })
@@ -718,7 +759,7 @@ function buildICS(game, base) {
     `UID:${game.id}@setmatch`,
     `DTSTAMP:${stamp}`,
     `DTSTART:${icsTime(game.date, game.time)}`,
-    `DTEND:${icsTime(game.date, game.time, 2)}`,
+    `DTEND:${game.endTime ? icsTime(game.date, game.endTime) : icsTime(game.date, game.time, 2)}`,
     `SUMMARY:${icsEscape(game.title)}`,
     `LOCATION:${icsEscape(`${game.location}, ${game.area}`)}`,
     `DESCRIPTION:${icsEscape(desc)}`,
