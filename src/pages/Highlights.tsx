@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { api } from "../lib/api";
 import type { Highlight } from "../types";
@@ -336,11 +337,21 @@ function HighlightCard({
 
 export default function Highlights() {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [slow, setSlow] = useState(false);
   const [error, setError] = useState("");
   const [showUpload, setShowUpload] = useState(false);
+
+  // Auto-open upload modal when navigated here via the "+" sheet (?upload=1)
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("upload") === "1") {
+      setShowUpload(true);
+      navigate("/highlights", { replace: true });
+    }
+  }, [location.search, navigate]);
 
   async function load() {
     setError("");
