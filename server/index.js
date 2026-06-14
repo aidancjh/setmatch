@@ -407,6 +407,47 @@ app.get(
   })
 );
 
+// --- Email debug (authenticated) -----------------------------------------
+
+app.get(
+  "/api/debug/email-test",
+  requireAuth,
+  h(async (req, res) => {
+    const user = await repo.findUserById(req.userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const resendKey = process.env.RESEND_API_KEY;
+    if (!resendKey) {
+      return res.json({ ok: false, stage: "no_key", error: "RESEND_API_KEY is not set in Railway Variables." });
+    }
+
+    let r, body;
+    try {
+      r = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: "Coterie <onboarding@resend.dev>",
+          to: [user.email],
+          subject: "Coterie — email test",
+          html: "<p>If you see this, email delivery is working!</p>",
+        }),
+      });
+      body = await r.text();
+    } catch (e) {
+      return res.json({ ok: false, stage: "network", error: String(e) });
+    }
+
+    return res.json({
+      ok: r.ok,
+      stage: r.ok ? "sent" : "resend_error",
+      status: r.status,
+      to: user.email,
+      resend_response: body,
+    });
+  })
+);
+
 // --- Game routes ----------------------------------------------------------
 
 app.get(
