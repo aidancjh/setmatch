@@ -57,25 +57,36 @@ export default function UserProfile() {
       </button>
 
       {/* Header card */}
-      <div className="mb-4 flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand text-2xl font-bold text-white">
-          {profile.name.charAt(0).toUpperCase()}
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-lg font-bold text-slate-900">
-            {profile.name}
-            {isMe && <span className="ml-1 text-sm font-normal text-slate-400">(you)</span>}
-          </p>
-          <div className="mt-1 flex items-center gap-2">
-            <SkillBadge skill={profile.skill} />
-            {profile.homeArea && (
-              <span className="text-xs text-slate-400">📍 {profile.homeArea}</span>
+      <div className="mb-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-2xl font-bold text-white">
+            {profile.avatarUrl ? (
+              <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" />
+            ) : (
+              profile.name.charAt(0).toUpperCase()
             )}
           </div>
-          <p className="mt-1 text-xs text-slate-400">
-            Member since {memberSince(profile.memberSince)}
-          </p>
+          <div className="min-w-0">
+            <p className="truncate text-lg font-bold text-slate-900">
+              {profile.name}
+              {isMe && <span className="ml-1 text-sm font-normal text-slate-400">(you)</span>}
+            </p>
+            <div className="mt-1 flex items-center gap-2">
+              <SkillBadge skill={profile.skill} />
+              {profile.homeArea && (
+                <span className="text-xs text-slate-400">📍 {profile.homeArea}</span>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-slate-400">
+              Member since {memberSince(profile.memberSince)}
+            </p>
+          </div>
         </div>
+        {profile.bio && (
+          <p className="mt-3 border-t border-slate-50 pt-3 text-sm text-slate-600">
+            {profile.bio}
+          </p>
+        )}
       </div>
 
       {/* Stats */}

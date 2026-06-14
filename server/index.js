@@ -154,13 +154,15 @@ app.patch(
   "/api/auth/me",
   requireAuth,
   h(async (req, res) => {
-    const { name, skill, homeArea } = req.body || {};
+    const { name, skill, homeArea, bio, avatarUrl } = req.body || {};
     if (skill && !SKILLS.includes(skill))
       return res.status(400).json({ error: "Invalid skill level." });
     const user = await repo.updateUser(req.userId, {
       name: name != null ? String(name).trim() || undefined : undefined,
       skill,
       homeArea,
+      bio: bio != null ? String(bio).trim().slice(0, 300) : undefined,
+      avatarUrl: avatarUrl != null ? String(avatarUrl) : undefined,
     });
     res.json({ user: repo.publicUser(user) });
   })

@@ -19,6 +19,8 @@ interface AuthState {
     name?: string;
     skill?: SkillLevel;
     homeArea?: string;
+    bio?: string;
+    avatarUrl?: string;
   }) => Promise<void>;
 }
 

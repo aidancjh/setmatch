@@ -51,9 +51,13 @@ export default function Auth() {
     setError("");
     setBusy(true);
     try {
-      if (mode === "signup") await signup(email.trim(), password, name.trim());
-      else await login(email.trim(), password);
-      navigate(from, { replace: true });
+      if (mode === "signup") {
+        await signup(email.trim(), password, name.trim());
+        navigate("/welcome", { replace: true });
+      } else {
+        await login(email.trim(), password);
+        navigate(from, { replace: true });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {

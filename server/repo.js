@@ -28,15 +28,20 @@ export async function createUser({ email, passwordHash, name }) {
   return findUserById(id);
 }
 
-export async function updateUser(id, { name, skill, homeArea }) {
+export async function updateUser(id, { name, skill, homeArea, bio, avatarUrl }) {
   const cur = await findUserById(id);
   if (!cur) return null;
-  await query("UPDATE users SET name = $1, skill = $2, home_area = $3 WHERE id = $4", [
-    name ?? cur.name,
-    skill ?? cur.skill,
-    homeArea ?? cur.home_area,
-    id,
-  ]);
+  await query(
+    "UPDATE users SET name = $1, skill = $2, home_area = $3, bio = $4, avatar_url = $5 WHERE id = $6",
+    [
+      name ?? cur.name,
+      skill ?? cur.skill,
+      homeArea ?? cur.home_area,
+      bio ?? cur.bio ?? "",
+      avatarUrl ?? cur.avatar_url ?? "",
+      id,
+    ]
+  );
   return findUserById(id);
 }
 
@@ -67,6 +72,8 @@ export async function getUserProfile(userId) {
     name: u.name,
     skill: u.skill,
     homeArea: u.home_area,
+    bio: u.bio || "",
+    avatarUrl: u.avatar_url || "",
     memberSince: u.created_at,
     gamesHosted: hosted,
     gamesPlayed: played,
@@ -83,6 +90,8 @@ export function publicUser(row) {
     name: row.name,
     skill: row.skill,
     homeArea: row.home_area,
+    bio: row.bio || "",
+    avatarUrl: row.avatar_url || "",
     role: row.role || "user",
   };
 }

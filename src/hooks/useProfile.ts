@@ -6,6 +6,8 @@ const GUEST: Profile = {
   name: "",
   skill: "Intermediate",
   homeArea: "",
+  bio: "",
+  avatarUrl: "",
 };
 
 /**

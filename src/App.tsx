@@ -18,6 +18,7 @@ const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Admin       = lazy(() => import("./pages/Admin"));
 const Highlights  = lazy(() => import("./pages/Highlights"));
 const Settings    = lazy(() => import("./pages/Settings"));
+const Onboarding  = lazy(() => import("./pages/Onboarding"));
 
 function PageFallback() {
   return (
@@ -34,6 +35,16 @@ export default function App() {
       {/* Public — no sign-in required */}
       <Route path="/auth" element={<Auth />} />
       <Route path="/privacy" element={<Privacy />} />
+
+      {/* Post-signup onboarding — requires auth but no nav bar */}
+      <Route
+        path="/welcome"
+        element={
+          <RequireAuth>
+            <Suspense fallback={<PageFallback />}><Onboarding /></Suspense>
+          </RequireAuth>
+        }
+      />
 
       {/* Everything else requires an account. Logged-out users are sent to /auth. */}
       <Route

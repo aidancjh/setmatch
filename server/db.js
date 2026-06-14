@@ -136,6 +136,14 @@ export async function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_reviews_reviewer ON game_reviews(reviewer_id);
   `);
 
+  // Profile bio and avatar.
+  await pool.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT NOT NULL DEFAULT ''"
+  );
+  await pool.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT NOT NULL DEFAULT ''"
+  );
+
   // Google OAuth + password reset via email.
   await pool.query(
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT"

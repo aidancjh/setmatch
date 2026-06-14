@@ -39,6 +39,8 @@ export interface Profile {
   name: string;
   skill: SkillLevel;
   homeArea: string;
+  bio: string;
+  avatarUrl: string;
   email?: string;
   role?: "user" | "staff" | "admin";
 }
@@ -70,6 +72,8 @@ export interface UserProfile {
   name: string;
   skill: SkillLevel;
   homeArea: string;
+  bio: string;
+  avatarUrl: string;
   memberSince: string;
   gamesHosted: number;
   gamesPlayed: number;
