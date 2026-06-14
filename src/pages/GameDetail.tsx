@@ -32,8 +32,10 @@ export default function GameDetail() {
   const [ratingMsg, setRatingMsg] = useState("");
   const [joinModal, setJoinModal] = useState<"preview" | "confirmed" | "waitlist" | null>(null);
   const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState("");
   const [leaveModal, setLeaveModal] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [leaveError, setLeaveError] = useState("");
 
   useEffect(() => {
     const refresh = () => getGame(id).then((g) => setGame(g ?? null));
@@ -84,19 +86,19 @@ export default function GameDetail() {
 
   const handleJoin = () => {
     if (!user) { navigate("/auth", { state: { from: location.pathname } }); return; }
+    setJoinError("");
     setJoinModal("preview");
   };
 
   const handleConfirmJoin = async () => {
-    setError("");
+    setJoinError("");
     setJoining(true);
     const willBePlayer = left > 0;
     try {
       await joinGame(game.id);
       setJoinModal(willBePlayer ? "confirmed" : "waitlist");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-      setJoinModal(null);
+      setJoinError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setJoining(false);
     }
@@ -105,14 +107,13 @@ export default function GameDetail() {
   const handleLeave = () => setLeaveModal(true);
 
   const handleConfirmLeave = async () => {
-    setError("");
+    setLeaveError("");
     setLeaving(true);
     try {
       await leaveGame(game.id);
       setLeaveModal(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-      setLeaveModal(false);
+      setLeaveError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setLeaving(false);
     }
@@ -201,12 +202,17 @@ export default function GameDetail() {
                 )}
                 {/* Actions */}
                 <div className="space-y-2 px-8 pb-2 pt-5">
+                  {joinError && (
+                    <p className="rounded-xl bg-rose-50 px-3 py-2 text-center text-xs text-rose-600">
+                      {joinError}
+                    </p>
+                  )}
                   <button
                     onClick={handleConfirmJoin}
                     disabled={joining}
                     className="w-full rounded-2xl bg-brand py-3.5 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60"
                   >
-                    {joining ? "Joining…" : left > 0 ? "Yes, join game" : "Yes, join waitlist"}
+                    {joining ? "Joining…" : joinError ? "Try again" : left > 0 ? "Yes, join game" : "Yes, join waitlist"}
                   </button>
                   <button
                     onClick={() => setJoinModal(null)}
@@ -319,12 +325,17 @@ export default function GameDetail() {
               </div>
             </div>
             <div className="space-y-2 px-8 pb-2 pt-5">
+              {leaveError && (
+                <p className="rounded-xl bg-rose-50 px-3 py-2 text-center text-xs text-rose-600">
+                  {leaveError}
+                </p>
+              )}
               <button
                 onClick={handleConfirmLeave}
                 disabled={leaving}
                 className="w-full rounded-2xl bg-rose-500 py-3.5 text-sm font-semibold text-white transition hover:bg-rose-600 disabled:opacity-60"
               >
-                {leaving ? "Leaving…" : waiting ? "Yes, leave waitlist" : "Yes, leave game"}
+                {leaving ? "Leaving…" : leaveError ? "Try again" : waiting ? "Yes, leave waitlist" : "Yes, leave game"}
               </button>
               <button
                 onClick={() => setLeaveModal(false)}
