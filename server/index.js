@@ -1,6 +1,13 @@
 // Coterie API server — Express + PostgreSQL.
 // Local dev:  node --env-file=.env server/index.js   (see package.json scripts)
 // Production: node server/index.js                    (host provides env vars)
+import * as Sentry from "@sentry/node";
+
+Sentry.init({
+  dsn: "https://83a12c55babf018af2ba1667de40f393@o4511558969786368.ingest.us.sentry.io/4511561293365248",
+  environment: process.env.NODE_ENV || "production",
+});
+
 import express from "express";
 import cors from "cors";
 import fs from "node:fs";
@@ -484,6 +491,9 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
 app.use("/api", (_req, res) => {
   res.status(404).json({ error: "Not found." });
 });
+
+// Sentry must capture errors before the custom handler closes the response.
+Sentry.setupExpressErrorHandler(app);
 
 // Last-resort error handler so a thrown error returns clean JSON, not a crash.
 // eslint-disable-next-line no-unused-vars
