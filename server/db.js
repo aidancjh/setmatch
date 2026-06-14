@@ -104,6 +104,28 @@ export async function initSchema() {
   await pool.query(
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user'"
   );
+
+  // Sports highlights / clips feed.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS highlights (
+      id          TEXT PRIMARY KEY,
+      user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      caption     TEXT NOT NULL DEFAULT '',
+      video_url   TEXT NOT NULL,
+      thumb_url   TEXT NOT NULL DEFAULT '',
+      created_at  TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS highlight_likes (
+      highlight_id TEXT NOT NULL REFERENCES highlights(id) ON DELETE CASCADE,
+      user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      PRIMARY KEY (highlight_id, user_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_highlights_created ON highlights(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_highlights_user    ON highlights(user_id);
+    CREATE INDEX IF NOT EXISTS idx_hl_likes           ON highlight_likes(highlight_id);
+  `);
 }
 
 export function uid(prefix = "id") {

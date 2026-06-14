@@ -91,6 +91,18 @@ export interface AppNotification {
   createdAt: string;
 }
 
+export interface Highlight {
+  id: string;
+  userId: string;
+  userName: string;
+  caption: string;
+  videoUrl: string;
+  thumbUrl: string;
+  createdAt: string;
+  likesCount: number;
+  likedBy: string[];
+}
+
 export interface NewGameInput {
   title: string;
   type: GameType;

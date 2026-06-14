@@ -1,16 +1,30 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
-import BrowseGames from "./pages/BrowseGames";
-import GameDetail from "./pages/GameDetail";
-import CreateGame from "./pages/CreateGame";
-import EditGame from "./pages/EditGame";
-import MyGames from "./pages/MyGames";
-import Profile from "./pages/Profile";
-import UserProfile from "./pages/UserProfile";
-import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import Privacy from "./pages/Privacy";
 import RequireAuth from "./auth/RequireAuth";
+import { GameCardSkeleton } from "./components/Skeleton";
+
+// Lazy-load all authenticated pages so the initial bundle is smaller.
+const BrowseGames = lazy(() => import("./pages/BrowseGames"));
+const GameDetail  = lazy(() => import("./pages/GameDetail"));
+const CreateGame  = lazy(() => import("./pages/CreateGame"));
+const EditGame    = lazy(() => import("./pages/EditGame"));
+const MyGames     = lazy(() => import("./pages/MyGames"));
+const Profile     = lazy(() => import("./pages/Profile"));
+const UserProfile = lazy(() => import("./pages/UserProfile"));
+const Admin       = lazy(() => import("./pages/Admin"));
+const Highlights  = lazy(() => import("./pages/Highlights"));
+
+function PageFallback() {
+  return (
+    <div className="space-y-3 pt-4">
+      <GameCardSkeleton />
+      <GameCardSkeleton />
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -27,15 +41,16 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route path="/" element={<BrowseGames />} />
-        <Route path="/game/:id" element={<GameDetail />} />
-        <Route path="/user/:id" element={<UserProfile />} />
-        <Route path="/game/:id/edit" element={<EditGame />} />
-        <Route path="/create" element={<CreateGame />} />
-        <Route path="/my-games" element={<MyGames />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="*" element={<BrowseGames />} />
+        <Route path="/" element={<Suspense fallback={<PageFallback />}><BrowseGames /></Suspense>} />
+        <Route path="/highlights" element={<Suspense fallback={<PageFallback />}><Highlights /></Suspense>} />
+        <Route path="/game/:id" element={<Suspense fallback={<PageFallback />}><GameDetail /></Suspense>} />
+        <Route path="/user/:id" element={<Suspense fallback={<PageFallback />}><UserProfile /></Suspense>} />
+        <Route path="/game/:id/edit" element={<Suspense fallback={<PageFallback />}><EditGame /></Suspense>} />
+        <Route path="/create" element={<Suspense fallback={<PageFallback />}><CreateGame /></Suspense>} />
+        <Route path="/my-games" element={<Suspense fallback={<PageFallback />}><MyGames /></Suspense>} />
+        <Route path="/profile" element={<Suspense fallback={<PageFallback />}><Profile /></Suspense>} />
+        <Route path="/admin" element={<Suspense fallback={<PageFallback />}><Admin /></Suspense>} />
+        <Route path="*" element={<Suspense fallback={<PageFallback />}><BrowseGames /></Suspense>} />
       </Route>
     </Routes>
   );

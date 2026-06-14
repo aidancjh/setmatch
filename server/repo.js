@@ -563,6 +563,88 @@ export async function addComment(gameId, userId, body) {
   return { ok: true, comments: await listComments(gameId) };
 }
 
+// --- Highlights ---------------------------------------------------------------
+
+function serializeHighlight(row) {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    userName: row.user_name,
+    caption: row.caption,
+    videoUrl: row.video_url,
+    thumbUrl: row.thumb_url,
+    createdAt: row.created_at,
+    likesCount: Number(row.likes_count || 0),
+    likedBy: row.liked_by || [],
+  };
+}
+
+const HL_SELECT = `
+  SELECT h.*, u.name AS user_name,
+         (SELECT COUNT(*) FROM highlight_likes WHERE highlight_id = h.id)::int AS likes_count,
+         ARRAY(SELECT user_id FROM highlight_likes WHERE highlight_id = h.id) AS liked_by
+    FROM highlights h JOIN users u ON u.id = h.user_id
+`;
+
+export async function listHighlights(limit = 20, offset = 0) {
+  const { rows } = await query(
+    `${HL_SELECT} ORDER BY h.created_at DESC LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
+  return rows.map(serializeHighlight);
+}
+
+export async function createHighlight(userId, { caption, videoUrl, thumbUrl }) {
+  const id = uid("hl");
+  await query(
+    `INSERT INTO highlights (id, user_id, caption, video_url, thumb_url, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [id, userId, caption || "", videoUrl, thumbUrl || "", new Date().toISOString()]
+  );
+  const { rows } = await query(`${HL_SELECT} WHERE h.id = $1`, [id]);
+  return serializeHighlight(rows[0]);
+}
+
+export async function deleteHighlight(id, userId) {
+  const { rows } = await query("SELECT user_id FROM highlights WHERE id = $1", [id]);
+  if (!rows[0]) return { ok: false, code: 404, error: "Highlight not found." };
+  if (rows[0].user_id !== userId)
+    return { ok: false, code: 403, error: "You can't delete someone else's highlight." };
+  await query("DELETE FROM highlights WHERE id = $1", [id]);
+  return { ok: true };
+}
+
+export async function toggleHighlightLike(highlightId, userId) {
+  const { rows: ex } = await query(
+    "SELECT 1 FROM highlight_likes WHERE highlight_id = $1 AND user_id = $2",
+    [highlightId, userId]
+  );
+  if (ex.length > 0) {
+    await query(
+      "DELETE FROM highlight_likes WHERE highlight_id = $1 AND user_id = $2",
+      [highlightId, userId]
+    );
+  } else {
+    await query(
+      "INSERT INTO highlight_likes (highlight_id, user_id) VALUES ($1, $2)",
+      [highlightId, userId]
+    );
+  }
+  const { rows } = await query(`${HL_SELECT} WHERE h.id = $1`, [highlightId]);
+  if (!rows[0]) return null;
+  return serializeHighlight(rows[0]);
+}
+
+export async function getUserHighlights(userId) {
+  const { rows } = await query(
+    `${HL_SELECT} WHERE h.user_id = $1 ORDER BY h.created_at DESC`,
+    [userId]
+  );
+  return rows.map(serializeHighlight);
+}
+
+// --------------------------------------------------------------------------
+
 export async function deleteComment(gameId, commentId, userId) {
   const { rows } = await query(
     "SELECT c.user_id, g.host_id FROM game_comments c JOIN games g ON g.id = c.game_id WHERE c.id = $1 AND c.game_id = $2",

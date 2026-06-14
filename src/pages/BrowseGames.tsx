@@ -6,6 +6,7 @@ import { isInGame, spotsLeft } from "../services/gamesService";
 import { isPast } from "../lib/format";
 import type { GameType, SkillLevel } from "../types";
 import GameCard from "../components/GameCard";
+import { GameCardSkeleton } from "../components/Skeleton";
 
 const skillFilters: (SkillLevel | "Any")[] = [
   "Any",
@@ -97,14 +98,15 @@ export default function BrowseGames() {
 
       {/* Results */}
       {loading ? (
-        <div className="py-10 text-center">
-          <p className="text-sm text-slate-400">Loading games…</p>
+        <div className="space-y-3">
           {slow && (
-            <p className="mx-auto mt-3 max-w-xs text-xs leading-relaxed text-slate-400">
-              ⏳ Waking up the server — on the free plan it naps when idle, so the
-              first load can take up to a minute. Hang tight!
+            <p className="text-center text-xs text-slate-400">
+              ⏳ Waking up the server — hang tight…
             </p>
           )}
+          <GameCardSkeleton />
+          <GameCardSkeleton />
+          <GameCardSkeleton />
         </div>
       ) : error ? (
         <div className="rounded-2xl border border-dashed border-rose-200 bg-rose-50 py-12 text-center">

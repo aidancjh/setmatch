@@ -55,6 +55,39 @@ export function PlusIcon({ className }: IconProps) {
   );
 }
 
+export function VideoIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <rect x="2" y="6" width="20" height="14" rx="3" />
+      <path d="m15 13-5 3V10l5 3Z" />
+    </svg>
+  );
+}
+
+export function HeartIcon({ className, filled }: IconProps) {
+  return (
+    <svg className={className} fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z" />
+    </svg>
+  );
+}
+
+export function TrashIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+    </svg>
+  );
+}
+
+export function UploadIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+    </svg>
+  );
+}
+
 export function VolleyballIcon({ className }: IconProps) {
   return (
     <svg className={className} {...base}>

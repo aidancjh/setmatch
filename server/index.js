@@ -393,6 +393,63 @@ app.get(
   })
 );
 
+// --- Highlights -----------------------------------------------------------
+
+app.get(
+  "/api/highlights",
+  h(async (req, res) => {
+    const limit = Math.min(Number(req.query.limit) || 20, 50);
+    const offset = Number(req.query.offset) || 0;
+    res.json(await repo.listHighlights(limit, offset));
+  })
+);
+
+app.post(
+  "/api/highlights",
+  requireAuth,
+  h(async (req, res) => {
+    const { caption, videoUrl, thumbUrl } = req.body || {};
+    if (!videoUrl || typeof videoUrl !== "string")
+      return res.status(400).json({ error: "Video URL is required." });
+    if (caption && String(caption).length > 300)
+      return res.status(400).json({ error: "Caption too long (max 300 characters)." });
+    const hl = await repo.createHighlight(req.userId, {
+      caption: String(caption || "").trim(),
+      videoUrl: String(videoUrl),
+      thumbUrl: String(thumbUrl || ""),
+    });
+    res.status(201).json(hl);
+  })
+);
+
+app.delete(
+  "/api/highlights/:id",
+  requireAuth,
+  h(async (req, res) => {
+    const result = await repo.deleteHighlight(req.params.id, req.userId);
+    if (result.ok) return res.status(204).end();
+    res.status(result.code).json({ error: result.error });
+  })
+);
+
+app.post(
+  "/api/highlights/:id/like",
+  requireAuth,
+  h(async (req, res) => {
+    const hl = await repo.toggleHighlightLike(req.params.id, req.userId);
+    if (!hl) return res.status(404).json({ error: "Highlight not found." });
+    res.json(hl);
+  })
+);
+
+app.get(
+  "/api/users/:id/highlights",
+  requireAuth,
+  h(async (req, res) => {
+    res.json(await repo.getUserHighlights(req.params.id));
+  })
+);
+
 // --- Add to calendar (.ics) -----------------------------------------------
 // Public on purpose: the phone's calendar app fetches this without auth.
 
