@@ -501,7 +501,13 @@ app.post(
           subject: `You're in: ${game.title}`,
           html: buildConfirmEmail({ game, userName: user.name, gcalUrl, appUrl, timeDisplay }),
         }),
-      }).catch((e) => console.error("[email] join confirmation failed:", e));
+      }).then((r) => {
+        if (r.ok) {
+          console.log(`[email] join confirmation sent to ${user.email}`);
+        } else {
+          r.text().then((t) => console.error(`[email] Resend rejected (${r.status}):`, t));
+        }
+      }).catch((e) => console.error("[email] join confirmation network error:", e));
     }
 
     res.json(game);

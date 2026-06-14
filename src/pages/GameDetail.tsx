@@ -30,7 +30,8 @@ export default function GameDetail() {
   const [error, setError] = useState("");
   const [ratables, setRatables] = useState<{ id: string; name: string; myRating: number | null }[] | null>(null);
   const [ratingMsg, setRatingMsg] = useState("");
-  const [joinConfirmed, setJoinConfirmed] = useState<"player" | "waitlist" | null>(null);
+  const [joinModal, setJoinModal] = useState<"preview" | "confirmed" | "waitlist" | null>(null);
+  const [joining, setJoining] = useState(false);
 
   useEffect(() => {
     const refresh = () => getGame(id).then((g) => setGame(g ?? null));
@@ -79,15 +80,23 @@ export default function GameDetail() {
     }
   };
 
-  const handleJoin = async () => {
+  const handleJoin = () => {
     if (!user) { navigate("/auth", { state: { from: location.pathname } }); return; }
+    setJoinModal("preview");
+  };
+
+  const handleConfirmJoin = async () => {
     setError("");
+    setJoining(true);
     const willBePlayer = left > 0;
     try {
       await joinGame(game.id);
-      setJoinConfirmed(willBePlayer ? "player" : "waitlist");
+      setJoinModal(willBePlayer ? "confirmed" : "waitlist");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
+      setJoinModal(null);
+    } finally {
+      setJoining(false);
     }
   };
 
@@ -142,11 +151,11 @@ export default function GameDetail() {
 
   return (
     <div>
-      {/* Join confirmation modal */}
-      {joinConfirmed && (
+      {/* Join modal — preview ("are you sure?") and post-join confirmation */}
+      {joinModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
-          onClick={() => setJoinConfirmed(null)}
+          onClick={() => { if (!joining) setJoinModal(null); }}
         >
           <div
             className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
@@ -156,71 +165,135 @@ export default function GameDetail() {
             <div className="flex justify-center pt-5 pb-2">
               <div className="h-9 w-9 rounded-full bg-slate-900" />
             </div>
-            {/* Checkmark */}
-            <div className="flex justify-center py-3">
-              <div className={`flex h-14 w-14 items-center justify-center rounded-full text-3xl text-white ${joinConfirmed === "player" ? "bg-brand" : "bg-amber-500"}`}>
-                ✓
-              </div>
-            </div>
-            {/* Heading */}
-            <div className="px-8 pb-2 text-center">
-              <h2 className="text-3xl font-bold leading-tight text-slate-900">
-                {joinConfirmed === "player" ? "You're In!" : "You're on the List!"}
-              </h2>
-              <p className="mt-2 text-sm text-slate-500">
-                {joinConfirmed === "player"
-                  ? <>Your spot for <strong className="text-slate-700">{game.title}</strong> is confirmed.</>
-                  : <>You're on the waitlist for <strong className="text-slate-700">{game.title}</strong>. We'll notify you if a spot opens.</>}
-              </p>
-            </div>
-            {/* Divider */}
-            <div className="mx-8 my-4 h-px bg-slate-100" />
-            {/* Details */}
-            <div className="space-y-3 px-8">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Date</span>
-                <span className="text-right text-sm font-semibold text-slate-800">{formatDate(game.date)}</span>
-              </div>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Time</span>
-                <span className="text-right text-sm font-semibold text-slate-800">{formatTimeRange(game.time, game.endTime)}</span>
-              </div>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Location</span>
-                <span className="max-w-[60%] text-right text-sm font-semibold leading-snug text-slate-800">{game.location}</span>
-              </div>
-              {game.courtFee && (
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Court fee</span>
-                  <span className="text-sm font-semibold text-slate-800">{game.courtFee}</span>
+
+            {joinModal === "preview" ? (
+              <>
+                {/* Heading */}
+                <div className="px-8 pb-2 pt-3 text-center">
+                  <h2 className="text-2xl font-bold leading-tight text-slate-900">Join this game?</h2>
+                  <p className="mt-1.5 text-sm text-slate-500">
+                    Review the details before claiming your spot.
+                  </p>
                 </div>
-              )}
-            </div>
-            {/* Notes */}
-            {game.notes && (
-              <div className="mx-8 mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
-                {game.notes}
-              </div>
+                {/* Divider */}
+                <div className="mx-8 my-4 h-px bg-slate-100" />
+                {/* Details */}
+                <div className="space-y-3 px-8">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Game</span>
+                    <span className="max-w-[65%] text-right text-sm font-semibold text-slate-800">{game.title}</span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Date</span>
+                    <span className="text-right text-sm font-semibold text-slate-800">{formatDate(game.date)}</span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Time</span>
+                    <span className="text-right text-sm font-semibold text-slate-800">{formatTimeRange(game.time, game.endTime)}</span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Location</span>
+                    <span className="max-w-[60%] text-right text-sm font-semibold leading-snug text-slate-800">{game.location}</span>
+                  </div>
+                  {game.courtFee && (
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Court fee</span>
+                      <span className="text-sm font-semibold text-slate-800">{game.courtFee}</span>
+                    </div>
+                  )}
+                </div>
+                {game.notes && (
+                  <div className="mx-8 mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
+                    {game.notes}
+                  </div>
+                )}
+                {/* Actions */}
+                <div className="space-y-2 px-8 pb-2 pt-5">
+                  <button
+                    onClick={handleConfirmJoin}
+                    disabled={joining}
+                    className="w-full rounded-2xl bg-brand py-3.5 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60"
+                  >
+                    {joining ? "Joining…" : left > 0 ? "Yes, join game" : "Yes, join waitlist"}
+                  </button>
+                  <button
+                    onClick={() => setJoinModal(null)}
+                    disabled={joining}
+                    className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Checkmark */}
+                <div className="flex justify-center py-3">
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-full text-3xl text-white ${joinModal === "confirmed" ? "bg-brand" : "bg-amber-500"}`}>
+                    ✓
+                  </div>
+                </div>
+                {/* Heading */}
+                <div className="px-8 pb-2 text-center">
+                  <h2 className="text-3xl font-bold leading-tight text-slate-900">
+                    {joinModal === "confirmed" ? "You're In!" : "You're on the List!"}
+                  </h2>
+                  <p className="mt-2 text-sm text-slate-500">
+                    {joinModal === "confirmed"
+                      ? <>Your spot for <strong className="text-slate-700">{game.title}</strong> is confirmed.</>
+                      : <>You're on the waitlist for <strong className="text-slate-700">{game.title}</strong>. We'll notify you if a spot opens.</>}
+                  </p>
+                </div>
+                {/* Divider */}
+                <div className="mx-8 my-4 h-px bg-slate-100" />
+                {/* Details */}
+                <div className="space-y-3 px-8">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Date</span>
+                    <span className="text-right text-sm font-semibold text-slate-800">{formatDate(game.date)}</span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Time</span>
+                    <span className="text-right text-sm font-semibold text-slate-800">{formatTimeRange(game.time, game.endTime)}</span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Location</span>
+                    <span className="max-w-[60%] text-right text-sm font-semibold leading-snug text-slate-800">{game.location}</span>
+                  </div>
+                  {game.courtFee && (
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Court fee</span>
+                      <span className="text-sm font-semibold text-slate-800">{game.courtFee}</span>
+                    </div>
+                  )}
+                </div>
+                {game.notes && (
+                  <div className="mx-8 mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
+                    {game.notes}
+                  </div>
+                )}
+                {/* Actions */}
+                <div className="space-y-2 px-8 pb-2 pt-5">
+                  {joinModal === "confirmed" && (
+                    <a
+                      href={buildGCalUrl(game)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block w-full rounded-2xl bg-brand py-3.5 text-center text-sm font-semibold text-white transition hover:bg-brand-dark"
+                    >
+                      Add to Google Calendar
+                    </a>
+                  )}
+                  <button
+                    onClick={() => setJoinModal(null)}
+                    className="block w-full rounded-2xl border border-slate-200 py-3 text-center text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
             )}
-            {/* Actions */}
-            <div className="space-y-2 px-8 pb-2 pt-5">
-              {joinConfirmed === "player" && (
-                <a
-                  href={buildGCalUrl(game)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full rounded-2xl bg-brand py-3.5 text-center text-sm font-semibold text-white transition hover:bg-brand-dark"
-                >
-                  Add to Google Calendar
-                </a>
-              )}
-              <button
-                onClick={() => setJoinConfirmed(null)}
-                className="block w-full rounded-2xl border border-slate-200 py-3 text-center text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-              >
-                Done
-              </button>
-            </div>
+
             <p className="py-5 text-center text-[11px] font-semibold uppercase tracking-widest text-slate-300">
               Coterie
             </p>
