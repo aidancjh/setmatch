@@ -58,6 +58,7 @@ export default function EditGame() {
     area: game.area,
     totalSlots: game.totalSlots,
     notes: game.notes,
+    preFilled: game.preFilled ?? 0,
   };
 
   const handleSubmit = async (input: NewGameInput) => {
