@@ -2,6 +2,8 @@ export type SkillLevel = "Beginner" | "Intermediate" | "Advanced" | "All Levels"
 
 export type GameType = "Indoor" | "Beach" | "Grass";
 
+export type GameGender = "Men" | "Women" | "Mixed" | "Open";
+
 export interface Player {
   id: string;
   name: string;
@@ -12,6 +14,8 @@ export interface Game {
   title: string;
   type: GameType;
   skill: SkillLevel;
+  gender: GameGender;
+  netHeight: string;
   /** ISO date string, e.g. 2026-06-20 */
   date: string;
   /** 24h time string, e.g. "18:30" */
@@ -43,6 +47,10 @@ export interface Profile {
   avatarUrl: string;
   email?: string;
   role?: "user" | "staff" | "admin";
+  birthdate?: string | null;
+  userGender?: string;
+  showAge?: boolean;
+  showGender?: boolean;
 }
 
 export interface AdminStats {
@@ -78,6 +86,8 @@ export interface UserProfile {
   gamesHosted: number;
   gamesPlayed: number;
   hostedUpcoming: Game[];
+  ageDisplay?: string;
+  genderDisplay?: string;
 }
 
 export interface Comment {
@@ -113,6 +123,8 @@ export interface NewGameInput {
   title: string;
   type: GameType;
   skill: SkillLevel;
+  gender: GameGender;
+  netHeight: string;
   date: string;
   time: string;
   location: string;

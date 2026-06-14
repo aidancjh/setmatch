@@ -177,6 +177,26 @@ export async function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_highlights_user    ON highlights(user_id);
     CREATE INDEX IF NOT EXISTS idx_hl_likes           ON highlight_likes(highlight_id);
   `);
+
+  // Feature: gender and net height on games.
+  await pool.query(
+    "ALTER TABLE games ADD COLUMN IF NOT EXISTS gender TEXT NOT NULL DEFAULT 'Open'"
+  );
+  await pool.query(
+    "ALTER TABLE games ADD COLUMN IF NOT EXISTS net_height TEXT NOT NULL DEFAULT 'Venue Standard'"
+  );
+
+  // Feature: birthdate and gender on user profiles.
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS birthdate TEXT");
+  await pool.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS user_gender TEXT NOT NULL DEFAULT ''"
+  );
+  await pool.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS show_age BOOLEAN NOT NULL DEFAULT TRUE"
+  );
+  await pool.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS show_gender BOOLEAN NOT NULL DEFAULT TRUE"
+  );
 }
 
 export function uid(prefix = "id") {

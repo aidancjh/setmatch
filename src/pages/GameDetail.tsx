@@ -143,6 +143,16 @@ export default function GameDetail() {
             {game.hostName}
           </Link>
         </InfoRow>
+        {game.gender !== "Open" && (
+          <InfoRow icon="👥" label="Gender">
+            {game.gender === "Men" ? "Men's" : game.gender === "Women" ? "Women's" : game.gender}
+          </InfoRow>
+        )}
+        {game.netHeight && game.netHeight !== "Venue Standard" && (
+          <InfoRow icon="🏐" label="Net height">
+            {game.netHeight}
+          </InfoRow>
+        )}
         {game.notes && (
           <InfoRow icon="📝" label="Notes">
             {game.notes}
@@ -258,13 +268,6 @@ export default function GameDetail() {
             Share invite
           </button>
         </div>
-
-        <a
-          href={`/api/games/${game.id}/calendar.ics`}
-          className="block rounded-xl border border-slate-200 bg-white py-2.5 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-        >
-          📅 Add to calendar
-        </a>
 
         {isHost && (
           <div className="space-y-2 border-t border-slate-100 pt-3">

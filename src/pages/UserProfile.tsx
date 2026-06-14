@@ -77,6 +77,11 @@ export default function UserProfile() {
                 <span className="text-xs text-slate-400">📍 {profile.homeArea}</span>
               )}
             </div>
+            {(profile.ageDisplay || profile.genderDisplay) && (
+              <p className="mt-0.5 text-xs text-slate-500">
+                {[profile.ageDisplay ? `${profile.ageDisplay} yrs` : null, profile.genderDisplay].filter(Boolean).join(" · ")}
+              </p>
+            )}
             <p className="mt-1 text-xs text-slate-400">
               Member since {memberSince(profile.memberSince)}
             </p>

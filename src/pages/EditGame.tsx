@@ -52,6 +52,8 @@ export default function EditGame() {
     title: game.title,
     type: game.type,
     skill: game.skill,
+    gender: game.gender,
+    netHeight: game.netHeight,
     date: game.date,
     time: game.time,
     location: game.location,

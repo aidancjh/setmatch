@@ -6,6 +6,16 @@ import type { Highlight, SkillLevel } from "../types";
 import { SkillBadge } from "../components/Badges";
 
 const skills: SkillLevel[] = ["Beginner", "Intermediate", "Advanced", "All Levels"];
+const GENDER_OPTIONS = ["Man", "Woman", "Non-binary", "Prefer not to say"];
+
+function computeAge(birthdate: string | null | undefined): number | null {
+  if (!birthdate) return null;
+  const [y, m, d] = birthdate.split("-").map(Number);
+  const now = new Date();
+  let age = now.getFullYear() - y;
+  if (now.getMonth() + 1 < m || (now.getMonth() + 1 === m && now.getDate() < d)) age--;
+  return age >= 0 ? age : null;
+}
 
 const SKILL_INFO: Record<SkillLevel, { emoji: string; desc: string }> = {
   Beginner:       { emoji: "🌱", desc: "New to the game. Casual, friendly rallies — mistakes totally fine." },
@@ -136,6 +146,10 @@ export default function Profile() {
   const [homeArea, setHomeArea] = useState(user?.homeArea ?? "");
   const [bio, setBio] = useState(user?.bio ?? "");
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? "");
+  const [birthdate, setBirthdate] = useState(user?.birthdate ?? "");
+  const [userGender, setUserGender] = useState(user?.userGender ?? "");
+  const [showAge, setShowAge] = useState(user?.showAge !== false);
+  const [showGender, setShowGender] = useState(user?.showGender !== false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -173,7 +187,17 @@ export default function Profile() {
   const handleSave = async () => {
     setError("");
     try {
-      await updateProfile({ name: name.trim() || "You", skill, homeArea: homeArea.trim(), bio: bio.trim(), avatarUrl });
+      await updateProfile({
+        name: name.trim() || "You",
+        skill,
+        homeArea: homeArea.trim(),
+        bio: bio.trim(),
+        avatarUrl,
+        birthdate: birthdate || null,
+        userGender,
+        showAge,
+        showGender,
+      });
       setSaved(true);
       setTimeout(() => { setSaved(false); setEditing(false); }, 1200);
     } catch (err) {
@@ -182,12 +206,15 @@ export default function Profile() {
   };
 
   const handleCancelEdit = () => {
-    // Reset to current user values
     setName(user?.name ?? "");
     setSkill(user?.skill ?? "Intermediate");
     setHomeArea(user?.homeArea ?? "");
     setBio(user?.bio ?? "");
     setAvatarUrl(user?.avatarUrl ?? "");
+    setBirthdate(user?.birthdate ?? "");
+    setUserGender(user?.userGender ?? "");
+    setShowAge(user?.showAge !== false);
+    setShowGender(user?.showGender !== false);
     setError("");
     setEditing(false);
   };
@@ -274,6 +301,43 @@ export default function Profile() {
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400" />
           </label>
 
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium text-slate-700">Birthday</span>
+            <input type="date" value={birthdate || ""} onChange={(e) => setBirthdate(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400" />
+          </label>
+
+          <div>
+            <span className="mb-1.5 block text-sm font-medium text-slate-700">Gender</span>
+            <div className="flex flex-wrap gap-1.5">
+              {GENDER_OPTIONS.map((g) => (
+                <button key={g} type="button" onClick={() => setUserGender(g === userGender ? "" : g)}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${userGender === g ? "bg-brand text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                  {g}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Privacy</p>
+            <label className="flex cursor-pointer items-center justify-between gap-3">
+              <span className="text-sm text-slate-700">Show my age on profile</span>
+              <button type="button" onClick={() => setShowAge((v) => !v)}
+                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${showAge ? "bg-brand" : "bg-slate-200"}`}>
+                <span className={`mt-0.5 ml-0.5 inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${showAge ? "translate-x-4" : "translate-x-0"}`} />
+              </button>
+            </label>
+            <label className="flex cursor-pointer items-center justify-between gap-3">
+              <span className="text-sm text-slate-700">Show my gender on profile</span>
+              <button type="button" onClick={() => setShowGender((v) => !v)}
+                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${showGender ? "bg-brand" : "bg-slate-200"}`}>
+                <span className={`mt-0.5 ml-0.5 inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${showGender ? "translate-x-4" : "translate-x-0"}`} />
+              </button>
+            </label>
+          </div>
+
           {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>}
 
           <button onClick={handleSave}
@@ -332,6 +396,16 @@ export default function Profile() {
                 <span className="text-xs text-slate-400">📍 {user.homeArea}</span>
               )}
             </div>
+            {(() => {
+              const age = computeAge(user?.birthdate);
+              const parts = [
+                user?.showAge !== false && age !== null ? `${age} yrs` : null,
+                user?.showGender !== false && user?.userGender ? user.userGender : null,
+              ].filter(Boolean);
+              return parts.length > 0 ? (
+                <p className="mt-0.5 text-xs text-slate-500">{parts.join(" · ")}</p>
+              ) : null;
+            })()}
             <p className="mt-0.5 text-xs text-slate-400">{user?.email}</p>
           </div>
         </div>

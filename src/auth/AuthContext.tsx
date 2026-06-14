@@ -21,6 +21,10 @@ interface AuthState {
     homeArea?: string;
     bio?: string;
     avatarUrl?: string;
+    birthdate?: string | null;
+    userGender?: string;
+    showAge?: boolean;
+    showGender?: boolean;
   }) => Promise<void>;
 }
 

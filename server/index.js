@@ -53,6 +53,8 @@ app.get("/healthz", async (_req, res) => {
 
 const SKILLS = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 const TYPES = ["Indoor", "Beach", "Grass"];
+const GENDERS = ["Men", "Women", "Mixed", "Open"];
+const NET_HEIGHTS = ["Men's (2.43m)", "Women's (2.24m)", "Recreational (2.35m)", "Venue Standard"];
 
 function validGameInput(b) {
   // pre_filled is optional — default 0, max totalSlots - 1
@@ -60,6 +62,8 @@ function validGameInput(b) {
   if (!b.title || !String(b.title).trim()) return "Title is required.";
   if (!TYPES.includes(b.type)) return "Invalid game type.";
   if (!SKILLS.includes(b.skill)) return "Invalid skill level.";
+  if (b.gender && !GENDERS.includes(b.gender)) return "Invalid gender option.";
+  if (b.netHeight && !NET_HEIGHTS.includes(b.netHeight)) return "Invalid net height option.";
   if (!b.date) return "Date is required.";
   if (!b.time) return "Time is required.";
   if (!b.location || !String(b.location).trim()) return "Location is required.";
@@ -74,6 +78,8 @@ function gameInputFrom(body) {
     title: String(body.title).trim(),
     type: body.type,
     skill: body.skill,
+    gender: GENDERS.includes(body.gender) ? body.gender : "Open",
+    netHeight: NET_HEIGHTS.includes(body.netHeight) ? body.netHeight : "Venue Standard",
     date: body.date,
     time: body.time,
     location: String(body.location).trim(),
@@ -154,7 +160,7 @@ app.patch(
   "/api/auth/me",
   requireAuth,
   h(async (req, res) => {
-    const { name, skill, homeArea, bio, avatarUrl } = req.body || {};
+    const { name, skill, homeArea, bio, avatarUrl, birthdate, userGender, showAge, showGender } = req.body || {};
     if (skill && !SKILLS.includes(skill))
       return res.status(400).json({ error: "Invalid skill level." });
     const user = await repo.updateUser(req.userId, {
@@ -163,6 +169,10 @@ app.patch(
       homeArea,
       bio: bio != null ? String(bio).trim().slice(0, 300) : undefined,
       avatarUrl: avatarUrl != null ? String(avatarUrl) : undefined,
+      birthdate: birthdate !== undefined ? (birthdate ? String(birthdate) : null) : undefined,
+      userGender: userGender !== undefined ? String(userGender) : undefined,
+      showAge: showAge !== undefined ? Boolean(showAge) : undefined,
+      showGender: showGender !== undefined ? Boolean(showGender) : undefined,
     });
     res.json({ user: repo.publicUser(user) });
   })
@@ -367,6 +377,33 @@ app.post(
   h(async (req, res) => {
     const game = await repo.joinGame(req.params.id, req.userId);
     if (!game) return res.status(404).json({ error: "Game not found." });
+
+    // Fire-and-forget: email a calendar invite when user gets a confirmed spot.
+    const user = await repo.findUserById(req.userId);
+    const isPlayer = game.players.some((p) => p.id === req.userId);
+    const resendKey = process.env.RESEND_API_KEY;
+    if (user && isPlayer && resendKey && !user.email.endsWith("@demo.test")) {
+      const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+      const ics = buildICS(game, appUrl);
+      fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: "Coterie <onboarding@resend.dev>",
+          to: [user.email],
+          subject: `You're in: ${game.title}`,
+          html: `<p style="font-family:sans-serif">Hi ${user.name},</p>
+                 <p style="font-family:sans-serif">You've claimed your spot for <strong>${game.title}</strong>!</p>
+                 <p style="font-family:sans-serif">📅 ${game.date} at ${game.time}<br>📍 ${game.location}, ${game.area}</p>
+                 ${game.notes ? `<p style="font-family:sans-serif">Notes: ${game.notes}</p>` : ""}
+                 <p style="font-family:sans-serif">The calendar invite is attached — tap it to add to your calendar.</p>
+                 <p style="font-family:sans-serif"><a href="${appUrl}/game/${game.id}" style="color:#E8734A;">View game details</a></p>
+                 <p style="font-family:sans-serif">— The Coterie team</p>`,
+          attachments: [{ filename: "coterie-game.ics", content: Buffer.from(ics).toString("base64") }],
+        }),
+      }).catch((e) => console.error("[calendar] email failed:", e));
+    }
+
     res.json(game);
   })
 );
@@ -646,23 +683,7 @@ app.get(
   })
 );
 
-// --- Add to calendar (.ics) -----------------------------------------------
-// Public on purpose: the phone's calendar app fetches this without auth.
-
-app.get(
-  "/api/games/:id/calendar.ics",
-  h(async (req, res) => {
-    const game = await repo.getGame(req.params.id);
-    if (!game) return res.status(404).json({ error: "Game not found." });
-    const ics = buildICS(game, `${req.protocol}://${req.get("host")}`);
-    res.setHeader("Content-Type", "text/calendar; charset=utf-8");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${game.id}.ics"`
-    );
-    res.send(ics);
-  })
-);
+// --- Calendar ICS builder (used when emailing invites on join) ------------
 
 function icsTime(dateISO, timeHHMM, addHours = 0) {
   const [y, m, d] = dateISO.split("-").map(Number);

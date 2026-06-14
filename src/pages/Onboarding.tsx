@@ -4,6 +4,8 @@ import { useAuth } from "../auth/AuthContext";
 import type { SkillLevel } from "../types";
 import { VolleyballIcon } from "../components/icons";
 
+const GENDER_OPTIONS = ["Man", "Woman", "Non-binary", "Prefer not to say"];
+
 const SKILL_CARDS: {
   level: SkillLevel;
   emoji: string;
@@ -55,19 +57,108 @@ const SKILL_CARDS: {
 export default function Onboarding() {
   const { updateProfile } = useAuth();
   const navigate = useNavigate();
+  const [step, setStep] = useState<1 | 2>(1);
   const [selected, setSelected] = useState<SkillLevel | null>(null);
+  const [birthdate, setBirthdate] = useState("");
+  const [userGender, setUserGender] = useState("");
+  const [showAge, setShowAge] = useState(true);
+  const [showGender, setShowGender] = useState(true);
   const [busy, setBusy] = useState(false);
 
-  async function handleContinue() {
-    if (!selected) return;
+  async function handleFinish(opts?: { skip?: boolean }) {
     setBusy(true);
     try {
-      await updateProfile({ skill: selected });
-      localStorage.setItem("coterie.welcomed", "1");
-      navigate("/", { replace: true });
-    } catch {
-      navigate("/", { replace: true });
-    }
+      await updateProfile({
+        skill: selected ?? undefined,
+        birthdate: opts?.skip ? undefined : (birthdate || null),
+        userGender: opts?.skip ? undefined : userGender,
+        showAge,
+        showGender,
+      });
+    } catch { /* best-effort */ }
+    localStorage.setItem("coterie.welcomed", "1");
+    navigate("/", { replace: true });
+  }
+
+  if (step === 2) {
+    return (
+      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-white px-5 py-10">
+        <div className="mb-7 flex flex-col items-center text-center">
+          <VolleyballIcon className="h-10 w-10 text-brand" />
+          <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900">
+            A bit about you
+          </h1>
+          <p className="mt-1.5 text-sm text-slate-500">
+            Optional — you can always update this in your profile.
+          </p>
+        </div>
+
+        <div className="flex-1 space-y-5">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Birthday</label>
+            <input
+              type="date"
+              value={birthdate}
+              onChange={(e) => setBirthdate(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
+            />
+          </div>
+
+          <div>
+            <p className="mb-1.5 text-sm font-medium text-slate-700">Gender</p>
+            <div className="flex flex-wrap gap-2">
+              {GENDER_OPTIONS.map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setUserGender(g === userGender ? "" : g)}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    userGender === g ? "bg-brand text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Privacy</p>
+            <label className="flex cursor-pointer items-center justify-between gap-3">
+              <span className="text-sm text-slate-700">Show my age on profile</span>
+              <button type="button" onClick={() => setShowAge((v) => !v)}
+                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${showAge ? "bg-brand" : "bg-slate-200"}`}>
+                <span className={`mt-0.5 ml-0.5 inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${showAge ? "translate-x-4" : "translate-x-0"}`} />
+              </button>
+            </label>
+            <label className="flex cursor-pointer items-center justify-between gap-3">
+              <span className="text-sm text-slate-700">Show my gender on profile</span>
+              <button type="button" onClick={() => setShowGender((v) => !v)}
+                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${showGender ? "bg-brand" : "bg-slate-200"}`}>
+                <span className={`mt-0.5 ml-0.5 inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${showGender ? "translate-x-4" : "translate-x-0"}`} />
+              </button>
+            </label>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <button
+            onClick={() => handleFinish()}
+            disabled={busy}
+            className="w-full rounded-xl bg-brand py-3.5 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-40"
+          >
+            {busy ? "Setting up…" : "Let's go!"}
+          </button>
+          <button
+            onClick={() => handleFinish({ skip: true })}
+            className="mt-3 w-full text-center text-sm text-slate-400 hover:text-slate-600"
+          >
+            Skip for now
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -127,11 +218,11 @@ export default function Onboarding() {
       {/* Continue button */}
       <div className="mt-6">
         <button
-          onClick={handleContinue}
-          disabled={!selected || busy}
+          onClick={() => { if (selected) setStep(2); }}
+          disabled={!selected}
           className="w-full rounded-xl bg-brand py-3.5 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-40"
         >
-          {busy ? "Setting up…" : selected ? `I'm ${selected} — let's go!` : "Pick your level to continue"}
+          {selected ? `I'm ${selected} — continue` : "Pick your level to continue"}
         </button>
         <button
           onClick={() => { localStorage.setItem("coterie.welcomed", "1"); navigate("/", { replace: true }); }}

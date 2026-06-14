@@ -1,19 +1,23 @@
 import { useState } from "react";
-import type { GameType, NewGameInput, SkillLevel } from "../types";
+import type { GameGender, GameType, NewGameInput, SkillLevel } from "../types";
 import { todayISO } from "../lib/format";
 
 const types: GameType[] = ["Indoor", "Beach", "Grass"];
-const skills: SkillLevel[] = [
-  "Beginner",
-  "Intermediate",
-  "Advanced",
-  "All Levels",
+const skills: SkillLevel[] = ["Beginner", "Intermediate", "Advanced", "All Levels"];
+const genders: GameGender[] = ["Open", "Mixed", "Men", "Women"];
+const netHeightOptions = [
+  { value: "Men's (2.43m)", label: "Men's (2.43m)" },
+  { value: "Women's (2.24m)", label: "Women's (2.24m)" },
+  { value: "Recreational (2.35m)", label: "Recreational (2.35m)" },
+  { value: "Venue Standard", label: "Venue standard" },
 ];
 
 export const blankGame: NewGameInput = {
   title: "",
   type: "Indoor",
   skill: "All Levels",
+  gender: "Open",
+  netHeight: "Venue Standard",
   date: "",
   time: "18:00",
   location: "",
@@ -129,6 +133,44 @@ export default function GameForm({
             />
           </Field>
         )}
+      </div>
+
+      <div className="space-y-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+        <div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-700">Who's this game for?</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {genders.map((g) => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => set("gender", g)}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
+                  form.gender === g ? "bg-brand text-white" : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                }`}
+              >
+                {g === "Open" ? "Open to all" : g === "Men" ? "Men's" : g === "Women" ? "Women's" : "Mixed"}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-[11px] text-slate-400">
+            Skill grades on Coterie are based on men's competition standards.
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">Net height</label>
+          <select
+            value={form.netHeight}
+            onChange={(e) => set("netHeight", e.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
+          >
+            {netHeightOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Friends mode toggle */}

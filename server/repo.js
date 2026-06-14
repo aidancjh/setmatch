@@ -28,21 +28,35 @@ export async function createUser({ email, passwordHash, name }) {
   return findUserById(id);
 }
 
-export async function updateUser(id, { name, skill, homeArea, bio, avatarUrl }) {
+export async function updateUser(id, { name, skill, homeArea, bio, avatarUrl, birthdate, userGender, showAge, showGender }) {
   const cur = await findUserById(id);
   if (!cur) return null;
   await query(
-    "UPDATE users SET name = $1, skill = $2, home_area = $3, bio = $4, avatar_url = $5 WHERE id = $6",
+    `UPDATE users SET name = $1, skill = $2, home_area = $3, bio = $4, avatar_url = $5,
+      birthdate = $6, user_gender = $7, show_age = $8, show_gender = $9 WHERE id = $10`,
     [
       name ?? cur.name,
       skill ?? cur.skill,
       homeArea ?? cur.home_area,
       bio ?? cur.bio ?? "",
       avatarUrl ?? cur.avatar_url ?? "",
+      birthdate !== undefined ? birthdate : (cur.birthdate ?? null),
+      userGender !== undefined ? userGender : (cur.user_gender || ""),
+      showAge !== undefined ? showAge : (cur.show_age !== false),
+      showGender !== undefined ? showGender : (cur.show_gender !== false),
       id,
     ]
   );
   return findUserById(id);
+}
+
+function computeAge(birthdate) {
+  if (!birthdate) return null;
+  const [y, m, d] = birthdate.split("-").map(Number);
+  const now = new Date();
+  let age = now.getFullYear() - y;
+  if (now.getMonth() + 1 < m || (now.getMonth() + 1 === m && now.getDate() < d)) age--;
+  return age >= 0 ? age : null;
 }
 
 /** Public profile of any user: basic info + participation stats. */
@@ -67,6 +81,7 @@ export async function getUserProfile(userId) {
     [userId, today]
   );
   const hostedUpcoming = await Promise.all(rows.map(serializeGame));
+  const age = computeAge(u.birthdate);
   return {
     id: u.id,
     name: u.name,
@@ -78,6 +93,8 @@ export async function getUserProfile(userId) {
     gamesHosted: hosted,
     gamesPlayed: played,
     hostedUpcoming,
+    ageDisplay: u.show_age !== false && age !== null ? String(age) : undefined,
+    genderDisplay: u.show_gender !== false && u.user_gender ? u.user_gender : undefined,
   };
 }
 
@@ -93,6 +110,10 @@ export function publicUser(row) {
     bio: row.bio || "",
     avatarUrl: row.avatar_url || "",
     role: row.role || "user",
+    birthdate: row.birthdate || null,
+    userGender: row.user_gender || "",
+    showAge: row.show_age !== false,
+    showGender: row.show_gender !== false,
   };
 }
 
@@ -270,6 +291,8 @@ async function serializeGame(row) {
     title: row.title,
     type: row.type,
     skill: row.skill,
+    gender: row.gender || "Open",
+    netHeight: row.net_height || "Venue Standard",
     date: row.date,
     time: row.time,
     location: row.location,
@@ -305,8 +328,8 @@ export async function createGame(hostId, input) {
   const now = new Date().toISOString();
   await query(
     `INSERT INTO games
-       (id, title, type, skill, date, time, location, area, total_slots, pre_filled, host_id, notes, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+       (id, title, type, skill, date, time, location, area, total_slots, pre_filled, host_id, notes, gender, net_height, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
     [
       id,
       input.title,
@@ -320,6 +343,8 @@ export async function createGame(hostId, input) {
       input.preFilled || 0,
       hostId,
       input.notes || "",
+      input.gender || "Open",
+      input.netHeight || "Venue Standard",
       now,
     ]
   );
@@ -465,8 +490,9 @@ export async function updateGame(gameId, userId, input) {
   await query(
     `UPDATE games
         SET title = $1, type = $2, skill = $3, date = $4, time = $5,
-            location = $6, area = $7, total_slots = $8, notes = $9
-      WHERE id = $10`,
+            location = $6, area = $7, total_slots = $8, notes = $9,
+            gender = $10, net_height = $11
+      WHERE id = $12`,
     [
       input.title,
       input.type,
@@ -477,6 +503,8 @@ export async function updateGame(gameId, userId, input) {
       input.area,
       input.totalSlots,
       input.notes || "",
+      input.gender || "Open",
+      input.netHeight || "Venue Standard",
       gameId,
     ]
   );
