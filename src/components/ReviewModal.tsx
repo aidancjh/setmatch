@@ -51,6 +51,10 @@ export default function ReviewModal({
       setError("Please tap a star to rate the game.");
       return;
     }
+    if (!comment.trim()) {
+      setError("Please leave a comment before submitting.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -63,65 +67,61 @@ export default function ReviewModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
-      <div className="mx-auto w-full max-w-md rounded-t-3xl bg-white pb-10 pt-3 shadow-xl">
-        {/* Handle */}
-        <div className="mb-4 flex justify-center">
-          <div className="h-1 w-10 rounded-full bg-slate-200" />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onDone(); }}
+    >
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        {/* Header */}
+        <div className="mb-5 text-center">
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand">
+            How was it?
+          </p>
+          <h2 className="mt-1 text-lg font-bold text-slate-900">{game.title}</h2>
+          <p className="text-sm text-slate-500">
+            {formatDate(game.date)} · {formatTime(game.time)} · hosted by {game.hostName}
+          </p>
         </div>
 
-        <div className="px-5">
-          {/* Header */}
-          <div className="mb-5 text-center">
-            <p className="text-xs font-semibold uppercase tracking-wide text-brand">
-              How was it?
-            </p>
-            <h2 className="mt-1 text-lg font-bold text-slate-900">{game.title}</h2>
-            <p className="text-sm text-slate-500">
-              {formatDate(game.date)} · {formatTime(game.time)} · hosted by {game.hostName}
-            </p>
-          </div>
+        {/* Star rating */}
+        <div className="mb-2 flex flex-col items-center gap-2">
+          <Stars value={rating} onChange={setRating} />
+          <p className="h-5 text-sm font-semibold text-amber-500">
+            {rating > 0 ? ratingLabel[rating] : "Tap to rate"}
+          </p>
+        </div>
 
-          {/* Star rating */}
-          <div className="mb-2 flex flex-col items-center gap-2">
-            <Stars value={rating} onChange={setRating} />
-            <p className="h-5 text-sm font-semibold text-amber-500">
-              {rating > 0 ? ratingLabel[rating] : "Tap to rate"}
-            </p>
-          </div>
+        {/* Comment */}
+        <textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value.slice(0, 500))}
+          placeholder="Leave a comment for the host… (required)"
+          rows={3}
+          className="mt-3 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+        />
+        <p className="mt-0.5 text-right text-xs text-slate-400">{comment.length}/500</p>
 
-          {/* Comment */}
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value.slice(0, 500))}
-            placeholder="Leave a comment for the host… (optional)"
-            rows={3}
-            className="mt-3 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400"
-          />
-          <p className="mt-0.5 text-right text-xs text-slate-400">{comment.length}/500</p>
+        {error && (
+          <p className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">
+            {error}
+          </p>
+        )}
 
-          {error && (
-            <p className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">
-              {error}
-            </p>
-          )}
-
-          {/* Actions */}
-          <div className="mt-4 flex gap-2">
-            <button
-              onClick={onDone}
-              className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-50"
-            >
-              Skip for now
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={busy}
-              className="flex-1 rounded-xl bg-brand py-3 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-50"
-            >
-              {busy ? "Saving…" : "Submit review"}
-            </button>
-          </div>
+        {/* Actions */}
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={onDone}
+            className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={busy}
+            className="flex-1 rounded-xl bg-brand py-3 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-50"
+          >
+            {busy ? "Saving…" : "Submit review"}
+          </button>
         </div>
       </div>
     </div>

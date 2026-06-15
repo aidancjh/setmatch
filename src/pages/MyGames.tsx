@@ -93,14 +93,12 @@ export default function MyGames() {
           {filtered.map((g) => {
             const canReview = tab === "past" && g.hostId !== me.id && pendingIds.has(g.id);
             return (
-              <div key={g.id} className="flex items-stretch gap-2">
-                <div className="min-w-0 flex-1">
-                  <GameCard game={g} youAreIn={isInGame(g, me.id)} />
-                </div>
+              <div key={g.id} className="relative">
+                <GameCard game={g} youAreIn={isInGame(g, me.id)} />
                 {canReview && (
                   <button
                     onClick={() => setReviewGame(g)}
-                    className="shrink-0 rounded-2xl bg-orange-500 px-3 text-sm font-bold text-white shadow-sm transition hover:bg-orange-600 active:scale-95"
+                    className="absolute right-3 top-3 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-orange-600 active:scale-95"
                   >
                     Review
                   </button>

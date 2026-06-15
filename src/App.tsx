@@ -4,7 +4,6 @@ import Layout from "./components/Layout";
 import Auth from "./pages/Auth";
 import Privacy from "./pages/Privacy";
 import RequireAuth from "./auth/RequireAuth";
-import ReviewPrompt from "./components/ReviewPrompt";
 import { GameCardSkeleton } from "./components/Skeleton";
 
 // Lazy-load all authenticated pages so the initial bundle is smaller.
@@ -52,7 +51,6 @@ export default function App() {
           <RequireAuth>
             <>
               <Layout />
-              <ReviewPrompt />
             </>
           </RequireAuth>
         }
