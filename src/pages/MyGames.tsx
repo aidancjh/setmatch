@@ -6,12 +6,13 @@ import { isInGame, isOnWaitlist, getPendingReviews } from "../services/gamesServ
 import { isPast } from "../lib/format";
 import GameCard from "../components/GameCard";
 import ReviewModal from "../components/ReviewModal";
+import { GameCardSkeleton } from "../components/Skeleton";
 import type { Game } from "../types";
 
 type Tab = "upcoming" | "hosting" | "past";
 
 export default function MyGames() {
-  const { games } = useGames();
+  const { games, loading, error, reload } = useGames();
   const me = useProfile();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("upcoming");
@@ -72,7 +73,22 @@ export default function MyGames() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="space-y-3">
+          <GameCardSkeleton />
+          <GameCardSkeleton />
+        </div>
+      ) : error ? (
+        <div className="rounded-2xl border border-dashed border-rose-200 bg-rose-50 py-12 text-center">
+          <p className="text-sm text-rose-600">Couldn't load your games.</p>
+          <button
+            onClick={reload}
+            className="mt-3 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white"
+          >
+            Retry
+          </button>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-center">
           <p className="text-sm text-slate-500">
             {tab === "hosting"
@@ -98,7 +114,7 @@ export default function MyGames() {
                 {canReview && (
                   <button
                     onClick={() => setReviewGame(g)}
-                    className="absolute right-3 top-3 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-orange-600 active:scale-95"
+                    className="absolute right-3 top-3 z-10 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-orange-600 active:scale-95"
                   >
                     Review
                   </button>
