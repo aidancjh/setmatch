@@ -245,7 +245,7 @@ app.patch(
   "/api/auth/me",
   requireAuth,
   h(async (req, res) => {
-    const { name, skill, homeArea, bio, avatarUrl, birthdate, userGender, showAge, showGender, favoritePositions } = req.body || {};
+    const { name, skill, homeArea, bio, avatarUrl, birthdate, userGender, showAge, showGender, favoritePositions, bannerColor, bannerImage } = req.body || {};
     if (skill && !SKILLS.includes(skill))
       return res.status(400).json({ error: "Invalid skill level." });
     const user = await repo.updateUser(req.userId, {
@@ -261,6 +261,8 @@ app.patch(
       favoritePositions: Array.isArray(favoritePositions)
         ? favoritePositions.filter((p) => POSITIONS.includes(p))
         : undefined,
+      bannerColor: bannerColor !== undefined ? String(bannerColor) : undefined,
+      bannerImage: bannerImage !== undefined ? String(bannerImage) : undefined,
     });
     res.json({ user: repo.publicUser(user) });
   })

@@ -28,13 +28,13 @@ export async function createUser({ email, passwordHash, name }) {
   return findUserById(id);
 }
 
-export async function updateUser(id, { name, skill, homeArea, bio, avatarUrl, birthdate, userGender, showAge, showGender, favoritePositions }) {
+export async function updateUser(id, { name, skill, homeArea, bio, avatarUrl, birthdate, userGender, showAge, showGender, favoritePositions, bannerColor, bannerImage }) {
   const cur = await findUserById(id);
   if (!cur) return null;
   await query(
     `UPDATE users SET name = $1, skill = $2, home_area = $3, bio = $4, avatar_url = $5,
       birthdate = $6, user_gender = $7, show_age = $8, show_gender = $9,
-      favorite_positions = $10 WHERE id = $11`,
+      favorite_positions = $10, banner_color = $11, banner_image = $12 WHERE id = $13`,
     [
       name ?? cur.name,
       skill ?? cur.skill,
@@ -48,6 +48,8 @@ export async function updateUser(id, { name, skill, homeArea, bio, avatarUrl, bi
       favoritePositions !== undefined
         ? JSON.stringify(favoritePositions)
         : (cur.favorite_positions || "[]"),
+      bannerColor !== undefined ? bannerColor : (cur.banner_color || ""),
+      bannerImage !== undefined ? bannerImage : (cur.banner_image || ""),
       id,
     ]
   );
@@ -122,6 +124,8 @@ export function publicUser(row) {
     showAge: row.show_age !== false,
     showGender: row.show_gender !== false,
     favoritePositions: parseJsonArr(row.favorite_positions),
+    bannerColor: row.banner_color || "",
+    bannerImage: row.banner_image || "",
   };
 }
 

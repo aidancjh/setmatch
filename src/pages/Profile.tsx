@@ -2,12 +2,19 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getUserHighlights } from "../services/gamesService";
+import { api } from "../lib/api";
 import type { Highlight, SkillLevel } from "../types";
-import { SkillBadge, RatingHero } from "../components/Badges";
+import { RatingHero } from "../components/Badges";
 
 const skills: SkillLevel[] = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 const GENDER_OPTIONS = ["Man", "Woman", "Non-binary", "Prefer not to say"];
 const POSITION_OPTIONS = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist"];
+
+const BANNER_COLORS = [
+  "#f4634e", "#f97316", "#eab308", "#22c55e",
+  "#06b6d4", "#3b82f6", "#6366f1", "#8b5cf6",
+  "#ec4899", "#ef4444", "#64748b", "#0f172a",
+];
 
 function computeAge(birthdate: string | null | undefined): number | null {
   if (!birthdate) return null;
@@ -62,10 +69,7 @@ function HighlightGrid({
         <p className="text-sm font-semibold text-slate-900">
           My Highlights <span className="font-normal text-slate-400">({highlights.length})</span>
         </p>
-        <button
-          onClick={onNavigate}
-          className="text-xs font-semibold text-brand"
-        >
+        <button onClick={onNavigate} className="text-xs font-semibold text-brand">
           + Add
         </button>
       </div>
@@ -98,7 +102,6 @@ function HighlightGrid({
         ))}
       </div>
 
-      {/* Media modal */}
       {playing && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
@@ -139,6 +142,14 @@ export default function Profile() {
 
   const [editing, setEditing] = useState(false);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [stats, setStats] = useState<{ gamesHosted: number; gamesPlayed: number } | null>(null);
+
+  // Banner customization
+  const [bannerColor, setBannerColor] = useState(user?.bannerColor || "#f4634e");
+  const [bannerImage, setBannerImage] = useState(user?.bannerImage || "");
+  const [bannerPickerOpen, setBannerPickerOpen] = useState(false);
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const bannerImageRef = useRef<HTMLInputElement>(null);
 
   // Edit-mode state
   const [name, setName] = useState(user?.name ?? "");
@@ -163,8 +174,51 @@ export default function Profile() {
   useEffect(() => {
     if (user?.id) {
       getUserHighlights(user.id).then(setHighlights).catch(() => {});
+      api.get<{ gamesHosted: number; gamesPlayed: number }>(`/users/${user.id}/profile`)
+        .then(setStats)
+        .catch(() => {});
     }
   }, [user?.id]);
+
+  // Sync banner state when user updates (e.g. after save)
+  useEffect(() => {
+    setBannerColor(user?.bannerColor || "#f4634e");
+    setBannerImage(user?.bannerImage || "");
+  }, [user?.bannerColor, user?.bannerImage]);
+
+  // Banner color selection — auto-saves immediately
+  const handleColorSelect = async (color: string) => {
+    setBannerColor(color);
+    setBannerImage("");
+    setBannerPickerOpen(false);
+    try { await updateProfile({ bannerColor: color, bannerImage: "" }); } catch { /* silent */ }
+  };
+
+  // Banner image upload — auto-saves immediately
+  const handleBannerImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !cloudName || !uploadPreset) return;
+    setBannerUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("upload_preset", uploadPreset);
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: "POST", body: fd }
+      );
+      const data = await res.json();
+      if (data.secure_url) {
+        const img = data.secure_url;
+        setBannerImage(img);
+        setBannerPickerOpen(false);
+        try { await updateProfile({ bannerColor, bannerImage: img }); } catch { /* silent */ }
+      }
+    } catch { /* silent */ } finally {
+      setBannerUploading(false);
+      if (bannerImageRef.current) bannerImageRef.current.value = "";
+    }
+  };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -224,6 +278,10 @@ export default function Profile() {
 
   const initials = ((user?.name ?? "Y").trim() || "Y").charAt(0).toUpperCase();
   const displayAvatar = avatarUrl || user?.avatarUrl;
+
+  const bannerStyle = bannerImage
+    ? { backgroundImage: `url(${bannerImage})`, backgroundSize: "cover", backgroundPosition: "center" }
+    : { backgroundColor: bannerColor || "#f4634e" };
 
   // ── Edit mode ────────────────────────────────────────────────────────────
 
@@ -385,63 +443,141 @@ export default function Profile() {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold tracking-tight text-slate-900">Profile</h1>
-
-      {/* Profile card with gradient banner */}
+      {/* Profile card */}
       <div className="relative mb-4 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
-        <div className="h-24 bg-gradient-to-br from-brand to-orange-400" />
 
-        {/* Edit button — glassy on the banner */}
-        <button
-          onClick={() => setEditing(true)}
-          className="absolute right-4 top-4 flex items-center gap-1.5 rounded-xl bg-white/25 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/40 active:scale-95"
-          aria-label="Edit profile"
-        >
-          ✏️ Edit
-        </button>
+        {/* Banner */}
+        <div className="relative h-44" style={bannerStyle}>
+          {/* Dashed border overlay in edit mode */}
+          {bannerPickerOpen && (
+            <div className="pointer-events-none absolute inset-0 border-2 border-dashed border-white/70" />
+          )}
+
+          {/* Background edit button */}
+          <button
+            onClick={() => setBannerPickerOpen((v) => !v)}
+            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/25 text-white transition hover:bg-black/40 active:scale-90"
+            aria-label={bannerPickerOpen ? "Close background editor" : "Edit background"}
+          >
+            {bannerPickerOpen ? (
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            )}
+          </button>
+
+          {/* Name + skill centered on banner */}
+          <div className="flex h-full flex-col items-center justify-center pb-14 px-8 text-center">
+            <p className="text-xl font-bold leading-tight text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.25)]">
+              {user?.name || "You"}
+            </p>
+            <p className="mt-1 text-sm text-white/85">
+              {user?.skill}
+              {user?.homeArea ? ` · 📍 ${user.homeArea}` : ""}
+            </p>
+          </div>
+        </div>
 
         <div className="px-4 pb-4">
-          {/* Avatar overlapping the banner */}
-          <div className="-mt-12 flex items-end">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-3xl font-bold text-white ring-4 ring-white">
+          {/* Avatar — centered, overlapping banner bottom edge */}
+          <div className="-mt-14 flex justify-center">
+            <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-4xl font-bold text-white ring-4 ring-white">
               {displayAvatar ? (
                 <img src={displayAvatar} alt={user?.name} className="h-full w-full object-cover" />
               ) : initials}
             </div>
           </div>
 
-          {/* Name + skill + area */}
-          <div className="mt-3">
-            <p className="truncate text-xl font-bold text-slate-900">{user?.name || "You"}</p>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <SkillBadge skill={user?.skill ?? "Intermediate"} />
-              {user?.homeArea && (
-                <span className="text-xs text-slate-400">📍 {user.homeArea}</span>
-              )}
+          {/* Banner color picker box */}
+          {bannerPickerOpen && (
+            <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <div className="grid grid-cols-6 gap-2.5">
+                {BANNER_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => handleColorSelect(c)}
+                    className="aspect-square w-full rounded-xl transition active:scale-90"
+                    style={{
+                      backgroundColor: c,
+                      outline: bannerColor === c && !bannerImage ? "3px solid rgba(0,0,0,0.35)" : "none",
+                      outlineOffset: "2px",
+                    }}
+                    aria-label={`Set banner color`}
+                  />
+                ))}
+              </div>
+              <div className="mt-3 border-t border-slate-100 pt-3">
+                <button
+                  onClick={() => bannerImageRef.current?.click()}
+                  disabled={bannerUploading}
+                  className="w-full rounded-xl border border-dashed border-slate-200 py-3 text-sm text-slate-500 transition hover:border-brand/40 hover:text-brand disabled:opacity-50"
+                >
+                  {bannerUploading ? "Uploading…" : "Insert your own image"}
+                </button>
+                {bannerImage && (
+                  <button
+                    onClick={async () => {
+                      setBannerImage("");
+                      try { await updateProfile({ bannerColor, bannerImage: "" }); } catch { /* silent */ }
+                    }}
+                    className="mt-1.5 w-full text-center text-xs text-slate-400 transition hover:text-rose-500"
+                  >
+                    Remove image
+                  </button>
+                )}
+                <input
+                  ref={bannerImageRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleBannerImageUpload}
+                />
+              </div>
             </div>
-            {(() => {
-              const age = computeAge(user?.birthdate);
-              const parts = [
-                user?.showAge !== false && age !== null ? `${age} yrs` : null,
-                user?.showGender !== false && user?.userGender ? user.userGender : null,
-              ].filter(Boolean);
-              return parts.length > 0 ? (
-                <p className="mt-1 text-xs text-slate-500">{parts.join(" · ")}</p>
-              ) : null;
-            })()}
-            <p className="mt-1 text-xs text-slate-400">{user?.email}</p>
-          </div>
-
-          {/* Bio */}
-          {user?.bio && (
-            <p className="mt-3 border-t border-slate-50 pt-3 text-sm leading-relaxed text-slate-600">
-              {user.bio}
-            </p>
           )}
 
-          {!user?.bio && (
-            <button onClick={() => setEditing(true)}
-              className="mt-3 w-full border-t border-slate-50 pt-3 text-left text-xs text-slate-300 hover:text-brand">
+          {/* 3-column stats row */}
+          <div className="mt-5 grid grid-cols-3 divide-x divide-slate-100 text-center">
+            <div className="py-1 pr-2">
+              <p className="text-xl font-bold text-slate-900">{stats?.gamesHosted ?? "—"}</p>
+              <p className="mt-0.5 text-xs text-slate-400">Hosted</p>
+            </div>
+            <div className="py-1">
+              <p className="text-xl font-bold text-slate-900">{stats?.gamesPlayed ?? "—"}</p>
+              <p className="mt-0.5 text-xs text-slate-400">Joined</p>
+            </div>
+            <div className="py-1 pl-2">
+              <p className="text-xl font-bold text-slate-900">
+                {user?.playerRating && user.playerRating.count > 0
+                  ? (user.playerRating.avg?.toFixed(1) ?? "—")
+                  : "—"}
+              </p>
+              <p className="mt-0.5 text-xs text-slate-400">Rating</p>
+            </div>
+          </div>
+
+          {/* Edit profile button */}
+          <button
+            onClick={() => setEditing(true)}
+            className="mt-4 w-full rounded-xl border border-brand/30 bg-brand/5 py-2 text-sm font-semibold text-brand transition hover:bg-brand/10 active:scale-[0.98]"
+          >
+            ✏️ Edit profile
+          </button>
+
+          {/* Bio */}
+          {user?.bio ? (
+            <p className="mt-4 border-t border-slate-50 pt-4 text-sm leading-relaxed text-slate-600">
+              {user.bio}
+            </p>
+          ) : (
+            <button
+              onClick={() => setEditing(true)}
+              className="mt-4 w-full border-t border-slate-50 pt-4 text-left text-xs text-slate-300 hover:text-brand"
+            >
               + Add a bio…
             </button>
           )}
@@ -455,7 +591,7 @@ export default function Profile() {
 
           {/* Favorite positions */}
           {user?.favoritePositions && user.favoritePositions.length > 0 && (
-            <div className="mt-3 border-t border-slate-50 pt-3">
+            <div className="mt-4 border-t border-slate-50 pt-4">
               <p className="mb-1.5 text-xs font-medium text-slate-400">Positions</p>
               <div className="flex flex-wrap gap-1.5">
                 {user.favoritePositions.map((p) => (
@@ -464,6 +600,18 @@ export default function Profile() {
               </div>
             </div>
           )}
+
+          {/* Age / gender display */}
+          {(() => {
+            const age = computeAge(user?.birthdate);
+            const parts = [
+              user?.showAge !== false && age !== null ? `${age} yrs` : null,
+              user?.showGender !== false && user?.userGender ? user.userGender : null,
+            ].filter(Boolean);
+            return parts.length > 0 ? (
+              <p className="mt-3 text-xs text-slate-400">{parts.join(" · ")}</p>
+            ) : null;
+          })()}
         </div>
       </div>
 

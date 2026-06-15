@@ -61,6 +61,8 @@ export interface Profile {
   showGender?: boolean;
   favoritePositions?: string[];
   playerRating?: { count: number; avg: number | null };
+  bannerColor?: string;
+  bannerImage?: string;
 }
 
 export interface AdminStats {

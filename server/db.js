@@ -254,6 +254,14 @@ export async function initSchema() {
   await pool.query(
     "ALTER TABLE game_members ADD COLUMN IF NOT EXISTS paid BOOLEAN NOT NULL DEFAULT FALSE"
   );
+
+  // Feature: profile banner background (color or image).
+  await pool.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_color TEXT NOT NULL DEFAULT ''"
+  );
+  await pool.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_image TEXT NOT NULL DEFAULT ''"
+  );
 }
 
 export function uid(prefix = "id") {

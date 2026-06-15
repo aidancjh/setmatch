@@ -26,6 +26,8 @@ interface AuthState {
     showAge?: boolean;
     showGender?: boolean;
     favoritePositions?: string[];
+    bannerColor?: string;
+    bannerImage?: string;
   }) => Promise<void>;
 }
 
