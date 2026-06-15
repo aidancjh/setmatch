@@ -234,6 +234,26 @@ export async function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_pr_rated ON player_ratings(rated_id);
     CREATE INDEX IF NOT EXISTS idx_pr_game  ON player_ratings(game_id);
   `);
+
+  // Feature: members-only group chat per game.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id         TEXT PRIMARY KEY,
+      game_id    TEXT NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+      user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      body       TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_messages_game ON messages(game_id, created_at);
+  `);
+
+  // Feature: cost splitting — total court cost on a game, paid flag per member.
+  await pool.query(
+    "ALTER TABLE games ADD COLUMN IF NOT EXISTS court_cost NUMERIC NOT NULL DEFAULT 0"
+  );
+  await pool.query(
+    "ALTER TABLE game_members ADD COLUMN IF NOT EXISTS paid BOOLEAN NOT NULL DEFAULT FALSE"
+  );
 }
 
 export function uid(prefix = "id") {

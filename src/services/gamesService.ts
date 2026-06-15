@@ -10,8 +10,10 @@
  */
 import type {
   AppNotification,
+  ChatSummary,
   Comment,
   Game,
+  Message,
   NewGameInput,
   UserProfile,
 } from "../types";
@@ -115,6 +117,38 @@ export async function deleteComment(
   commentId: string
 ): Promise<Comment[]> {
   return api.del<Comment[]>(`/games/${gameId}/comments/${commentId}`);
+}
+
+// --- Chat (members-only group messages) -----------------------------------
+
+export async function getChats(): Promise<ChatSummary[]> {
+  return api.get<ChatSummary[]>("/chats");
+}
+
+export async function getMessages(gameId: string): Promise<Message[]> {
+  return api.get<Message[]>(`/games/${gameId}/messages`);
+}
+
+export async function sendMessage(
+  gameId: string,
+  body: string
+): Promise<Message> {
+  return api.post<Message>(`/games/${gameId}/messages`, { body });
+}
+
+// --- Cost splitting -------------------------------------------------------
+
+export async function setMemberPaid(
+  gameId: string,
+  memberId: string,
+  paid: boolean
+): Promise<Game> {
+  const game = await api.post<Game>(
+    `/games/${gameId}/members/${memberId}/paid`,
+    { paid }
+  );
+  notify();
+  return game;
 }
 
 // --- Notifications --------------------------------------------------------

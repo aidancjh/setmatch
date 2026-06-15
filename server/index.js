@@ -162,6 +162,7 @@ function gameInputFrom(body) {
     positionsNeeded: rawPositions.filter((p) => POSITIONS.includes(p)),
     rotationType: ROTATION_TYPES.includes(body.rotationType) ? body.rotationType : "Standard",
     courtFee: String(body.courtFee || "").trim().slice(0, 50),
+    courtCost: Math.max(0, Math.min(Number(body.courtCost) || 0, 100000)),
     date: body.date,
     time: body.time,
     endTime: body.endTime ? String(body.endTime) : "",
@@ -708,6 +709,65 @@ app.delete(
       req.userId
     );
     if (result.ok) return res.json(result.comments);
+    res.status(result.code).json({ error: result.error });
+  })
+);
+
+// --- Chat (members-only group messages per game) --------------------------
+
+app.get(
+  "/api/chats",
+  requireAuth,
+  h(async (req, res) => {
+    res.json(await repo.listChatsForUser(req.userId));
+  })
+);
+
+app.get(
+  "/api/games/:id/messages",
+  requireAuth,
+  h(async (req, res) => {
+    if (!(await repo.canAccessChat(req.params.id, req.userId)))
+      return res
+        .status(403)
+        .json({ error: "Only players in this game can see the chat." });
+    res.json(await repo.listMessages(req.params.id));
+  })
+);
+
+app.post(
+  "/api/games/:id/messages",
+  requireAuth,
+  h(async (req, res) => {
+    if (!(await repo.canAccessChat(req.params.id, req.userId)))
+      return res
+        .status(403)
+        .json({ error: "Only players in this game can post in the chat." });
+    const body = String((req.body && req.body.body) || "").trim();
+    if (!body) return res.status(400).json({ error: "Message can't be empty." });
+    if (body.length > 1000)
+      return res
+        .status(400)
+        .json({ error: "Message is too long (max 1000 characters)." });
+    const msg = await repo.addMessage(req.params.id, req.userId, body);
+    res.status(201).json(msg);
+  })
+);
+
+// --- Cost splitting -------------------------------------------------------
+
+app.post(
+  "/api/games/:id/members/:memberId/paid",
+  requireAuth,
+  h(async (req, res) => {
+    const paid = !!(req.body && req.body.paid);
+    const result = await repo.setMemberPaid(
+      req.params.id,
+      req.userId,
+      req.params.memberId,
+      paid
+    );
+    if (result.ok) return res.json(result.game);
     res.status(result.code).json({ error: result.error });
   })
 );

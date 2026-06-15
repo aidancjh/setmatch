@@ -8,6 +8,7 @@ import {
   isOnWaitlist,
   joinGame,
   leaveGame,
+  setMemberPaid,
   spotsLeft,
   subscribe,
   toggleInterested,
@@ -474,6 +475,16 @@ export default function GameDetail() {
         )}
       </div>
 
+      {/* Cost split — shown when the host set a total court cost */}
+      {game.courtCost > 0 && game.players.length > 0 && (
+        <CostSplit
+          game={game}
+          meId={me.id}
+          isHost={isHost}
+          onError={(msg) => setError(msg)}
+        />
+      )}
+
       {shareMsg && (
         <p className="mb-2 text-center text-sm font-medium text-emerald-600">
           {shareMsg}
@@ -531,6 +542,15 @@ export default function GameDetail() {
             Share invite
           </button>
         </div>
+
+        {(joined || isHost) && (
+          <button
+            onClick={() => navigate(`/chats/${game.id}`)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97]"
+          >
+            💬 Open group chat
+          </button>
+        )}
 
         {isHost && (
           <div className="space-y-2 border-t border-slate-100 pt-3">
@@ -594,6 +614,102 @@ export default function GameDetail() {
 
       {/* Discussion thread */}
       <GameComments gameId={game.id} hostId={game.hostId} />
+    </div>
+  );
+}
+
+function CostSplit({
+  game,
+  meId,
+  isHost,
+  onError,
+}: {
+  game: Game;
+  meId: string;
+  isHost: boolean;
+  onError: (msg: string) => void;
+}) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const share = game.courtCost / game.players.length;
+  const paidCount = game.players.filter((p) => p.paid).length;
+  const collected = share * paidCount;
+
+  const fmt = (n: number) =>
+    `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const toggle = async (p: { id: string; paid?: boolean }) => {
+    setBusyId(p.id);
+    onError("");
+    try {
+      await setMemberPaid(game.id, p.id, !p.paid);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "Couldn't update payment.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <div className="mb-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h2 className="text-sm font-semibold text-slate-900">Cost split</h2>
+        <span className="text-xs text-slate-400">
+          {fmt(collected)} of {fmt(game.courtCost)} collected
+        </span>
+      </div>
+
+      <div className="mb-3 flex items-center justify-between rounded-xl bg-brand/5 px-3 py-2.5">
+        <span className="text-sm text-slate-600">
+          {fmt(game.courtCost)} ÷ {game.players.length} player
+          {game.players.length === 1 ? "" : "s"}
+        </span>
+        <span className="text-lg font-bold text-brand">{fmt(share)} each</span>
+      </div>
+
+      <ul className="space-y-1.5">
+        {game.players.map((p) => {
+          const canToggle = isHost || p.id === meId;
+          return (
+            <li
+              key={p.id}
+              className="flex items-center justify-between gap-2 rounded-lg px-1 py-1"
+            >
+              <span className="truncate text-sm text-slate-700">
+                {p.id === game.hostId && "⭐ "}
+                {p.name}
+                {p.id === meId && " (you)"}
+              </span>
+              {canToggle ? (
+                <button
+                  onClick={() => toggle(p)}
+                  disabled={busyId === p.id}
+                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition active:scale-95 disabled:opacity-50 ${
+                    p.paid
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                  }`}
+                >
+                  {p.paid ? "✓ Paid" : "Mark paid"}
+                </button>
+              ) : (
+                <span
+                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
+                    p.paid ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-400"
+                  }`}
+                >
+                  {p.paid ? "✓ Paid" : "Unpaid"}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+
+      {isHost && (
+        <p className="mt-3 text-xs text-slate-400">
+          Tap a player to mark them paid. Players can also mark themselves.
+        </p>
+      )}
     </div>
   );
 }

@@ -267,14 +267,14 @@ export async function markAllRead(userId) {
 
 async function memberPlayers(gameId, status) {
   const { rows } = await query(
-    `SELECT u.id, u.name
+    `SELECT u.id, u.name, m.paid
        FROM game_members m
        JOIN users u ON u.id = m.user_id
       WHERE m.game_id = $1 AND m.status = $2
       ORDER BY m.seq ASC`,
     [gameId, status]
   );
-  return rows.map((r) => ({ id: r.id, name: r.name }));
+  return rows.map((r) => ({ id: r.id, name: r.name, paid: r.paid === true }));
 }
 
 async function interestedIds(gameId) {
@@ -309,6 +309,7 @@ async function serializeGame(row) {
     positionsNeeded: parseJsonArr(row.positions_needed),
     rotationType: row.rotation_type || "Standard",
     courtFee: row.court_fee || "",
+    courtCost: Number(row.court_cost || 0),
     date: row.date,
     time: row.time,
     endTime: row.end_time || "",
@@ -346,8 +347,8 @@ export async function createGame(hostId, input) {
   await query(
     `INSERT INTO games
        (id, title, type, skill, date, time, end_time, location, area, total_slots, pre_filled, host_id, notes,
-        gender, net_height, positions_needed, rotation_type, court_fee, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
+        gender, net_height, positions_needed, rotation_type, court_fee, court_cost, created_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
     [
       id,
       input.title,
@@ -367,6 +368,7 @@ export async function createGame(hostId, input) {
       JSON.stringify(input.positionsNeeded || []),
       input.rotationType || "Standard",
       input.courtFee || "",
+      Number(input.courtCost) || 0,
       now,
     ]
   );
@@ -514,8 +516,8 @@ export async function updateGame(gameId, userId, input) {
         SET title = $1, type = $2, skill = $3, date = $4, time = $5, end_time = $6,
             location = $7, area = $8, total_slots = $9, notes = $10,
             gender = $11, net_height = $12, positions_needed = $13,
-            rotation_type = $14, court_fee = $15
-      WHERE id = $16`,
+            rotation_type = $14, court_fee = $15, court_cost = $16
+      WHERE id = $17`,
     [
       input.title,
       input.type,
@@ -532,6 +534,7 @@ export async function updateGame(gameId, userId, input) {
       JSON.stringify(input.positionsNeeded || []),
       input.rotationType || "Standard",
       input.courtFee || "",
+      Number(input.courtCost) || 0,
       gameId,
     ]
   );
@@ -628,6 +631,118 @@ export async function addComment(gameId, userId, body) {
     gameId
   );
   return { ok: true, comments: await listComments(gameId) };
+}
+
+// --- Chat (members-only group messages per game) --------------------------
+
+/**
+ * Whether a user may read/post in a game's chat. Access is granted while you
+ * are a current member (player or waitlist) or the host. Leaving the game
+ * removes your membership row, so you lose access — but past games keep their
+ * members, so the chat stays reachable after the game has ended.
+ */
+export async function canAccessChat(gameId, userId) {
+  const game = await getGameRow(gameId);
+  if (!game) return false;
+  if (game.host_id === userId) return true;
+  const { rows } = await query(
+    "SELECT 1 FROM game_members WHERE game_id = $1 AND user_id = $2",
+    [gameId, userId]
+  );
+  return rows.length > 0;
+}
+
+export async function listMessages(gameId) {
+  const { rows } = await query(
+    `SELECT m.id, m.user_id, m.body, m.created_at, u.name AS user_name
+       FROM messages m
+       JOIN users u ON u.id = m.user_id
+      WHERE m.game_id = $1
+      ORDER BY m.created_at ASC`,
+    [gameId]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    userId: r.user_id,
+    userName: r.user_name,
+    body: r.body,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function addMessage(gameId, userId, body) {
+  const id = uid("msg");
+  const now = new Date().toISOString();
+  await query(
+    "INSERT INTO messages (id, game_id, user_id, body, created_at) VALUES ($1, $2, $3, $4, $5)",
+    [id, gameId, userId, body, now]
+  );
+  // Notify the other members about the new chat message.
+  const game = await getGameRow(gameId);
+  const actor = await findUserById(userId);
+  const recipients = (await memberUserIds(gameId)).filter((id2) => id2 !== userId);
+  await notifyUsers(
+    recipients,
+    "message",
+    `${actor ? actor.name : "Someone"} messaged in "${game ? game.title : "a game"}"`,
+    gameId
+  );
+  return { id, userId, userName: actor ? actor.name : "", body, createdAt: now };
+}
+
+/**
+ * Every game the user is a member/host of, with a preview of the last message.
+ * Sorted by most-recent activity (last message, falling back to game creation).
+ */
+export async function listChatsForUser(userId) {
+  const { rows } = await query(
+    `SELECT g.id, g.title, g.date, g.time, g.host_id,
+            (SELECT COUNT(*) FROM game_members gm WHERE gm.game_id = g.id) AS member_count,
+            lm.body AS last_body, lm.created_at AS last_at, lu.name AS last_sender
+       FROM games g
+       JOIN game_members m ON m.game_id = g.id AND m.user_id = $1
+       LEFT JOIN LATERAL (
+         SELECT body, created_at, user_id
+           FROM messages
+          WHERE game_id = g.id
+          ORDER BY created_at DESC
+          LIMIT 1
+       ) lm ON TRUE
+       LEFT JOIN users lu ON lu.id = lm.user_id
+      ORDER BY COALESCE(lm.created_at, g.created_at) DESC`,
+    [userId]
+  );
+  return rows.map((r) => ({
+    gameId: r.id,
+    title: r.title,
+    date: r.date,
+    time: r.time,
+    hostId: r.host_id,
+    memberCount: Number(r.member_count),
+    lastMessage: r.last_body || null,
+    lastSender: r.last_sender || null,
+    lastMessageAt: r.last_at || null,
+  }));
+}
+
+// --- Cost splitting -------------------------------------------------------
+
+/**
+ * Mark whether a member has paid their share of the court cost. The host may
+ * update anyone; a player may only update their own status.
+ */
+export async function setMemberPaid(gameId, actorId, memberId, paid) {
+  const game = await getGameRow(gameId);
+  if (!game) return { ok: false, code: 404, error: "Game not found." };
+  if (game.host_id !== actorId && actorId !== memberId)
+    return { ok: false, code: 403, error: "Only the host can update others' payment." };
+  const { rowCount } = await query(
+    "UPDATE game_members SET paid = $1 WHERE game_id = $2 AND user_id = $3",
+    [paid === true, gameId, memberId]
+  );
+  if (rowCount === 0)
+    return { ok: false, code: 404, error: "That player isn't in this game." };
+  return { ok: true, game: await getGame(gameId) };
 }
 
 // --- Reviews ------------------------------------------------------------------

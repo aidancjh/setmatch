@@ -7,6 +7,8 @@ export type GameGender = "Men" | "Women" | "Mixed" | "Open";
 export interface Player {
   id: string;
   name: string;
+  /** Whether this member has paid their share of the court cost. */
+  paid?: boolean;
 }
 
 export interface Game {
@@ -19,6 +21,8 @@ export interface Game {
   positionsNeeded: string[];
   rotationType: string;
   courtFee: string;
+  /** Total court cost to split between confirmed players (0 = not set). */
+  courtCost: number;
   /** ISO date string, e.g. 2026-06-20 */
   date: string;
   /** 24h time string, e.g. "18:30" */
@@ -106,6 +110,28 @@ export interface Comment {
   createdAt: string;
 }
 
+/** A single message in a game's members-only chat. */
+export interface Message {
+  id: string;
+  userId: string;
+  userName: string;
+  body: string;
+  createdAt: string;
+}
+
+/** A row in the Chats hub — one game chat the user belongs to. */
+export interface ChatSummary {
+  gameId: string;
+  title: string;
+  date: string;
+  time: string;
+  hostId: string;
+  memberCount: number;
+  lastMessage: string | null;
+  lastSender: string | null;
+  lastMessageAt: string | null;
+}
+
 export interface AppNotification {
   id: string;
   type: string;
@@ -137,6 +163,7 @@ export interface NewGameInput {
   positionsNeeded: string[];
   rotationType: string;
   courtFee: string;
+  courtCost: number;
   date: string;
   time: string;
   endTime: string;

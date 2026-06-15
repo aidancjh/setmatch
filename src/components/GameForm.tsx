@@ -23,6 +23,7 @@ export const blankGame: NewGameInput = {
   positionsNeeded: [],
   rotationType: "Standard",
   courtFee: "",
+  courtCost: 0,
   date: "",
   time: "18:00",
   endTime: "",
@@ -264,6 +265,28 @@ export default function GameForm({
           />
         </Field>
       </div>
+
+      <Field label="Total court cost to split (optional)">
+        <div className="relative">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
+            $
+          </span>
+          <input
+            type="number"
+            min={0}
+            step="0.01"
+            inputMode="decimal"
+            value={form.courtCost ? String(form.courtCost) : ""}
+            onChange={(e) => set("courtCost", Number(e.target.value) || 0)}
+            placeholder="0"
+            className={`${inputCls} pl-7`}
+          />
+        </div>
+        <p className="mt-1 text-xs text-slate-400">
+          Coterie divides this by the number of confirmed players and tracks who's
+          paid. Leave blank if there's no shared cost.
+        </p>
+      </Field>
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Start time">

@@ -57,6 +57,7 @@ export default function EditGame() {
     positionsNeeded: game.positionsNeeded ?? [],
     rotationType: game.rotationType ?? "Standard",
     courtFee: game.courtFee ?? "",
+    courtCost: game.courtCost ?? 0,
     date: game.date,
     time: game.time,
     endTime: game.endTime ?? "",

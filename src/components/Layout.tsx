@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
 import {
   CalendarIcon,
+  ChatIcon,
   PlusIcon,
   SearchIcon,
   SettingsIcon,
@@ -147,6 +148,13 @@ export default function Layout() {
         </button>
 
         <div className="flex items-center gap-0.5">
+          <button
+            onClick={() => navigate("/chats")}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 active:scale-90"
+            aria-label="Chats"
+          >
+            <ChatIcon className="h-5 w-5" />
+          </button>
           <NotificationBell />
           <button
             onClick={() => navigate("/settings")}
