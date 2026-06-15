@@ -1128,6 +1128,7 @@ async function start() {
   await initSchema();
   await seedIfEmpty();
   await syncDemoPasswords();
+  await seedPastData();
   await repo.promoteAdminsFromEnv();
   if (!process.env.RESEND_API_KEY) console.warn("[email] RESEND_API_KEY not set — join confirmation emails will be skipped");
   app.listen(PORT, () => {
