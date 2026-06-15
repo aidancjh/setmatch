@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
 import {
   CalendarIcon,
@@ -110,8 +110,8 @@ function Tab({
       end={end}
       aria-label={label}
       className={({ isActive }) =>
-        `flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-all duration-150 active:scale-90 active:opacity-70 ${
-          isActive ? "text-brand" : "text-slate-400"
+        `relative z-10 flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-all duration-150 active:scale-90 active:opacity-70 ${
+          isActive ? "text-white" : "text-slate-400"
         }`
       }
     >
@@ -127,7 +127,15 @@ function Tab({
 
 export default function Layout() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [showPost, setShowPost] = useState(false);
+
+  const activeSlot =
+    pathname === "/" ? 0 :
+    pathname.startsWith("/highlights") ? 1 :
+    pathname.startsWith("/my-games") ? 3 :
+    pathname.startsWith("/profile") ? 4 :
+    -1;
 
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col bg-white shadow-sm">
@@ -174,29 +182,44 @@ export default function Layout() {
       {/* Bottom tab bar with raised center "+" */}
       <nav
         aria-label="Main navigation"
-        className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md items-end border-t border-slate-100 bg-white/95 backdrop-blur"
+        className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-md border-t border-slate-100 bg-white/95 backdrop-blur"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        {/* Left tabs */}
-        {leftTabs.map((t) => (
-          <Tab key={t.to} {...t} />
-        ))}
+        <div className="relative flex items-end">
+          {/* Sliding pill — same style as My Games tab switcher */}
+          {activeSlot >= 0 && (
+            <div
+              className="pointer-events-none absolute inset-y-1 left-0 w-1/5 px-1.5"
+              style={{
+                transform: `translateX(${activeSlot * 100}%)`,
+                transition: "transform 0.22s cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+            >
+              <div className="h-full w-full rounded-2xl bg-brand shadow-sm" />
+            </div>
+          )}
 
-        {/* Center + button */}
-        <div className="flex flex-1 flex-col items-center pb-2.5">
-          <button
-            onClick={() => setShowPost(true)}
-            aria-label="Create a post"
-            className="flex h-14 w-14 -translate-y-3 items-center justify-center rounded-full bg-brand text-white shadow-lg shadow-brand/30 transition active:scale-95 hover:bg-brand-dark"
-          >
-            <PlusIcon className="h-7 w-7" />
-          </button>
+          {/* Left tabs */}
+          {leftTabs.map((t) => (
+            <Tab key={t.to} {...t} />
+          ))}
+
+          {/* Center + button */}
+          <div className="flex flex-1 flex-col items-center pb-2.5">
+            <button
+              onClick={() => setShowPost(true)}
+              aria-label="Create a post"
+              className="flex h-14 w-14 -translate-y-3 items-center justify-center rounded-full bg-brand text-white shadow-lg shadow-brand/30 transition active:scale-95 hover:bg-brand-dark"
+            >
+              <PlusIcon className="h-7 w-7" />
+            </button>
+          </div>
+
+          {/* Right tabs */}
+          {rightTabs.map((t) => (
+            <Tab key={t.to} {...t} />
+          ))}
         </div>
-
-        {/* Right tabs */}
-        {rightTabs.map((t) => (
-          <Tab key={t.to} {...t} />
-        ))}
       </nav>
 
       {showPost && <PostSheet onClose={() => setShowPost(false)} />}
