@@ -263,6 +263,11 @@ export async function initSchema() {
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_image TEXT NOT NULL DEFAULT ''"
   );
 
+  // Feature: region (North/South/East/West) on games for area filtering.
+  await pool.query(
+    "ALTER TABLE games ADD COLUMN IF NOT EXISTS region TEXT NOT NULL DEFAULT ''"
+  );
+
   // Feature: comments on highlights (anyone can comment).
   await pool.query(`
     CREATE TABLE IF NOT EXISTS highlight_comments (

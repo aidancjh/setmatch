@@ -13,6 +13,7 @@ const netHeightOptions = [
 ];
 const positions = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist", "Any"];
 const rotationTypes = ["Standard", "No Rotation", "King of the Court", "Round Robin"];
+const regions = ["North", "South", "East", "West"];
 
 export const blankGame: NewGameInput = {
   title: "",
@@ -24,6 +25,7 @@ export const blankGame: NewGameInput = {
   rotationType: "Standard",
   courtFee: "",
   courtCost: 0,
+  region: "",
   date: "",
   time: "18:00",
   endTime: "",
@@ -372,6 +374,28 @@ export default function GameForm({
           placeholder="e.g. Santa Monica"
           className={inputCls}
         />
+      </Field>
+
+      <Field label="Region">
+        <div className="flex flex-wrap gap-1.5">
+          {regions.map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => set("region", form.region === r ? "" : r)}
+              className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
+                form.region === r
+                  ? "bg-brand text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1.5 text-[11px] text-slate-400">
+          Helps players filter games by part of the island.
+        </p>
       </Field>
 
       <Field label="Notes (optional)">

@@ -23,6 +23,8 @@ export interface Game {
   courtFee: string;
   /** Total court cost to split between confirmed players (0 = not set). */
   courtCost: number;
+  /** Broad area of the island: North | South | East | West (or "" if unset). */
+  region: string;
   /** ISO date string, e.g. 2026-06-20 */
   date: string;
   /** 24h time string, e.g. "18:30" */
@@ -178,6 +180,7 @@ export interface NewGameInput {
   rotationType: string;
   courtFee: string;
   courtCost: number;
+  region: string;
   date: string;
   time: string;
   endTime: string;

@@ -316,6 +316,7 @@ async function serializeGame(row) {
     rotationType: row.rotation_type || "Standard",
     courtFee: row.court_fee || "",
     courtCost: Number(row.court_cost || 0),
+    region: row.region || "",
     date: row.date,
     time: row.time,
     endTime: row.end_time || "",
@@ -353,8 +354,8 @@ export async function createGame(hostId, input) {
   await query(
     `INSERT INTO games
        (id, title, type, skill, date, time, end_time, location, area, total_slots, pre_filled, host_id, notes,
-        gender, net_height, positions_needed, rotation_type, court_fee, court_cost, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
+        gender, net_height, positions_needed, rotation_type, court_fee, court_cost, region, created_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`,
     [
       id,
       input.title,
@@ -375,6 +376,7 @@ export async function createGame(hostId, input) {
       input.rotationType || "Standard",
       input.courtFee || "",
       Number(input.courtCost) || 0,
+      input.region || "",
       now,
     ]
   );
@@ -522,8 +524,8 @@ export async function updateGame(gameId, userId, input) {
         SET title = $1, type = $2, skill = $3, date = $4, time = $5, end_time = $6,
             location = $7, area = $8, total_slots = $9, notes = $10,
             gender = $11, net_height = $12, positions_needed = $13,
-            rotation_type = $14, court_fee = $15, court_cost = $16
-      WHERE id = $17`,
+            rotation_type = $14, court_fee = $15, court_cost = $16, region = $17
+      WHERE id = $18`,
     [
       input.title,
       input.type,
@@ -541,6 +543,7 @@ export async function updateGame(gameId, userId, input) {
       input.rotationType || "Standard",
       input.courtFee || "",
       Number(input.courtCost) || 0,
+      input.region || "",
       gameId,
     ]
   );

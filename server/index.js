@@ -132,6 +132,7 @@ const GENDERS = ["Men", "Women", "Mixed", "Open"];
 const NET_HEIGHTS = ["Men's (2.43m)", "Women's (2.24m)", "Recreational (2.35m)", "Venue Standard"];
 const POSITIONS = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist", "Any"];
 const ROTATION_TYPES = ["Standard", "No Rotation", "King of the Court", "Round Robin"];
+const REGIONS = ["North", "South", "East", "West"];
 
 function validGameInput(b) {
   // pre_filled is optional — default 0, max totalSlots - 1
@@ -163,6 +164,7 @@ function gameInputFrom(body) {
     rotationType: ROTATION_TYPES.includes(body.rotationType) ? body.rotationType : "Standard",
     courtFee: String(body.courtFee || "").trim().slice(0, 50),
     courtCost: Math.max(0, Math.min(Number(body.courtCost) || 0, 100000)),
+    region: REGIONS.includes(body.region) ? body.region : "",
     date: body.date,
     time: body.time,
     endTime: body.endTime ? String(body.endTime) : "",
