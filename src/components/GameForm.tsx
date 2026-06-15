@@ -248,27 +248,17 @@ export default function GameForm({
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Date">
-          <input
-            type="date"
-            min={today}
-            value={form.date}
-            onChange={(e) => set("date", e.target.value)}
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Court fee (optional)">
-          <input
-            value={form.courtFee}
-            onChange={(e) => set("courtFee", e.target.value)}
-            placeholder="e.g. $5, free"
-            className={inputCls}
-          />
-        </Field>
-      </div>
+      <Field label="Date">
+        <input
+          type="date"
+          min={today}
+          value={form.date}
+          onChange={(e) => set("date", e.target.value)}
+          className={inputCls}
+        />
+      </Field>
 
-      <Field label="Total court cost to split (optional)">
+      <Field label="Court cost — split per player (optional)">
         <div className="relative">
           <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
             $

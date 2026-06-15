@@ -382,8 +382,22 @@ export default function GameDetail() {
           {formatDate(game.date)} · {formatTimeRange(game.time, game.endTime)}
         </InfoRow>
         <InfoRow icon="📍" label="Where">
-          {game.location}
-          <span className="text-slate-400"> · {game.area}</span>
+          <div className="flex items-start gap-2">
+            <span className="flex-1">
+              {game.location}
+              {game.area && <span className="text-slate-400"> · {game.area}</span>}
+            </span>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([game.location, game.area].filter(Boolean).join(", "))}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-500 transition hover:bg-slate-100 active:scale-95"
+              aria-label="Open in Google Maps"
+            >
+              <MapsIcon className="h-3 w-3" />
+              Maps
+            </a>
+          </div>
         </InfoRow>
         <InfoRow icon="👤" label="Host">
           <Link
@@ -735,12 +749,20 @@ function InfoRow({
   return (
     <div className="flex gap-2">
       <span aria-hidden>{icon}</span>
-      <div>
+      <div className="min-w-0 flex-1">
         <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
           {label}
         </span>
         <div>{children}</div>
       </div>
     </div>
+  );
+}
+
+function MapsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+    </svg>
   );
 }

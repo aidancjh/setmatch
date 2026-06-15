@@ -286,19 +286,25 @@ function FilterModal({
         </div>
 
         {/* Body */}
-        <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-4">
-            <ChipGroup label="Court type" options={typeOptions} value={f.type} onChange={(v) => set({ type: v })} />
-            <ChipGroup label="Standard" options={skillOptions} value={f.skill} onChange={(v) => set({ skill: v })} />
-            <ChipGroup label="Region" options={regionOptions} value={f.region} onChange={(v) => set({ region: v })} />
-            <ChipGroup label="Who it's for" options={genderOptions} labels={genderLabels} value={f.gender} onChange={(v) => set({ gender: v })} />
+        <div className="flex-1 divide-y divide-slate-100 overflow-y-auto">
+          {/* Section 1 — Game details */}
+          <div className="px-4 py-4">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+              <ChipGroup label="Court type" options={typeOptions} value={f.type} onChange={(v) => set({ type: v })} />
+              <ChipGroup label="Standard" options={skillOptions} value={f.skill} onChange={(v) => set({ skill: v })} />
+              <ChipGroup label="Region" options={regionOptions} value={f.region} onChange={(v) => set({ region: v })} />
+              <ChipGroup label="Who it's for" options={genderOptions} labels={genderLabels} value={f.gender} onChange={(v) => set({ gender: v })} />
+            </div>
           </div>
 
-          <ChipGroup label="Net height" options={netOptions} labels={netLabels} value={f.netHeight} onChange={(v) => set({ netHeight: v })} />
-          <ChipGroup label="Position needed" options={positionOptions} labels={positionLabels} value={f.position} onChange={(v) => set({ position: v })} />
+          {/* Section 2 — Court & positions */}
+          <div className="space-y-4 px-4 py-4">
+            <ChipGroup label="Net height" options={netOptions} labels={netLabels} value={f.netHeight} onChange={(v) => set({ netHeight: v })} />
+            <ChipGroup label="Position needed" options={positionOptions} labels={positionLabels} value={f.position} onChange={(v) => set({ position: v })} />
+          </div>
 
-          {/* Price */}
-          <div>
+          {/* Section 3 — Price */}
+          <div className="px-4 py-4">
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Price</p>
             <div className="flex flex-wrap gap-1.5">
               {(["Any", "Free", "Paid"] as Price[]).map((p) => (
@@ -309,43 +315,53 @@ function FilterModal({
             </div>
           </div>
 
-          {/* Time range */}
-          <div>
-            <div className="mb-1.5 flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Game time</p>
-              <span className="text-xs font-semibold text-slate-600">{timeLabel}</span>
+          {/* Section 4 — Timing */}
+          <div className="space-y-5 px-4 py-4">
+            {/* Dual-handle time range */}
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Game time</p>
+                <span className="text-xs font-semibold text-slate-700">{timeLabel}</span>
+              </div>
+              <DualRangeSlider
+                value1={f.minTime}
+                value2={f.maxTime}
+                onChange1={(v) => set({ minTime: v })}
+                onChange2={(v) => set({ maxTime: v })}
+              />
+              <div className="mt-2 flex justify-between text-[11px] text-slate-400">
+                <span>12:00 AM</span>
+                <span>Midnight</span>
+              </div>
             </div>
-            <input
-              type="range" min={0} max={1440} step={30} value={f.minTime}
-              onChange={(e) => set({ minTime: Math.min(Number(e.target.value), f.maxTime) })}
-              className="w-full accent-brand"
-              aria-label="Earliest start time"
-            />
-            <input
-              type="range" min={0} max={1440} step={30} value={f.maxTime}
-              onChange={(e) => set({ maxTime: Math.max(Number(e.target.value), f.minTime) })}
-              className="w-full accent-brand"
-              aria-label="Latest start time"
-            />
-          </div>
 
-          {/* Open spots */}
-          <div>
-            <div className="mb-1.5 flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Open spots</p>
-              <span className="text-xs font-semibold text-slate-600">
-                {f.minOpenSpots === 0 ? "Any" : `${f.minOpenSpots}+ free`}
-              </span>
+            {/* Open spots */}
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Open spots</p>
+                <span className="text-xs font-semibold text-slate-700">
+                  {f.minOpenSpots === 0 ? "Any" : `${f.minOpenSpots}+ open`}
+                </span>
+              </div>
+              <div
+                className="single-range"
+                style={{ "--range-pct": `${(f.minOpenSpots / 12) * 100}%` } as React.CSSProperties}
+              >
+                <input
+                  type="range"
+                  min={0}
+                  max={12}
+                  step={1}
+                  value={f.minOpenSpots}
+                  onChange={(e) => set({ minOpenSpots: Number(e.target.value) })}
+                  aria-label="Minimum open spots"
+                />
+              </div>
+              <div className="mt-2 flex justify-between text-[11px] text-slate-400">
+                <span>Any</span>
+                <span>12+</span>
+              </div>
             </div>
-            <input
-              type="range" min={0} max={12} step={1} value={f.minOpenSpots}
-              onChange={(e) => set({ minOpenSpots: Number(e.target.value) })}
-              className="w-full accent-brand"
-              aria-label="Minimum open spots"
-            />
-            <p className="mt-1 text-[11px] text-slate-400">
-              Bringing friends? Set how many open spots you need.
-            </p>
           </div>
         </div>
 
@@ -427,5 +443,46 @@ function FilterIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M7 12h10M10 18h4" />
     </svg>
+  );
+}
+
+function DualRangeSlider({
+  value1,
+  value2,
+  onChange1,
+  onChange2,
+}: {
+  value1: number;
+  value2: number;
+  onChange1: (v: number) => void;
+  onChange2: (v: number) => void;
+}) {
+  const pct1 = (value1 / 1440) * 100;
+  const pct2 = (value2 / 1440) * 100;
+  return (
+    <div className="dual-range">
+      <div className="dual-range-track" />
+      <div className="dual-range-fill" style={{ left: `${pct1}%`, right: `${100 - pct2}%` }} />
+      <input
+        type="range"
+        min={0}
+        max={1440}
+        step={30}
+        value={value1}
+        onChange={(e) => onChange1(Math.min(Number(e.target.value), Math.max(0, value2 - 30)))}
+        style={{ zIndex: value1 > value2 - 60 ? 5 : 3 }}
+        aria-label="Earliest start time"
+      />
+      <input
+        type="range"
+        min={0}
+        max={1440}
+        step={30}
+        value={value2}
+        onChange={(e) => onChange2(Math.max(Number(e.target.value), Math.min(1440, value1 + 30)))}
+        style={{ zIndex: value1 > value2 - 60 ? 4 : 5 }}
+        aria-label="Latest start time"
+      />
+    </div>
   );
 }
