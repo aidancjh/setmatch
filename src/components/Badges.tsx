@@ -23,6 +23,57 @@ export function SkillBadge({ skill }: { skill: SkillLevel }) {
   );
 }
 
+/**
+ * Star rating with partial fill. Renders 5 stars where the amber overlay is
+ * clipped horizontally to the average, so 4.3/5 shows as 4.3 stars worth of gold.
+ */
+export function StarRating({
+  avg,
+  size = "md",
+}: {
+  avg: number;
+  size?: "sm" | "md" | "lg";
+}) {
+  const pct = Math.max(0, Math.min(100, (avg / 5) * 100));
+  const sizeCls = size === "lg" ? "text-3xl" : size === "sm" ? "text-base" : "text-xl";
+  return (
+    <span className={`relative inline-block leading-none ${sizeCls}`} aria-hidden>
+      <span className="whitespace-nowrap tracking-[0.1em] text-slate-200">★★★★★</span>
+      <span
+        className="absolute inset-0 overflow-hidden whitespace-nowrap tracking-[0.1em] text-amber-400"
+        style={{ width: `${pct}%` }}
+      >
+        ★★★★★
+      </span>
+    </span>
+  );
+}
+
+/**
+ * Prominent "hero" rating block for profiles — big number + large stars on a
+ * warm gradient. Only render when there is at least one vote.
+ */
+export function RatingHero({ avg, count }: { avg: number; count: number }) {
+  return (
+    <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-100 p-4 ring-1 ring-amber-200/60">
+      <div className="shrink-0 text-center">
+        <div className="text-4xl font-extrabold leading-none text-slate-900">
+          {avg.toFixed(1)}
+        </div>
+        <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-amber-600/80">
+          out of 5
+        </div>
+      </div>
+      <div className="min-w-0 flex-1">
+        <StarRating avg={avg} size="lg" />
+        <p className="mt-1.5 text-xs font-medium text-slate-500">
+          Player rating · {count} vote{count === 1 ? "" : "s"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function TypeBadge({ type }: { type: GameType }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">

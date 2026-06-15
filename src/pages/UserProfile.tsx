@@ -5,7 +5,7 @@ import { getUserProfile } from "../services/gamesService";
 import { useProfile } from "../hooks/useProfile";
 import { isInGame } from "../services/gamesService";
 import GameCard from "../components/GameCard";
-import { SkillBadge } from "../components/Badges";
+import { SkillBadge, RatingHero } from "../components/Badges";
 
 function memberSince(iso: string): string {
   const d = new Date(iso);
@@ -46,6 +46,7 @@ export default function UserProfile() {
   }
 
   const isMe = profile.id === me.id;
+  const rating = profile.playerRating;
 
   return (
     <div>
@@ -56,29 +57,33 @@ export default function UserProfile() {
         ← Back
       </button>
 
-      {/* Header card */}
-      <div className="mb-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-2xl font-bold text-white">
-            {profile.avatarUrl ? (
-              <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" />
-            ) : (
-              profile.name.charAt(0).toUpperCase()
-            )}
+      {/* Header card with gradient banner */}
+      <div className="mb-4 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+        <div className="h-24 bg-gradient-to-br from-brand to-orange-400" />
+        <div className="px-4 pb-4">
+          <div className="-mt-12 flex items-end gap-3">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-3xl font-bold text-white ring-4 ring-white">
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" />
+              ) : (
+                profile.name.charAt(0).toUpperCase()
+              )}
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-lg font-bold text-slate-900">
+
+          <div className="mt-3">
+            <p className="truncate text-xl font-bold text-slate-900">
               {profile.name}
               {isMe && <span className="ml-1 text-sm font-normal text-slate-400">(you)</span>}
             </p>
-            <div className="mt-1 flex items-center gap-2">
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <SkillBadge skill={profile.skill} />
               {profile.homeArea && (
                 <span className="text-xs text-slate-400">📍 {profile.homeArea}</span>
               )}
             </div>
             {(profile.ageDisplay || profile.genderDisplay) && (
-              <p className="mt-0.5 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-500">
                 {[profile.ageDisplay ? `${profile.ageDisplay} yrs` : null, profile.genderDisplay].filter(Boolean).join(" · ")}
               </p>
             )}
@@ -86,44 +91,43 @@ export default function UserProfile() {
               Member since {memberSince(profile.memberSince)}
             </p>
           </div>
-        </div>
-        {profile.bio && (
-          <p className="mt-3 border-t border-slate-50 pt-3 text-sm text-slate-600">
-            {profile.bio}
-          </p>
-        )}
 
-        {profile.playerRating && profile.playerRating.count > 0 && (
-          <div className="mt-3 border-t border-slate-50 pt-3 flex items-center gap-2">
-            <span className="text-amber-400 text-sm">{"★".repeat(Math.round(profile.playerRating.avg ?? 0))}</span>
-            <span className="text-sm font-semibold text-slate-800">{(profile.playerRating.avg ?? 0).toFixed(1)}</span>
-            <span className="text-xs text-slate-400">player rating ({profile.playerRating.count} vote{profile.playerRating.count === 1 ? "" : "s"})</span>
-          </div>
-        )}
+          {profile.bio && (
+            <p className="mt-3 border-t border-slate-50 pt-3 text-sm leading-relaxed text-slate-600">
+              {profile.bio}
+            </p>
+          )}
 
-        {profile.favoritePositions && profile.favoritePositions.length > 0 && (
-          <div className="mt-3 border-t border-slate-50 pt-3">
-            <p className="mb-1.5 text-xs font-medium text-slate-400">Positions</p>
-            <div className="flex flex-wrap gap-1.5">
-              {profile.favoritePositions.map((p) => (
-                <span key={p} className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{p}</span>
-              ))}
+          {rating && rating.count > 0 && (
+            <div className="mt-4">
+              <RatingHero avg={rating.avg ?? 0} count={rating.count} />
             </div>
-          </div>
-        )}
+          )}
+
+          {profile.favoritePositions && profile.favoritePositions.length > 0 && (
+            <div className="mt-3 border-t border-slate-50 pt-3">
+              <p className="mb-1.5 text-xs font-medium text-slate-400">Positions</p>
+              <div className="flex flex-wrap gap-1.5">
+                {profile.favoritePositions.map((p) => (
+                  <span key={p} className="rounded-lg bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand">{p}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Stats */}
       <div className="mb-5 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-slate-100 bg-white p-4 text-center shadow-sm">
-          <p className="text-2xl font-bold text-slate-900">{profile.gamesHosted}</p>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+        <div className="rounded-2xl bg-gradient-to-br from-brand/10 to-orange-100/60 p-4 text-center ring-1 ring-brand/15">
+          <p className="text-2xl font-bold text-brand">{profile.gamesHosted}</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             Hosted
           </p>
         </div>
-        <div className="rounded-2xl border border-slate-100 bg-white p-4 text-center shadow-sm">
-          <p className="text-2xl font-bold text-slate-900">{profile.gamesPlayed}</p>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+        <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-sky-100/60 p-4 text-center ring-1 ring-sky-200/60">
+          <p className="text-2xl font-bold text-sky-600">{profile.gamesPlayed}</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             Joined
           </p>
         </div>

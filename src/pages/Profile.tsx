@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getUserHighlights } from "../services/gamesService";
 import type { Highlight, SkillLevel } from "../types";
-import { SkillBadge } from "../components/Badges";
+import { SkillBadge, RatingHero } from "../components/Badges";
 
 const skills: SkillLevel[] = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 const GENDER_OPTIONS = ["Man", "Woman", "Non-binary", "Prefer not to say"];
@@ -387,29 +387,33 @@ export default function Profile() {
     <div>
       <h1 className="mb-4 text-2xl font-bold tracking-tight text-slate-900">Profile</h1>
 
-      {/* Profile card */}
-      <div className="relative mb-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        {/* Edit button — prominent coral */}
+      {/* Profile card with gradient banner */}
+      <div className="relative mb-4 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+        <div className="h-24 bg-gradient-to-br from-brand to-orange-400" />
+
+        {/* Edit button — glassy on the banner */}
         <button
           onClick={() => setEditing(true)}
-          className="absolute right-4 top-4 flex items-center gap-1.5 rounded-xl bg-brand px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-dark active:scale-95"
+          className="absolute right-4 top-4 flex items-center gap-1.5 rounded-xl bg-white/25 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/40 active:scale-95"
           aria-label="Edit profile"
         >
           ✏️ Edit
         </button>
 
-        <div className="flex items-center gap-4 pr-20">
-          {/* Avatar */}
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-2xl font-bold text-white">
-            {displayAvatar ? (
-              <img src={displayAvatar} alt={user?.name} className="h-full w-full object-cover" />
-            ) : initials}
+        <div className="px-4 pb-4">
+          {/* Avatar overlapping the banner */}
+          <div className="-mt-12 flex items-end">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-3xl font-bold text-white ring-4 ring-white">
+              {displayAvatar ? (
+                <img src={displayAvatar} alt={user?.name} className="h-full w-full object-cover" />
+              ) : initials}
+            </div>
           </div>
 
           {/* Name + skill + area */}
-          <div className="min-w-0">
-            <p className="truncate text-lg font-bold text-slate-900">{user?.name || "You"}</p>
-            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          <div className="mt-3">
+            <p className="truncate text-xl font-bold text-slate-900">{user?.name || "You"}</p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <SkillBadge skill={user?.skill ?? "Intermediate"} />
               {user?.homeArea && (
                 <span className="text-xs text-slate-400">📍 {user.homeArea}</span>
@@ -422,59 +426,57 @@ export default function Profile() {
                 user?.showGender !== false && user?.userGender ? user.userGender : null,
               ].filter(Boolean);
               return parts.length > 0 ? (
-                <p className="mt-0.5 text-xs text-slate-500">{parts.join(" · ")}</p>
+                <p className="mt-1 text-xs text-slate-500">{parts.join(" · ")}</p>
               ) : null;
             })()}
-            <p className="mt-0.5 text-xs text-slate-400">{user?.email}</p>
+            <p className="mt-1 text-xs text-slate-400">{user?.email}</p>
           </div>
-        </div>
 
-        {/* Bio */}
-        {user?.bio && (
-          <p className="mt-3 border-t border-slate-50 pt-3 text-sm text-slate-600 leading-relaxed">
-            {user.bio}
-          </p>
-        )}
+          {/* Bio */}
+          {user?.bio && (
+            <p className="mt-3 border-t border-slate-50 pt-3 text-sm leading-relaxed text-slate-600">
+              {user.bio}
+            </p>
+          )}
 
-        {!user?.bio && (
-          <button onClick={() => setEditing(true)}
-            className="mt-3 border-t border-slate-50 pt-3 text-xs text-slate-300 hover:text-brand w-full text-left">
-            + Add a bio…
-          </button>
-        )}
+          {!user?.bio && (
+            <button onClick={() => setEditing(true)}
+              className="mt-3 w-full border-t border-slate-50 pt-3 text-left text-xs text-slate-300 hover:text-brand">
+              + Add a bio…
+            </button>
+          )}
 
-        {/* Player rating */}
-        {user?.playerRating && user.playerRating.count > 0 && (
-          <div className="mt-3 border-t border-slate-50 pt-3 flex items-center gap-2">
-            <span className="text-amber-400 text-sm">{"★".repeat(Math.round(user.playerRating.avg ?? 0))}</span>
-            <span className="text-sm font-semibold text-slate-800">{(user.playerRating.avg ?? 0).toFixed(1)}</span>
-            <span className="text-xs text-slate-400">player rating ({user.playerRating.count} vote{user.playerRating.count === 1 ? "" : "s"})</span>
-          </div>
-        )}
-
-        {/* Favorite positions */}
-        {user?.favoritePositions && user.favoritePositions.length > 0 && (
-          <div className="mt-3 border-t border-slate-50 pt-3">
-            <p className="mb-1.5 text-xs font-medium text-slate-400">Positions</p>
-            <div className="flex flex-wrap gap-1.5">
-              {user.favoritePositions.map((p) => (
-                <span key={p} className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{p}</span>
-              ))}
+          {/* Player rating — prominent */}
+          {user?.playerRating && user.playerRating.count > 0 && (
+            <div className="mt-4">
+              <RatingHero avg={user.playerRating.avg ?? 0} count={user.playerRating.count} />
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Favorite positions */}
+          {user?.favoritePositions && user.favoritePositions.length > 0 && (
+            <div className="mt-3 border-t border-slate-50 pt-3">
+              <p className="mb-1.5 text-xs font-medium text-slate-400">Positions</p>
+              <div className="flex flex-wrap gap-1.5">
+                {user.favoritePositions.map((p) => (
+                  <span key={p} className="rounded-lg bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand">{p}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Action buttons */}
       <div className="mb-4 space-y-2">
         {user?.role === "admin" && (
           <button onClick={() => navigate("/admin")}
-            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+            className="w-full rounded-xl border border-brand/30 bg-brand/5 py-2.5 text-sm font-semibold text-brand transition hover:bg-brand/10 active:scale-[0.98]">
             🛠 Admin dashboard
           </button>
         )}
         <button onClick={() => { logout(); navigate("/"); }}
-          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 active:scale-[0.98]">
           Sign out
         </button>
       </div>

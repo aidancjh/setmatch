@@ -517,7 +517,7 @@ export default function GameDetail() {
         {(joined || waiting) && !isHost && (
           <button
             onClick={handleLeave}
-            className="w-full rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97] active:opacity-80"
+            className="w-full rounded-xl bg-rose-500 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-rose-600 active:scale-[0.97] active:opacity-90"
           >
             {waiting ? "Leave waitlist" : "Leave game"}
           </button>
@@ -526,10 +526,10 @@ export default function GameDetail() {
         <div className="flex gap-2">
           <button
             onClick={handleInterested}
-            className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.97] ${
+            className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.97] ${
               interested
-                ? "border-rose-200 bg-rose-50 text-rose-600"
-                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                ? "bg-brand text-white shadow-sm hover:bg-brand-dark"
+                : "border border-brand/40 bg-brand/5 text-brand hover:bg-brand/10"
             }`}
           >
             {interested ? "★ Interested" : "☆ Interested"}
@@ -537,7 +537,7 @@ export default function GameDetail() {
           </button>
           <button
             onClick={handleShare}
-            className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97]"
+            className="flex-1 rounded-xl bg-brand py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-brand-dark active:scale-[0.97]"
           >
             Share invite
           </button>
@@ -546,7 +546,7 @@ export default function GameDetail() {
         {(joined || isHost) && (
           <button
             onClick={() => navigate(`/chats/${game.id}`)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-brand/40 bg-brand/5 py-2.5 text-sm font-semibold text-brand transition-all duration-150 hover:bg-brand/10 active:scale-[0.97]"
           >
             💬 Open group chat
           </button>
@@ -556,7 +556,7 @@ export default function GameDetail() {
           <div className="space-y-2 border-t border-slate-100 pt-3">
             <button
               onClick={() => navigate(`/game/${game.id}/edit`)}
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="w-full rounded-xl border border-brand/40 bg-brand/5 py-2.5 text-sm font-semibold text-brand transition hover:bg-brand/10 active:scale-[0.98]"
             >
               Edit game
             </button>
@@ -582,7 +582,7 @@ export default function GameDetail() {
                 <Link to={`/user/${r.id}`} className="text-sm font-medium text-slate-700 hover:underline truncate">
                   {r.name}
                 </Link>
-                <div className="flex shrink-0 gap-1">
+                <div className="flex shrink-0 gap-1.5">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
@@ -598,7 +598,7 @@ export default function GameDetail() {
                           })
                           .catch(() => {});
                       }}
-                      className={`text-lg leading-none transition ${
+                      className={`text-2xl leading-none transition active:scale-90 ${
                         r.myRating !== null && star <= r.myRating ? "text-amber-400" : "text-slate-200 hover:text-amber-300"
                       }`}
                     >
