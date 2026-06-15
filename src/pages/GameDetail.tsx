@@ -76,6 +76,7 @@ export default function GameDetail() {
   const waiting = isOnWaitlist(game, me.id);
   const isHost = game.hostId === me.id;
   const interested = game.interestedIds.includes(me.id);
+  const past = isPast(game.date);
 
   const guarded = (fn: () => Promise<unknown>) => async () => {
     if (!user) { navigate("/auth", { state: { from: location.pathname } }); return; }
@@ -498,50 +499,58 @@ export default function GameDetail() {
 
       {/* Primary action */}
       <div className="space-y-2">
-        {!joined && !waiting && left > 0 && (
-          <button
-            onClick={handleJoin}
-            className="w-full rounded-xl bg-brand py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-brand-dark active:scale-[0.97] active:opacity-90"
-          >
-            Join game — claim 1 of {left} spots
-          </button>
-        )}
-        {!joined && !waiting && left === 0 && (
-          <button
-            onClick={handleJoin}
-            className="w-full rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-amber-600 active:scale-[0.97] active:opacity-90"
-          >
-            Game full — join waitlist
-          </button>
-        )}
-        {(joined || waiting) && !isHost && (
-          <button
-            onClick={handleLeave}
-            className="w-full rounded-xl bg-rose-500 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-rose-600 active:scale-[0.97] active:opacity-90"
-          >
-            {waiting ? "Leave waitlist" : "Leave game"}
-          </button>
-        )}
+        {past ? (
+          <p className="rounded-xl bg-slate-100 py-3 text-center text-sm font-medium text-slate-500">
+            This game has already taken place.
+          </p>
+        ) : (
+          <>
+            {!joined && !waiting && left > 0 && (
+              <button
+                onClick={handleJoin}
+                className="w-full rounded-xl bg-brand py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-brand-dark active:scale-[0.97] active:opacity-90"
+              >
+                Join game — claim 1 of {left} spots
+              </button>
+            )}
+            {!joined && !waiting && left === 0 && (
+              <button
+                onClick={handleJoin}
+                className="w-full rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-amber-600 active:scale-[0.97] active:opacity-90"
+              >
+                Game full — join waitlist
+              </button>
+            )}
+            {(joined || waiting) && !isHost && (
+              <button
+                onClick={handleLeave}
+                className="w-full rounded-xl bg-rose-500 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-rose-600 active:scale-[0.97] active:opacity-90"
+              >
+                {waiting ? "Leave waitlist" : "Leave game"}
+              </button>
+            )}
 
-        <div className="flex gap-2">
-          <button
-            onClick={handleInterested}
-            className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.97] ${
-              interested
-                ? "bg-brand text-white shadow-sm hover:bg-brand-dark"
-                : "border border-brand/40 bg-brand/5 text-brand hover:bg-brand/10"
-            }`}
-          >
-            {interested ? "★ Interested" : "☆ Interested"}
-            {game.interestedIds.length > 0 && ` (${game.interestedIds.length})`}
-          </button>
-          <button
-            onClick={handleShare}
-            className="flex-1 rounded-xl bg-brand py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-brand-dark active:scale-[0.97]"
-          >
-            Share invite
-          </button>
-        </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleInterested}
+                className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.97] ${
+                  interested
+                    ? "bg-brand text-white shadow-sm hover:bg-brand-dark"
+                    : "border border-brand/40 bg-brand/5 text-brand hover:bg-brand/10"
+                }`}
+              >
+                {interested ? "★ Interested" : "☆ Interested"}
+                {game.interestedIds.length > 0 && ` (${game.interestedIds.length})`}
+              </button>
+              <button
+                onClick={handleShare}
+                className="flex-1 rounded-xl bg-brand py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-brand-dark active:scale-[0.97]"
+              >
+                Share invite
+              </button>
+            </div>
+          </>
+        )}
 
         {(joined || isHost) && (
           <button

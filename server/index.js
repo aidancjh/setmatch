@@ -525,6 +525,12 @@ app.post(
   "/api/games/:id/join",
   requireAuth,
   h(async (req, res) => {
+    const existing = await repo.getGame(req.params.id);
+    if (!existing) return res.status(404).json({ error: "Game not found." });
+    // Can't join a game whose date has already passed (ISO date string compare).
+    if (existing.date < new Date().toISOString().slice(0, 10))
+      return res.status(400).json({ error: "This game has already taken place." });
+
     const game = await repo.joinGame(req.params.id, req.userId);
     if (!game) return res.status(404).json({ error: "Game not found." });
 
