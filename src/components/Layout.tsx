@@ -51,7 +51,7 @@ function PostSheet({ onClose }: { onClose: () => void }) {
       />
 
       {/* Sheet */}
-      <div className="relative mx-auto w-full max-w-md rounded-t-3xl bg-white pb-10 pt-3 shadow-xl">
+      <div className="animate-sheet-up relative mx-auto w-full max-w-md rounded-t-3xl bg-white pb-10 pt-3 shadow-xl">
         {/* Handle */}
         <div className="mb-4 flex justify-center">
           <div className="h-1 w-10 rounded-full bg-slate-200" />
@@ -109,7 +109,7 @@ function Tab({
       end={end}
       aria-label={label}
       className={({ isActive }) =>
-        `flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition ${
+        `flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-all duration-150 active:scale-90 active:opacity-70 ${
           isActive ? "text-brand" : "text-slate-400"
         }`
       }
@@ -137,7 +137,7 @@ export default function Layout() {
       >
         <button
           onClick={() => navigate("/")}
-          className="flex items-center gap-2 text-left"
+          className="flex items-center gap-2 text-left transition-all duration-150 active:scale-95 active:opacity-70"
           aria-label="Go to home"
         >
           <VolleyballIcon className="h-6 w-6 text-brand" />

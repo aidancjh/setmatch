@@ -157,7 +157,7 @@ function FilterChips({
         <button
           key={o}
           onClick={() => onChange(o)}
-          className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium transition ${
+          className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium transition-all duration-150 active:scale-95 active:opacity-80 ${
             value === o
               ? "bg-brand text-white"
               : "bg-slate-100 text-slate-600 hover:bg-slate-200"

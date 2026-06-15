@@ -156,7 +156,7 @@ export default function GameDetail() {
           onClick={() => { if (!joining) setJoinModal(null); }}
         >
           <div
-            className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
+            className="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {joinModal === "preview" ? (
@@ -210,14 +210,14 @@ export default function GameDetail() {
                   <button
                     onClick={handleConfirmJoin}
                     disabled={joining}
-                    className="w-full rounded-2xl bg-brand py-3.5 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60"
+                    className="w-full rounded-2xl bg-brand py-3.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-brand-dark active:scale-[0.97] disabled:opacity-60"
                   >
                     {joining ? "Joining…" : joinError ? "Try again" : left > 0 ? "Yes, join game" : "Yes, join waitlist"}
                   </button>
                   <button
                     onClick={() => setJoinModal(null)}
                     disabled={joining}
-                    className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                    className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-medium text-slate-600 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-60"
                   >
                     Cancel
                   </button>
@@ -296,7 +296,7 @@ export default function GameDetail() {
           onClick={() => { if (!leaving) setLeaveModal(false); }}
         >
           <div
-            className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
+            className="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-8 pb-2 pt-7 text-center">
@@ -333,14 +333,14 @@ export default function GameDetail() {
               <button
                 onClick={handleConfirmLeave}
                 disabled={leaving}
-                className="w-full rounded-2xl bg-rose-500 py-3.5 text-sm font-semibold text-white transition hover:bg-rose-600 disabled:opacity-60"
+                className="w-full rounded-2xl bg-rose-500 py-3.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-rose-600 active:scale-[0.97] disabled:opacity-60"
               >
                 {leaving ? "Leaving…" : leaveError ? "Try again" : waiting ? "Yes, leave waitlist" : "Yes, leave game"}
               </button>
               <button
                 onClick={() => setLeaveModal(false)}
                 disabled={leaving}
-                className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-medium text-slate-600 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-60"
               >
                 Cancel
               </button>
@@ -490,7 +490,7 @@ export default function GameDetail() {
         {!joined && !waiting && left > 0 && (
           <button
             onClick={handleJoin}
-            className="w-full rounded-xl bg-brand py-3 text-sm font-semibold text-white transition hover:bg-brand-dark"
+            className="w-full rounded-xl bg-brand py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-brand-dark active:scale-[0.97] active:opacity-90"
           >
             Join game — claim 1 of {left} spots
           </button>
@@ -498,7 +498,7 @@ export default function GameDetail() {
         {!joined && !waiting && left === 0 && (
           <button
             onClick={handleJoin}
-            className="w-full rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white transition hover:bg-amber-600"
+            className="w-full rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-amber-600 active:scale-[0.97] active:opacity-90"
           >
             Game full — join waitlist
           </button>
@@ -506,7 +506,7 @@ export default function GameDetail() {
         {(joined || waiting) && !isHost && (
           <button
             onClick={handleLeave}
-            className="w-full rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            className="w-full rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97] active:opacity-80"
           >
             {waiting ? "Leave waitlist" : "Leave game"}
           </button>
@@ -515,7 +515,7 @@ export default function GameDetail() {
         <div className="flex gap-2">
           <button
             onClick={handleInterested}
-            className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition ${
+            className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.97] ${
               interested
                 ? "border-rose-200 bg-rose-50 text-rose-600"
                 : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
@@ -526,7 +526,7 @@ export default function GameDetail() {
           </button>
           <button
             onClick={handleShare}
-            className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97]"
           >
             Share invite
           </button>

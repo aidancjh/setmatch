@@ -71,7 +71,7 @@ export default function ReviewModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
       onClick={(e) => { if (e.target === e.currentTarget) onDone(); }}
     >
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      <div className="animate-pop-in w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
         {/* Header */}
         <div className="mb-5 text-center">
           <p className="text-xs font-semibold uppercase tracking-wide text-brand">
@@ -111,14 +111,14 @@ export default function ReviewModal({
         <div className="mt-4 flex gap-2">
           <button
             onClick={onDone}
-            className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-50"
+            className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-500 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97]"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={busy}
-            className="flex-1 rounded-xl bg-brand py-3 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-50"
+            className="flex-1 rounded-xl bg-brand py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-brand-dark active:scale-[0.97] disabled:opacity-50"
           >
             {busy ? "Saving…" : "Submit review"}
           </button>

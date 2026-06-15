@@ -47,6 +47,7 @@ export default function MyGames() {
     { key: "hosting", label: "Hosting" },
     { key: "past", label: "Past" },
   ];
+  const tabIndex = tabs.findIndex(t => t.key === tab);
 
   return (
     <div>
@@ -57,15 +58,23 @@ export default function MyGames() {
         Games you're hosting, joined, or waitlisted for.
       </p>
 
-      <div className="mb-4 flex gap-1 rounded-xl bg-slate-100 p-1">
+      <div className="relative mb-4 flex rounded-xl bg-slate-100 p-1">
+        {/* Sliding pill */}
+        <div
+          className="pointer-events-none absolute inset-y-1 rounded-lg bg-brand shadow-sm"
+          style={{
+            left: 4,
+            width: 'calc((100% - 8px) / 3)',
+            transform: `translateX(${tabIndex * 100}%)`,
+            transition: 'transform 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
+        />
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 rounded-lg py-1.5 text-sm font-medium transition ${
-              tab === t.key
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500"
+            className={`relative z-10 flex-1 rounded-lg py-1.5 text-sm font-medium transition-colors duration-150 ${
+              tab === t.key ? "text-white" : "text-slate-500"
             }`}
           >
             {t.label}
