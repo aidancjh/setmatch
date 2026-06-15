@@ -1,19 +1,20 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getUserHighlights } from "../services/gamesService";
 import { api } from "../lib/api";
 import type { Highlight, SkillLevel } from "../types";
-import { RatingHero } from "../components/Badges";
+import { SkillBadge, RatingHero } from "../components/Badges";
 
 const skills: SkillLevel[] = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 const GENDER_OPTIONS = ["Man", "Woman", "Non-binary", "Prefer not to say"];
 const POSITION_OPTIONS = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist"];
 
+// "" = gradient default; hex = solid color
 const BANNER_COLORS = [
-  "#f4634e", "#f97316", "#eab308", "#22c55e",
-  "#06b6d4", "#3b82f6", "#6366f1", "#8b5cf6",
-  "#ec4899", "#ef4444", "#64748b", "#0f172a",
+  "#f97316", "#eab308", "#22c55e", "#06b6d4",
+  "#3b82f6", "#6366f1", "#8b5cf6", "#ec4899",
+  "#ef4444", "#64748b", "#0f172a",
 ];
 
 function computeAge(birthdate: string | null | undefined): number | null {
@@ -31,6 +32,139 @@ const SKILL_INFO: Record<SkillLevel, { emoji: string; desc: string }> = {
   Advanced:       { emoji: "🏆", desc: "Consistent technique. Competitive experience, performs under pressure." },
   "All Levels":   { emoji: "🤝", desc: "Happy in any game at any pace. Just here to play!" },
 };
+
+// ---------------------------------------------------------------------------
+// Banner image cropper (3:1 aspect ratio)
+// ---------------------------------------------------------------------------
+
+function BannerCropper({
+  preview,
+  onDone,
+  onCancel,
+}: {
+  preview: string;
+  onDone: (file: File) => void;
+  onCancel: () => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
+  const [applying, setApplying] = useState(false);
+
+  function clamp(ox: number, oy: number, dw: number, dh: number) {
+    const c = containerRef.current;
+    if (!c) return { x: ox, y: oy };
+    return {
+      x: Math.min(0, Math.max(c.offsetWidth - dw, ox)),
+      y: Math.min(0, Math.max(c.offsetHeight - dh, oy)),
+    };
+  }
+
+  const handleImgLoad = useCallback(() => {
+    const img = imgRef.current;
+    const c = containerRef.current;
+    if (!img || !c) return;
+    const scale = Math.max(c.offsetWidth / img.naturalWidth, c.offsetHeight / img.naturalHeight);
+    const dw = Math.round(img.naturalWidth * scale);
+    const dh = Math.round(img.naturalHeight * scale);
+    setImgSize({ w: dw, h: dh });
+    setOffset({ x: Math.round((c.offsetWidth - dw) / 2), y: Math.round((c.offsetHeight - dh) / 2) });
+  }, []);
+
+  function onPointerDown(e: React.PointerEvent) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDragging(true);
+    dragStart.current = { x: e.clientX, y: e.clientY, ox: offset.x, oy: offset.y };
+  }
+  function onPointerMove(e: React.PointerEvent) {
+    if (!dragging) return;
+    setOffset(clamp(
+      dragStart.current.ox + (e.clientX - dragStart.current.x),
+      dragStart.current.oy + (e.clientY - dragStart.current.y),
+      imgSize.w, imgSize.h
+    ));
+  }
+  function onPointerUp() { setDragging(false); }
+
+  async function applyCrop() {
+    const img = imgRef.current;
+    const c = containerRef.current;
+    if (!img || !c) return;
+    setApplying(true);
+    const cw = c.offsetWidth;
+    const ch = c.offsetHeight;
+    const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
+    const srcX = -offset.x / scale;
+    const srcY = -offset.y / scale;
+    const srcW = cw / scale;
+    const srcH = ch / scale;
+    const canvas = document.createElement("canvas");
+    canvas.width = 1200;
+    canvas.height = 400;
+    const ctx = canvas.getContext("2d")!;
+    const source = new Image();
+    source.src = preview;
+    await new Promise<void>((res) => { source.onload = () => res(); if (source.complete) res(); });
+    ctx.drawImage(source, srcX, srcY, srcW, srcH, 0, 0, 1200, 400);
+    canvas.toBlob((blob) => {
+      if (blob) onDone(new File([blob], "banner.jpg", { type: "image/jpeg" }));
+      setApplying(false);
+    }, "image/jpeg", 0.92);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-black">
+      <div className="flex items-center justify-between px-4 py-3">
+        <button onClick={onCancel} className="text-sm text-white/60 hover:text-white">Cancel</button>
+        <p className="text-sm font-semibold text-white">Crop banner</p>
+        <button
+          onClick={applyCrop}
+          disabled={applying || imgSize.w === 0}
+          className="text-sm font-semibold text-brand disabled:opacity-40"
+        >
+          {applying ? "Saving…" : "Use photo"}
+        </button>
+      </div>
+      <p className="mb-3 text-center text-xs text-white/40">Drag to reposition</p>
+
+      {/* 3:1 crop frame */}
+      <div
+        ref={containerRef}
+        className="relative mx-4 overflow-hidden rounded-2xl bg-slate-900"
+        style={{ aspectRatio: "3/1", cursor: dragging ? "grabbing" : "grab", userSelect: "none" }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        {imgSize.w > 0 && (
+          <img
+            ref={imgRef}
+            src={preview}
+            alt="Crop"
+            draggable={false}
+            onLoad={handleImgLoad}
+            className="absolute pointer-events-none"
+            style={{ width: imgSize.w, height: imgSize.h, left: offset.x, top: offset.y }}
+          />
+        )}
+        {imgSize.w === 0 && (
+          <img
+            ref={imgRef}
+            src={preview}
+            alt="Crop"
+            draggable={false}
+            onLoad={handleImgLoad}
+            className="absolute pointer-events-none opacity-0"
+          />
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Highlights grid
@@ -74,7 +208,7 @@ function HighlightGrid({
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-0.5 overflow-hidden rounded-2xl">
+      <div className="grid grid-cols-4 gap-0.5 overflow-hidden rounded-2xl">
         {highlights.map((h) => (
           <button
             key={h.id}
@@ -85,17 +219,17 @@ function HighlightGrid({
               <img src={h.thumbUrl || h.videoUrl} alt={h.caption} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
-                <span className="text-2xl text-white/60">▶</span>
+                <span className="text-lg text-white/60">▶</span>
               </div>
             )}
             {h.mediaType !== "photo" && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition hover:opacity-100">
-                <span className="text-xl text-white drop-shadow">▶</span>
+                <span className="text-base text-white drop-shadow">▶</span>
               </div>
             )}
             {h.likesCount > 0 && (
-              <span className="absolute bottom-1 right-1 rounded bg-black/50 px-1 text-[10px] text-white">
-                ♥ {h.likesCount}
+              <span className="absolute bottom-0.5 right-0.5 rounded bg-black/50 px-0.5 text-[9px] text-white">
+                ♥{h.likesCount}
               </span>
             )}
           </button>
@@ -145,11 +279,12 @@ export default function Profile() {
   const [stats, setStats] = useState<{ gamesHosted: number; gamesPlayed: number } | null>(null);
 
   // Banner customization
-  const [bannerColor, setBannerColor] = useState(user?.bannerColor || "#f4634e");
+  const [bannerColor, setBannerColor] = useState(user?.bannerColor || "");
   const [bannerImage, setBannerImage] = useState(user?.bannerImage || "");
   const [bannerPickerOpen, setBannerPickerOpen] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
-  const bannerImageRef = useRef<HTMLInputElement>(null);
+  const [bannerCropSrc, setBannerCropSrc] = useState("");
+  const bannerFileRef = useRef<HTMLInputElement>(null);
 
   // Edit-mode state
   const [name, setName] = useState(user?.name ?? "");
@@ -175,18 +310,16 @@ export default function Profile() {
     if (user?.id) {
       getUserHighlights(user.id).then(setHighlights).catch(() => {});
       api.get<{ gamesHosted: number; gamesPlayed: number }>(`/users/${user.id}/profile`)
-        .then(setStats)
-        .catch(() => {});
+        .then(setStats).catch(() => {});
     }
   }, [user?.id]);
 
-  // Sync banner state when user updates (e.g. after save)
   useEffect(() => {
-    setBannerColor(user?.bannerColor || "#f4634e");
+    setBannerColor(user?.bannerColor || "");
     setBannerImage(user?.bannerImage || "");
   }, [user?.bannerColor, user?.bannerImage]);
 
-  // Banner color selection — auto-saves immediately
+  // Banner color selection — auto-saves
   const handleColorSelect = async (color: string) => {
     setBannerColor(color);
     setBannerImage("");
@@ -194,10 +327,18 @@ export default function Profile() {
     try { await updateProfile({ bannerColor: color, bannerImage: "" }); } catch { /* silent */ }
   };
 
-  // Banner image upload — auto-saves immediately
-  const handleBannerImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // File selected → open cropper
+  const handleBannerFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !cloudName || !uploadPreset) return;
+    if (!file) return;
+    setBannerCropSrc(URL.createObjectURL(file));
+    if (bannerFileRef.current) bannerFileRef.current.value = "";
+  };
+
+  // Crop confirmed → upload to Cloudinary → save
+  const handleBannerCropDone = async (file: File) => {
+    setBannerCropSrc("");
+    setBannerPickerOpen(false);
     setBannerUploading(true);
     try {
       const fd = new FormData();
@@ -211,12 +352,10 @@ export default function Profile() {
       if (data.secure_url) {
         const img = data.secure_url;
         setBannerImage(img);
-        setBannerPickerOpen(false);
         try { await updateProfile({ bannerColor, bannerImage: img }); } catch { /* silent */ }
       }
     } catch { /* silent */ } finally {
       setBannerUploading(false);
-      if (bannerImageRef.current) bannerImageRef.current.value = "";
     }
   };
 
@@ -279,9 +418,13 @@ export default function Profile() {
   const initials = ((user?.name ?? "Y").trim() || "Y").charAt(0).toUpperCase();
   const displayAvatar = avatarUrl || user?.avatarUrl;
 
+  // "" = gradient (default), hex = solid, bannerImage = photo
   const bannerStyle = bannerImage
     ? { backgroundImage: `url(${bannerImage})`, backgroundSize: "cover", backgroundPosition: "center" }
-    : { backgroundColor: bannerColor || "#f4634e" };
+    : bannerColor
+      ? { backgroundColor: bannerColor }
+      : undefined;
+  const bannerCls = `relative h-24${!bannerStyle ? " bg-gradient-to-br from-brand to-orange-400" : ""}`;
 
   // ── Edit mode ────────────────────────────────────────────────────────────
 
@@ -295,7 +438,6 @@ export default function Profile() {
           <h1 className="text-lg font-bold text-slate-900">Edit profile</h1>
         </div>
 
-        {/* Avatar upload */}
         <div className="mb-5 flex flex-col items-center">
           <button
             onClick={() => fileRef.current?.click()}
@@ -447,13 +589,10 @@ export default function Profile() {
       <div className="relative mb-4 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
 
         {/* Banner */}
-        <div className="relative h-44" style={bannerStyle}>
-          {/* Dashed border overlay in edit mode */}
+        <div className={bannerCls} style={bannerStyle ?? undefined}>
           {bannerPickerOpen && (
             <div className="pointer-events-none absolute inset-0 border-2 border-dashed border-white/70" />
           )}
-
-          {/* Background edit button */}
           <button
             onClick={() => setBannerPickerOpen((v) => !v)}
             className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/25 text-white transition hover:bg-black/40 active:scale-90"
@@ -469,33 +608,63 @@ export default function Profile() {
               </svg>
             )}
           </button>
-
-          {/* Name + skill centered on banner */}
-          <div className="flex h-full flex-col items-center justify-center pb-14 px-8 text-center">
-            <p className="text-xl font-bold leading-tight text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.25)]">
-              {user?.name || "You"}
-            </p>
-            <p className="mt-1 text-sm text-white/85">
-              {user?.skill}
-              {user?.homeArea ? ` · 📍 ${user.homeArea}` : ""}
-            </p>
-          </div>
         </div>
 
-        <div className="px-4 pb-4">
-          {/* Avatar — centered, overlapping banner bottom edge */}
-          <div className="-mt-14 flex justify-center">
-            <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-4xl font-bold text-white ring-4 ring-white">
+        <div className="px-4 pb-5">
+          {/* Avatar — centered, overlapping banner */}
+          <div className="-mt-12 flex justify-center">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-3xl font-bold text-white ring-4 ring-white">
               {displayAvatar ? (
                 <img src={displayAvatar} alt={user?.name} className="h-full w-full object-cover" />
               ) : initials}
             </div>
           </div>
 
-          {/* Banner color picker box */}
+          {/* Name + info — centered */}
+          <div className="mt-3 text-center">
+            <p className="text-xl font-bold text-slate-900">{user?.name || "You"}</p>
+            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-2">
+              <SkillBadge skill={user?.skill ?? "Intermediate"} />
+              {user?.homeArea && (
+                <span className="text-xs text-slate-400">📍 {user.homeArea}</span>
+              )}
+            </div>
+            {(() => {
+              const age = computeAge(user?.birthdate);
+              const parts = [
+                user?.showAge !== false && age !== null ? `${age} yrs` : null,
+                user?.showGender !== false && user?.userGender ? user.userGender : null,
+              ].filter(Boolean);
+              return parts.length > 0 ? (
+                <p className="mt-1 text-xs text-slate-400">{parts.join(" · ")}</p>
+              ) : null;
+            })()}
+          </div>
+
+          {/* Edit button */}
+          <button
+            onClick={() => setEditing(true)}
+            className="mt-4 w-full rounded-xl border border-brand/30 bg-brand/5 py-2 text-sm font-semibold text-brand transition hover:bg-brand/10 active:scale-[0.98]"
+          >
+            ✏️ Edit profile
+          </button>
+
+          {/* Banner picker box */}
           {bannerPickerOpen && (
-            <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+            <div className="mt-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              {/* Gradient default swatch + color swatches */}
               <div className="grid grid-cols-6 gap-2.5">
+                {/* Default gradient swatch */}
+                <button
+                  onClick={() => handleColorSelect("")}
+                  className="aspect-square w-full rounded-xl transition active:scale-90"
+                  style={{
+                    background: "linear-gradient(135deg, #f4634e, #f97316)",
+                    outline: !bannerColor && !bannerImage ? "3px solid rgba(0,0,0,0.35)" : "none",
+                    outlineOffset: "2px",
+                  }}
+                  aria-label="Default gradient"
+                />
                 {BANNER_COLORS.map((c) => (
                   <button
                     key={c}
@@ -512,7 +681,7 @@ export default function Profile() {
               </div>
               <div className="mt-3 border-t border-slate-100 pt-3">
                 <button
-                  onClick={() => bannerImageRef.current?.click()}
+                  onClick={() => bannerFileRef.current?.click()}
                   disabled={bannerUploading}
                   className="w-full rounded-xl border border-dashed border-slate-200 py-3 text-sm text-slate-500 transition hover:border-brand/40 hover:text-brand disabled:opacity-50"
                 >
@@ -530,43 +699,15 @@ export default function Profile() {
                   </button>
                 )}
                 <input
-                  ref={bannerImageRef}
+                  ref={bannerFileRef}
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={handleBannerImageUpload}
+                  onChange={handleBannerFileSelect}
                 />
               </div>
             </div>
           )}
-
-          {/* 3-column stats row */}
-          <div className="mt-5 grid grid-cols-3 divide-x divide-slate-100 text-center">
-            <div className="py-1 pr-2">
-              <p className="text-xl font-bold text-slate-900">{stats?.gamesHosted ?? "—"}</p>
-              <p className="mt-0.5 text-xs text-slate-400">Hosted</p>
-            </div>
-            <div className="py-1">
-              <p className="text-xl font-bold text-slate-900">{stats?.gamesPlayed ?? "—"}</p>
-              <p className="mt-0.5 text-xs text-slate-400">Joined</p>
-            </div>
-            <div className="py-1 pl-2">
-              <p className="text-xl font-bold text-slate-900">
-                {user?.playerRating && user.playerRating.count > 0
-                  ? (user.playerRating.avg?.toFixed(1) ?? "—")
-                  : "—"}
-              </p>
-              <p className="mt-0.5 text-xs text-slate-400">Rating</p>
-            </div>
-          </div>
-
-          {/* Edit profile button */}
-          <button
-            onClick={() => setEditing(true)}
-            className="mt-4 w-full rounded-xl border border-brand/30 bg-brand/5 py-2 text-sm font-semibold text-brand transition hover:bg-brand/10 active:scale-[0.98]"
-          >
-            ✏️ Edit profile
-          </button>
 
           {/* Bio */}
           {user?.bio ? (
@@ -576,13 +717,13 @@ export default function Profile() {
           ) : (
             <button
               onClick={() => setEditing(true)}
-              className="mt-4 w-full border-t border-slate-50 pt-4 text-left text-xs text-slate-300 hover:text-brand"
+              className="mt-4 w-full border-t border-slate-50 pt-4 text-center text-xs text-slate-300 hover:text-brand"
             >
               + Add a bio…
             </button>
           )}
 
-          {/* Player rating — prominent */}
+          {/* Player rating */}
           {user?.playerRating && user.playerRating.count > 0 && (
             <div className="mt-4">
               <RatingHero avg={user.playerRating.avg ?? 0} count={user.playerRating.count} />
@@ -600,18 +741,18 @@ export default function Profile() {
               </div>
             </div>
           )}
+        </div>
+      </div>
 
-          {/* Age / gender display */}
-          {(() => {
-            const age = computeAge(user?.birthdate);
-            const parts = [
-              user?.showAge !== false && age !== null ? `${age} yrs` : null,
-              user?.showGender !== false && user?.userGender ? user.userGender : null,
-            ].filter(Boolean);
-            return parts.length > 0 ? (
-              <p className="mt-3 text-xs text-slate-400">{parts.join(" · ")}</p>
-            ) : null;
-          })()}
+      {/* Stats cards — outside card, same style as UserProfile */}
+      <div className="mb-4 grid grid-cols-2 gap-3">
+        <div className="rounded-2xl bg-gradient-to-br from-brand/10 to-orange-100/60 p-4 text-center ring-1 ring-brand/15">
+          <p className="text-2xl font-bold text-brand">{stats?.gamesHosted ?? "—"}</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Hosted</p>
+        </div>
+        <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-sky-100/60 p-4 text-center ring-1 ring-sky-200/60">
+          <p className="text-2xl font-bold text-sky-600">{stats?.gamesPlayed ?? "—"}</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Joined</p>
         </div>
       </div>
 
@@ -634,6 +775,15 @@ export default function Profile() {
         highlights={highlights}
         onNavigate={() => navigate("/highlights?upload=1")}
       />
+
+      {/* Banner image cropper modal */}
+      {bannerCropSrc && (
+        <BannerCropper
+          preview={bannerCropSrc}
+          onDone={handleBannerCropDone}
+          onCancel={() => setBannerCropSrc("")}
+        />
+      )}
     </div>
   );
 }

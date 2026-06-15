@@ -60,8 +60,9 @@ export default function UserProfile() {
       {/* Header card with gradient banner */}
       <div className="mb-4 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
         <div className="h-24 bg-gradient-to-br from-brand to-orange-400" />
-        <div className="px-4 pb-4">
-          <div className="-mt-12 flex items-end gap-3">
+        <div className="px-4 pb-5">
+          {/* Avatar — centered, overlapping banner */}
+          <div className="-mt-12 flex justify-center">
             <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-3xl font-bold text-white ring-4 ring-white">
               {profile.avatarUrl ? (
                 <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" />
@@ -71,19 +72,20 @@ export default function UserProfile() {
             </div>
           </div>
 
-          <div className="mt-3">
-            <p className="truncate text-xl font-bold text-slate-900">
+          {/* Name + info — centered */}
+          <div className="mt-3 text-center">
+            <p className="text-xl font-bold text-slate-900">
               {profile.name}
               {isMe && <span className="ml-1 text-sm font-normal text-slate-400">(you)</span>}
             </p>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-2">
               <SkillBadge skill={profile.skill} />
               {profile.homeArea && (
                 <span className="text-xs text-slate-400">📍 {profile.homeArea}</span>
               )}
             </div>
             {(profile.ageDisplay || profile.genderDisplay) && (
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-400">
                 {[profile.ageDisplay ? `${profile.ageDisplay} yrs` : null, profile.genderDisplay].filter(Boolean).join(" · ")}
               </p>
             )}
@@ -93,7 +95,7 @@ export default function UserProfile() {
           </div>
 
           {profile.bio && (
-            <p className="mt-3 border-t border-slate-50 pt-3 text-sm leading-relaxed text-slate-600">
+            <p className="mt-4 border-t border-slate-50 pt-4 text-sm leading-relaxed text-slate-600">
               {profile.bio}
             </p>
           )}
@@ -105,9 +107,9 @@ export default function UserProfile() {
           )}
 
           {profile.favoritePositions && profile.favoritePositions.length > 0 && (
-            <div className="mt-3 border-t border-slate-50 pt-3">
+            <div className="mt-4 border-t border-slate-50 pt-4">
               <p className="mb-1.5 text-xs font-medium text-slate-400">Positions</p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap justify-center gap-1.5">
                 {profile.favoritePositions.map((p) => (
                   <span key={p} className="rounded-lg bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand">{p}</span>
                 ))}
