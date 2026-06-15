@@ -10,6 +10,15 @@ const skills: SkillLevel[] = ["Beginner", "Intermediate", "Advanced", "All Level
 const GENDER_OPTIONS = ["Man", "Woman", "Non-binary", "Prefer not to say"];
 const POSITION_OPTIONS = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist"];
 
+const POSITION_ABBR: Record<string, string> = {
+  "Setter": "SET",
+  "Outside Hitter": "OH",
+  "Middle Blocker": "MB",
+  "Opposite": "OPP",
+  "Libero": "LIB",
+  "Defensive Specialist": "DS",
+};
+
 // "" = gradient default; hex = solid color
 const BANNER_COLORS = [
   "#f97316", "#eab308", "#22c55e", "#06b6d4",
@@ -744,15 +753,23 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Stats cards — outside card, same style as UserProfile */}
-      <div className="mb-4 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-gradient-to-br from-brand/10 to-orange-100/60 p-4 text-center ring-1 ring-brand/15">
+      {/* Stats cards — outside card, 3-col */}
+      <div className="mb-4 grid grid-cols-3 gap-2">
+        <div className="rounded-2xl bg-gradient-to-br from-brand/10 to-orange-100/60 p-3 text-center ring-1 ring-brand/15">
           <p className="text-2xl font-bold text-brand">{stats?.gamesHosted ?? "—"}</p>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Hosted</p>
+          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">Hosted</p>
         </div>
-        <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-sky-100/60 p-4 text-center ring-1 ring-sky-200/60">
+        <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-sky-100/60 p-3 text-center ring-1 ring-sky-200/60">
           <p className="text-2xl font-bold text-sky-600">{stats?.gamesPlayed ?? "—"}</p>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Joined</p>
+          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">Joined</p>
+        </div>
+        <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 p-3 text-center ring-1 ring-emerald-200/60">
+          <p className="text-2xl font-bold text-emerald-600">
+            {user?.favoritePositions?.[0]
+              ? (POSITION_ABBR[user.favoritePositions[0]] ?? user.favoritePositions[0].slice(0, 3).toUpperCase())
+              : "—"}
+          </p>
+          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">Position</p>
         </div>
       </div>
 

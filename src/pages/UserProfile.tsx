@@ -7,6 +7,15 @@ import { isInGame } from "../services/gamesService";
 import GameCard from "../components/GameCard";
 import { SkillBadge, RatingHero } from "../components/Badges";
 
+const POSITION_ABBR: Record<string, string> = {
+  "Setter": "SET",
+  "Outside Hitter": "OH",
+  "Middle Blocker": "MB",
+  "Opposite": "OPP",
+  "Libero": "LIB",
+  "Defensive Specialist": "DS",
+};
+
 function memberSince(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
@@ -120,18 +129,22 @@ export default function UserProfile() {
       </div>
 
       {/* Stats */}
-      <div className="mb-5 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-gradient-to-br from-brand/10 to-orange-100/60 p-4 text-center ring-1 ring-brand/15">
+      <div className="mb-5 grid grid-cols-3 gap-2">
+        <div className="rounded-2xl bg-gradient-to-br from-brand/10 to-orange-100/60 p-3 text-center ring-1 ring-brand/15">
           <p className="text-2xl font-bold text-brand">{profile.gamesHosted}</p>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Hosted
-          </p>
+          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">Hosted</p>
         </div>
-        <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-sky-100/60 p-4 text-center ring-1 ring-sky-200/60">
+        <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-sky-100/60 p-3 text-center ring-1 ring-sky-200/60">
           <p className="text-2xl font-bold text-sky-600">{profile.gamesPlayed}</p>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Joined
+          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">Joined</p>
+        </div>
+        <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 p-3 text-center ring-1 ring-emerald-200/60">
+          <p className="text-2xl font-bold text-emerald-600">
+            {profile.favoritePositions?.[0]
+              ? (POSITION_ABBR[profile.favoritePositions[0]] ?? profile.favoritePositions[0].slice(0, 3).toUpperCase())
+              : "—"}
           </p>
+          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">Position</p>
         </div>
       </div>
 
