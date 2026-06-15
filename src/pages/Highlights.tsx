@@ -211,10 +211,150 @@ function CropPhoto({
 }
 
 // ---------------------------------------------------------------------------
-// Upload modal  (3 steps: pick → edit → caption+share)
+// Video trim UI
 // ---------------------------------------------------------------------------
 
-type UploadStep = "pick" | "crop" | "ready";
+function TrimVideo({
+  src,
+  onDone,
+  onCancel,
+}: {
+  src: string;
+  onDone: (trim: { startTime: number; endTime: number }) => void;
+  onCancel: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [duration, setDuration] = useState(0);
+  const [start, setStart] = useState(0);
+  const [end, setEnd] = useState(0);
+  const [previewing, setPreviewing] = useState(false);
+  const checkRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function fmt(s: number) {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    const tenths = Math.floor((s % 1) * 10);
+    return `${m}:${sec.toString().padStart(2, "0")}.${tenths}`;
+  }
+
+  function onMeta() {
+    const v = videoRef.current;
+    if (!v || !isFinite(v.duration)) return;
+    setDuration(v.duration);
+    setEnd(v.duration);
+  }
+
+  function scrubTo(t: number) {
+    const v = videoRef.current;
+    if (v) v.currentTime = t;
+  }
+
+  function previewTrim() {
+    const v = videoRef.current;
+    if (!v || previewing) return;
+    v.currentTime = start;
+    v.play().catch(() => {});
+    setPreviewing(true);
+    if (checkRef.current) clearInterval(checkRef.current);
+    checkRef.current = setInterval(() => {
+      if (!videoRef.current || videoRef.current.currentTime >= end) {
+        videoRef.current?.pause();
+        if (videoRef.current) videoRef.current.currentTime = start;
+        setPreviewing(false);
+        if (checkRef.current) clearInterval(checkRef.current);
+      }
+    }, 80);
+  }
+
+  function stopPreview() {
+    const v = videoRef.current;
+    if (v) { v.pause(); v.currentTime = start; }
+    setPreviewing(false);
+    if (checkRef.current) clearInterval(checkRef.current);
+  }
+
+  useEffect(() => () => { if (checkRef.current) clearInterval(checkRef.current); }, []);
+
+  const clipLen = Math.max(0, end - start);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-center text-xs text-slate-500">Drag handles to trim your clip</p>
+
+      <div className="overflow-hidden rounded-2xl bg-black" style={{ aspectRatio: "4/5" }}>
+        <video
+          ref={videoRef}
+          src={src}
+          playsInline
+          className="h-full w-full object-contain"
+          onLoadedMetadata={onMeta}
+        />
+      </div>
+
+      {duration > 0 ? (
+        <div className="space-y-2.5 rounded-2xl bg-slate-50 p-3.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-slate-400">{fmt(start)}</span>
+            <span className="font-semibold text-slate-700">{fmt(clipLen)} selected</span>
+            <span className="text-slate-400">{fmt(end)}</span>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <span className="w-8 shrink-0 text-xs font-medium text-slate-400">Start</span>
+              <input
+                type="range" min={0} max={duration} step={0.1} value={start}
+                onChange={(e) => { const v = Math.min(Number(e.target.value), end - 0.1); setStart(v); scrubTo(v); }}
+                className="flex-1 accent-brand"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="w-8 shrink-0 text-xs font-medium text-slate-400">End</span>
+              <input
+                type="range" min={0} max={duration} step={0.1} value={end}
+                onChange={(e) => { const v = Math.max(Number(e.target.value), start + 0.1); setEnd(v); scrubTo(v); }}
+                className="flex-1 accent-brand"
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={previewing ? stopPreview : previewTrim}
+            className="w-full rounded-xl border border-brand/40 bg-brand/5 py-2 text-xs font-semibold text-brand transition active:scale-95"
+          >
+            {previewing ? "⏸ Stop preview" : "▶ Preview trim"}
+          </button>
+        </div>
+      ) : (
+        <div className="flex h-16 items-center justify-center rounded-2xl bg-slate-50">
+          <span className="text-xs text-slate-400">Loading video…</span>
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <button
+          onClick={onCancel}
+          className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-500 transition-all active:scale-[0.97]"
+        >
+          Back
+        </button>
+        <button
+          onClick={() => onDone({ startTime: start, endTime: end > 0 ? end : duration })}
+          disabled={duration === 0}
+          className="flex-1 rounded-xl bg-brand py-3 text-sm font-semibold text-white transition-all active:scale-[0.97] disabled:opacity-50"
+        >
+          Use clip
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Upload modal  (4 steps: pick → crop/trim → caption+share)
+// ---------------------------------------------------------------------------
+
+type UploadStep = "pick" | "crop" | "trim" | "ready";
 
 function UploadModal({
   onClose,
@@ -232,6 +372,8 @@ function UploadModal({
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function pickFile(f: File) {
@@ -251,10 +393,12 @@ function UploadModal({
     if (type === "photo") {
       setStep("crop");
     } else {
-      // Videos go straight to caption step
+      // Videos go to trim step before caption
       setFile(f);
       setPreview(url);
-      setStep("ready");
+      setTrimStart(0);
+      setTrimEnd(0);
+      setStep("trim");
     }
   }
 
@@ -262,6 +406,12 @@ function UploadModal({
     const url = URL.createObjectURL(croppedFile);
     setFile(croppedFile);
     setPreview(url);
+    setStep("ready");
+  }
+
+  function onTrimDone({ startTime, endTime }: { startTime: number; endTime: number }) {
+    setTrimStart(startTime);
+    setTrimEnd(endTime);
     setStep("ready");
   }
 
@@ -274,7 +424,16 @@ function UploadModal({
     setUploading(true);
     setError("");
     try {
-      const { videoUrl, thumbUrl, mediaType: mt } = await uploadToCloudinary(file, setProgress);
+      const { videoUrl: rawVideoUrl, thumbUrl: rawThumbUrl, mediaType: mt } = await uploadToCloudinary(file, setProgress);
+      let videoUrl = rawVideoUrl;
+      let thumbUrl = rawThumbUrl;
+      // Apply Cloudinary trim transformation when the user set in/out points
+      if (mt === "video" && trimEnd > 0) {
+        const so = trimStart.toFixed(2);
+        const eo = trimEnd.toFixed(2);
+        videoUrl = rawVideoUrl.replace("/upload/", `/upload/so_${so},eo_${eo}/`);
+        thumbUrl = rawThumbUrl.replace("so_0,", `so_${so},`);
+      }
       const hl = await api.post<Highlight>("/highlights", {
         caption: caption.trim(),
         videoUrl,
@@ -304,7 +463,7 @@ function UploadModal({
 
         <div className="px-4 pb-8 pt-2">
           <h2 className="mb-4 text-lg font-bold text-slate-900">
-            {step === "pick" ? "Share a highlight" : step === "crop" ? "Crop photo" : "Add a caption"}
+            {step === "pick" ? "Share a highlight" : step === "crop" ? "Crop photo" : step === "trim" ? "Trim video" : "Add a caption"}
           </h2>
 
           {/* ---- Step 1: pick ---- */}
@@ -319,12 +478,21 @@ function UploadModal({
             </button>
           )}
 
-          {/* ---- Step 2: crop (photos only) ---- */}
+          {/* ---- Step 2a: crop (photos only) ---- */}
           {step === "crop" && rawPreview && (
             <CropPhoto
               preview={rawPreview}
               onDone={onCropDone}
               onCancel={() => { setRawPreview(null); setStep("pick"); }}
+            />
+          )}
+
+          {/* ---- Step 2b: trim (videos only) ---- */}
+          {step === "trim" && rawPreview && (
+            <TrimVideo
+              src={rawPreview}
+              onDone={onTrimDone}
+              onCancel={() => { setRawPreview(null); setFile(null); setPreview(null); setStep("pick"); }}
             />
           )}
 
@@ -348,11 +516,11 @@ function UploadModal({
                   <button
                     onClick={() => {
                       if (mediaType === "photo") { setStep("crop"); }
-                      else { setRawPreview(null); setFile(null); setPreview(null); setStep("pick"); }
+                      else { setStep("trim"); }
                     }}
                     className="absolute right-2 top-2 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm"
                   >
-                    {mediaType === "photo" ? "Re-crop" : "Change"}
+                    {mediaType === "photo" ? "Re-crop" : "Re-trim"}
                   </button>
                 )}
               </div>
@@ -476,10 +644,14 @@ function HighlightCard({
         <span className="ml-auto shrink-0 text-xs text-slate-400">{relativeTime(hl.createdAt)}</span>
       </div>
 
-      {/* Caption — always reserve the space so layout is consistent */}
-      <p className={`px-3 pb-2 text-sm leading-snug ${hl.caption ? "text-slate-700" : "text-slate-300 italic"}`}>
-        {hl.caption || "No caption"}
-      </p>
+      {/* Caption — fixed 2-line height keeps all cards the same size */}
+      <div className="px-3 pb-3 pt-1" style={{ minHeight: "3.25rem" }}>
+        {hl.caption ? (
+          <p className="line-clamp-2 text-sm leading-snug text-slate-700">{hl.caption}</p>
+        ) : (
+          <p className="text-xs italic text-slate-300">No caption</p>
+        )}
+      </div>
 
       {/* Actions */}
       <div className="flex items-center gap-3 border-t border-slate-50 px-3 py-2">
