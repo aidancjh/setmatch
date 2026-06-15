@@ -266,6 +266,38 @@ export async function seedIfEmpty() {
 // ---------------------------------------------------------------------------
 
 const pastGames = [
+  // --- Maria's reviewable games (she's a player, not host — within 7-day review window) ---
+  {
+    id: "game_past_4",
+    title: "Mixed Beach 4s",
+    type: "Beach", skill: "Intermediate",
+    date: "2026-06-09", time: "10:00", end_time: "12:00",
+    location: "Ocean Park, Net 2", area: "Venice",
+    total_slots: 8, host_id: "user_p1",
+    notes: "Great vibes, sunny morning session.",
+    roster: ["user_p1", "user_maria", "user_p6", "user_p7"],
+  },
+  {
+    id: "game_past_5",
+    title: "Evening Indoor Comp",
+    type: "Indoor", skill: "Advanced",
+    date: "2026-06-11", time: "19:30", end_time: "21:30",
+    location: "Iron Court Athletics, Court B", area: "Culver City",
+    total_slots: 10, host_id: "user_p4",
+    notes: "Fast-paced competitive game. Score to 25.",
+    roster: ["user_p4", "user_maria", "user_p8", "user_p9", "user_p10"],
+  },
+  {
+    id: "game_past_6",
+    title: "Grass Open Run",
+    type: "Grass", skill: "All Levels",
+    date: "2026-06-13", time: "11:00", end_time: "13:00",
+    location: "Griffith Park, East Lawn", area: "Los Feliz",
+    total_slots: 8, host_id: "user_p6",
+    notes: "Casual grass game, all welcome.",
+    roster: ["user_p6", "user_maria", "user_p7", "user_nina"],
+  },
+  // --- Older seeded games (outside 7-day review window) ---
   {
     id: "game_past_1",
     title: "Thursday Night Indoor 6s",

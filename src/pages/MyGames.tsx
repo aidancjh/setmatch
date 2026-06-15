@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGames } from "../hooks/useGames";
 import { useProfile } from "../hooks/useProfile";
-import { isInGame, isOnWaitlist } from "../services/gamesService";
+import { isInGame, isOnWaitlist, getPendingReviews } from "../services/gamesService";
 import { isPast } from "../lib/format";
 import GameCard from "../components/GameCard";
+import ReviewModal from "../components/ReviewModal";
+import type { Game } from "../types";
 
 type Tab = "upcoming" | "hosting" | "past";
 
@@ -13,6 +15,14 @@ export default function MyGames() {
   const me = useProfile();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("upcoming");
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const [reviewGame, setReviewGame] = useState<Game | null>(null);
+
+  useEffect(() => {
+    getPendingReviews()
+      .then((games) => setPendingIds(new Set(games.map((g) => g.id))))
+      .catch(() => {});
+  }, []);
 
   const mine = useMemo(
     () =>
@@ -80,10 +90,39 @@ export default function MyGames() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((g) => (
-            <GameCard key={g.id} game={g} youAreIn={isInGame(g, me.id)} />
-          ))}
+          {filtered.map((g) => {
+            const canReview = tab === "past" && g.hostId !== me.id && pendingIds.has(g.id);
+            return (
+              <div key={g.id} className="flex items-stretch gap-2">
+                <div className="min-w-0 flex-1">
+                  <GameCard game={g} youAreIn={isInGame(g, me.id)} />
+                </div>
+                {canReview && (
+                  <button
+                    onClick={() => setReviewGame(g)}
+                    className="shrink-0 rounded-2xl bg-orange-500 px-3 text-sm font-bold text-white shadow-sm transition hover:bg-orange-600 active:scale-95"
+                  >
+                    Review
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
+      )}
+
+      {reviewGame && (
+        <ReviewModal
+          game={reviewGame}
+          onDone={() => {
+            setPendingIds((prev) => {
+              const next = new Set(prev);
+              next.delete(reviewGame.id);
+              return next;
+            });
+            setReviewGame(null);
+          }}
+        />
       )}
     </div>
   );
