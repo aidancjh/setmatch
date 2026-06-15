@@ -159,6 +159,11 @@ export default function Settings() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
+  function handleSignOut() {
+    logout();
+    navigate("/auth");
+  }
+
   async function handleDeleteAccount() {
     setDeleting(true);
     setDeleteError("");
@@ -221,6 +226,15 @@ export default function Settings() {
             />
           </>
         )}
+      </Section>
+
+      {/* Account */}
+      <Section title="Account">
+        <Row
+          label="Sign out"
+          sub="Log out of your account on this device"
+          onClick={handleSignOut}
+        />
       </Section>
 
       {/* Danger zone */}

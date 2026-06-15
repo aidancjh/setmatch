@@ -280,7 +280,7 @@ function HighlightGrid({
 // ---------------------------------------------------------------------------
 
 export default function Profile() {
-  const { user, updateProfile, logout } = useAuth();
+  const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
 
   const [editing, setEditing] = useState(false);
@@ -564,18 +564,14 @@ export default function Profile() {
           </button>
         </div>
 
-        <div className="mt-4 space-y-2">
-          {user?.role === "admin" && (
+        {user?.role === "admin" && (
+          <div className="mt-4">
             <button onClick={() => navigate("/admin")}
               className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
               🛠 Admin dashboard
             </button>
-          )}
-          <button onClick={() => { logout(); navigate("/"); }}
-            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
-            Sign out
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -622,8 +618,8 @@ export default function Profile() {
           {/* Name + info — centered */}
           <div className="mt-3 text-center">
             <p className="text-xl font-bold text-slate-900">{user?.name || "You"}</p>
-            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-2">
-              <SkillBadge skill={user?.skill ?? "Intermediate"} />
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+              <SkillBadge skill={user?.skill ?? "Intermediate"} size="lg" />
             </div>
             {(() => {
               const age = computeAge(user?.birthdate);
@@ -755,19 +751,15 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Action buttons */}
-      <div className="mb-4 space-y-2">
-        {user?.role === "admin" && (
+      {/* Admin shortcut */}
+      {user?.role === "admin" && (
+        <div className="mb-4">
           <button onClick={() => navigate("/admin")}
             className="w-full rounded-xl border border-brand/30 bg-brand/5 py-2.5 text-sm font-semibold text-brand transition hover:bg-brand/10 active:scale-[0.98]">
             🛠 Admin dashboard
           </button>
-        )}
-        <button onClick={() => { logout(); navigate("/"); }}
-          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 active:scale-[0.98]">
-          Sign out
-        </button>
-      </div>
+        </div>
+      )}
 
       {/* Highlights feed */}
       <HighlightGrid

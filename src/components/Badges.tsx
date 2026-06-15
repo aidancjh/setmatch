@@ -13,10 +13,20 @@ const typeEmoji: Record<GameType, string> = {
   Grass: "🌱",
 };
 
-export function SkillBadge({ skill }: { skill: SkillLevel }) {
+export function SkillBadge({
+  skill,
+  size = "md",
+}: {
+  skill: SkillLevel;
+  size?: "md" | "lg";
+}) {
+  const sizeCls =
+    size === "lg"
+      ? "px-4 py-1.5 text-sm font-semibold"
+      : "px-2 py-0.5 text-xs font-medium";
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${skillStyles[skill]}`}
+      className={`inline-flex items-center rounded-full ring-1 ring-inset ${sizeCls} ${skillStyles[skill]}`}
     >
       {skill}
     </span>

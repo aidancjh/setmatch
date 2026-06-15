@@ -95,8 +95,8 @@ export default function UserProfile() {
               {profile.name}
               {isMe && <span className="ml-1 text-sm font-normal text-slate-400">(you)</span>}
             </p>
-            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-2">
-              <SkillBadge skill={profile.skill} />
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+              <SkillBadge skill={profile.skill} size="lg" />
             </div>
             {(profile.ageDisplay || profile.genderDisplay) && (
               <p className="mt-1 text-xs text-slate-400">

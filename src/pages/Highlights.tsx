@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { api } from "../lib/api";
 import type { Highlight, HighlightComment } from "../types";
@@ -661,15 +661,16 @@ function CommentSection({
         <ul className="space-y-3">
           {comments.map((c) => (
             <li key={c.id} className="flex items-start gap-2">
-              <div
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-600"
-                aria-hidden
+              <Link
+                to={`/user/${c.userId}`}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-600 transition active:scale-95"
+                aria-label={`View ${c.userName}'s profile`}
               >
                 {c.userName.charAt(0).toUpperCase()}
-              </div>
+              </Link>
               <div className="min-w-0 flex-1">
                 <p className="text-sm leading-snug text-slate-700">
-                  <span className="font-semibold text-slate-900">{c.userName}</span>{" "}
+                  <Link to={`/user/${c.userId}`} className="font-semibold text-slate-900 hover:underline">{c.userName}</Link>{" "}
                   {c.body}
                 </p>
                 <p className="mt-0.5 text-[11px] text-slate-400">{relativeTime(c.createdAt)}</p>
@@ -754,15 +755,20 @@ function HighlightCard({
         )}
       </div>
 
-      {/* Author row */}
+      {/* Author row — tap name/avatar to view their profile */}
       <div className="flex items-center gap-2 px-3 pt-3 pb-1">
-        <div
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white"
-          aria-hidden
+        <Link
+          to={`/user/${hl.userId}`}
+          className="flex min-w-0 items-center gap-2 transition active:scale-[0.98]"
         >
-          {hl.userName.charAt(0).toUpperCase()}
-        </div>
-        <span className="truncate text-sm font-semibold text-slate-900">{hl.userName}</span>
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white"
+            aria-hidden
+          >
+            {hl.userName.charAt(0).toUpperCase()}
+          </div>
+          <span className="truncate text-sm font-semibold text-slate-900 hover:underline">{hl.userName}</span>
+        </Link>
         <span className="ml-auto shrink-0 text-xs text-slate-400">{relativeTime(hl.createdAt)}</span>
       </div>
 
