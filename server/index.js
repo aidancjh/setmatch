@@ -968,6 +968,44 @@ app.get(
   })
 );
 
+// --- Highlight comments (anyone can comment) ------------------------------
+
+app.get(
+  "/api/highlights/:id/comments",
+  requireAuth,
+  h(async (req, res) => {
+    res.json(await repo.listHighlightComments(req.params.id));
+  })
+);
+
+app.post(
+  "/api/highlights/:id/comments",
+  requireAuth,
+  h(async (req, res) => {
+    const body = String((req.body || {}).body || "").trim();
+    if (!body) return res.status(400).json({ error: "Comment can't be empty." });
+    if (body.length > 500)
+      return res.status(400).json({ error: "Comment too long (max 500 characters)." });
+    const result = await repo.addHighlightComment(req.params.id, req.userId, body);
+    if (!result.ok) return res.status(result.code).json({ error: result.error });
+    res.status(201).json(result.comments);
+  })
+);
+
+app.delete(
+  "/api/highlights/:id/comments/:commentId",
+  requireAuth,
+  h(async (req, res) => {
+    const result = await repo.deleteHighlightComment(
+      req.params.id,
+      req.params.commentId,
+      req.userId
+    );
+    if (!result.ok) return res.status(result.code).json({ error: result.error });
+    res.json(result.comments);
+  })
+);
+
 // --- Google Calendar URL builder ------------------------------------------
 
 function buildGCalUrl(game, appUrl) {

@@ -104,6 +104,8 @@ export async function getUserProfile(userId) {
     genderDisplay: u.show_gender !== false && u.user_gender ? u.user_gender : undefined,
     favoritePositions: parseJsonArr(u.favorite_positions),
     playerRating: rating,
+    bannerColor: u.banner_color || "",
+    bannerImage: u.banner_image || "",
   };
 }
 
@@ -893,12 +895,14 @@ function serializeHighlight(row) {
     createdAt: row.created_at,
     likesCount: Number(row.likes_count || 0),
     likedBy: row.liked_by || [],
+    commentsCount: Number(row.comments_count || 0),
   };
 }
 
 const HL_SELECT = `
   SELECT h.*, u.name AS user_name,
          (SELECT COUNT(*) FROM highlight_likes WHERE highlight_id = h.id)::int AS likes_count,
+         (SELECT COUNT(*) FROM highlight_comments WHERE highlight_id = h.id)::int AS comments_count,
          ARRAY(SELECT user_id FROM highlight_likes WHERE highlight_id = h.id) AS liked_by
     FROM highlights h JOIN users u ON u.id = h.user_id
 `;
@@ -958,6 +962,65 @@ export async function getUserHighlights(userId) {
     [userId]
   );
   return rows.map(serializeHighlight);
+}
+
+// --- Highlight comments (anyone can comment) ------------------------------
+
+export async function listHighlightComments(highlightId) {
+  const { rows } = await query(
+    `SELECT c.id, c.user_id, c.body, c.created_at, u.name AS user_name
+       FROM highlight_comments c
+       JOIN users u ON u.id = c.user_id
+      WHERE c.highlight_id = $1
+      ORDER BY c.created_at ASC`,
+    [highlightId]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    userId: r.user_id,
+    userName: r.user_name,
+    body: r.body,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function addHighlightComment(highlightId, userId, body) {
+  const { rows: hl } = await query(
+    "SELECT user_id FROM highlights WHERE id = $1",
+    [highlightId]
+  );
+  if (!hl[0]) return { ok: false, code: 404, error: "Highlight not found." };
+  const id = uid("hlc");
+  await query(
+    `INSERT INTO highlight_comments (id, highlight_id, user_id, body, created_at)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [id, highlightId, userId, body, new Date().toISOString()]
+  );
+  // Notify the highlight owner, unless they commented on their own clip.
+  if (hl[0].user_id !== userId) {
+    const actor = await findUserById(userId);
+    await notifyUsers(
+      [hl[0].user_id],
+      "highlight_comment",
+      `${actor ? actor.name : "Someone"} commented on your highlight`,
+      null
+    );
+  }
+  return { ok: true, comments: await listHighlightComments(highlightId) };
+}
+
+export async function deleteHighlightComment(highlightId, commentId, userId) {
+  const { rows } = await query(
+    `SELECT c.user_id AS commenter, h.user_id AS owner
+       FROM highlight_comments c JOIN highlights h ON h.id = c.highlight_id
+      WHERE c.id = $1 AND c.highlight_id = $2`,
+    [commentId, highlightId]
+  );
+  if (!rows[0]) return { ok: false, code: 404, error: "Comment not found." };
+  if (rows[0].commenter !== userId && rows[0].owner !== userId)
+    return { ok: false, code: 403, error: "You can't delete this comment." };
+  await query("DELETE FROM highlight_comments WHERE id = $1", [commentId]);
+  return { ok: true, comments: await listHighlightComments(highlightId) };
 }
 
 // --------------------------------------------------------------------------

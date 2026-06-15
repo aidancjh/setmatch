@@ -74,6 +74,25 @@ export function RatingHero({ avg, count }: { avg: number; count: number }) {
   );
 }
 
+/** Empty-state rating block — same footprint as RatingHero, shown when a
+ * player has no votes yet so every profile has a consistent ratings area. */
+export function RatingEmpty() {
+  return (
+    <div className="flex items-center gap-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200/60">
+      <div className="shrink-0 text-center">
+        <div className="text-4xl font-extrabold leading-none text-slate-300">—</div>
+        <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          out of 5
+        </div>
+      </div>
+      <div className="min-w-0 flex-1">
+        <StarRating avg={0} size="lg" />
+        <p className="mt-1.5 text-xs font-medium text-slate-400">No player ratings yet</p>
+      </div>
+    </div>
+  );
+}
+
 export function TypeBadge({ type }: { type: GameType }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">

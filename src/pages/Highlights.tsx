@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { api } from "../lib/api";
-import type { Highlight } from "../types";
-import { HeartIcon, TrashIcon, UploadIcon } from "../components/icons";
+import type { Highlight, HighlightComment } from "../types";
+import { ChatIcon, HeartIcon, TrashIcon, UploadIcon } from "../components/icons";
 import { HighlightCardSkeleton } from "../components/Skeleton";
 
 // ---------------------------------------------------------------------------
@@ -592,6 +592,126 @@ function UploadModal({
 }
 
 // ---------------------------------------------------------------------------
+// Comment section
+// ---------------------------------------------------------------------------
+
+function CommentSection({
+  highlightId,
+  ownerId,
+  currentUserId,
+  onCountChange,
+}: {
+  highlightId: string;
+  ownerId: string;
+  currentUserId: string;
+  onCountChange: (n: number) => void;
+}) {
+  const [comments, setComments] = useState<HighlightComment[] | null>(null);
+  const [text, setText] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    api.get<HighlightComment[]>(`/highlights/${highlightId}/comments`)
+      .then((c) => { if (active) { setComments(c); onCountChange(c.length); } })
+      .catch(() => { if (active) setComments([]); });
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightId]);
+
+  async function post() {
+    const body = text.trim();
+    if (!body || posting) return;
+    setPosting(true);
+    setError("");
+    try {
+      const updated = await api.post<HighlightComment[]>(
+        `/highlights/${highlightId}/comments`,
+        { body }
+      );
+      setComments(updated);
+      onCountChange(updated.length);
+      setText("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't post comment.");
+    } finally {
+      setPosting(false);
+    }
+  }
+
+  async function remove(commentId: string) {
+    try {
+      const updated = await api.del<HighlightComment[]>(
+        `/highlights/${highlightId}/comments/${commentId}`
+      );
+      setComments(updated);
+      onCountChange(updated.length);
+    } catch { /* silent */ }
+  }
+
+  return (
+    <div className="border-t border-slate-50 px-3 py-3">
+      {/* Existing comments */}
+      {comments === null ? (
+        <p className="py-1 text-center text-xs text-slate-400">Loading comments…</p>
+      ) : comments.length === 0 ? (
+        <p className="py-1 text-center text-xs text-slate-400">No comments yet — be the first.</p>
+      ) : (
+        <ul className="space-y-3">
+          {comments.map((c) => (
+            <li key={c.id} className="flex items-start gap-2">
+              <div
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-600"
+                aria-hidden
+              >
+                {c.userName.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm leading-snug text-slate-700">
+                  <span className="font-semibold text-slate-900">{c.userName}</span>{" "}
+                  {c.body}
+                </p>
+                <p className="mt-0.5 text-[11px] text-slate-400">{relativeTime(c.createdAt)}</p>
+              </div>
+              {(c.userId === currentUserId || ownerId === currentUserId) && (
+                <button
+                  onClick={() => remove(c.id)}
+                  aria-label="Delete comment"
+                  className="shrink-0 text-slate-300 transition hover:text-rose-400 active:scale-90"
+                >
+                  <TrashIcon className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {error && <p className="mt-2 text-xs text-rose-500">{error}</p>}
+
+      {/* Add comment */}
+      <div className="mt-3 flex items-center gap-2">
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value.slice(0, 500))}
+          onKeyDown={(e) => { if (e.key === "Enter") post(); }}
+          placeholder="Add a comment…"
+          className="flex-1 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm outline-none focus:border-slate-400"
+        />
+        <button
+          onClick={post}
+          disabled={!text.trim() || posting}
+          className="shrink-0 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition active:scale-95 disabled:opacity-40"
+        >
+          {posting ? "…" : "Post"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Highlight card
 // ---------------------------------------------------------------------------
 
@@ -608,11 +728,13 @@ function HighlightCard({
 }) {
   const liked = hl.likedBy.includes(currentUserId);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentCount, setCommentCount] = useState(hl.commentsCount);
 
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-      {/* Media — fixed 4:5 aspect ratio, always consistent */}
-      <div className="relative overflow-hidden bg-black" style={{ aspectRatio: "4/5" }}>
+      {/* Media — square keeps the feed compact and uniform */}
+      <div className="relative overflow-hidden bg-black" style={{ aspectRatio: "1/1" }}>
         {hl.mediaType === "photo" ? (
           <img
             src={hl.videoUrl}
@@ -644,17 +766,15 @@ function HighlightCard({
         <span className="ml-auto shrink-0 text-xs text-slate-400">{relativeTime(hl.createdAt)}</span>
       </div>
 
-      {/* Caption — fixed 2-line height keeps all cards the same size */}
-      <div className="px-3 pb-3 pt-1" style={{ minHeight: "3.25rem" }}>
-        {hl.caption ? (
-          <p className="line-clamp-2 text-sm leading-snug text-slate-700">{hl.caption}</p>
-        ) : (
-          <p className="text-xs italic text-slate-300">No caption</p>
-        )}
-      </div>
+      {/* Caption — only shown when present */}
+      {hl.caption && (
+        <div className="px-3 pb-2 pt-1">
+          <p className="text-sm leading-snug text-slate-700">{hl.caption}</p>
+        </div>
+      )}
 
       {/* Actions */}
-      <div className="flex items-center gap-3 border-t border-slate-50 px-3 py-2">
+      <div className="flex items-center gap-4 border-t border-slate-50 px-3 py-2">
         <button
           onClick={() => onLike(hl.id)}
           aria-label={liked ? "Unlike" : "Like"}
@@ -664,6 +784,18 @@ function HighlightCard({
         >
           <HeartIcon className="h-5 w-5" filled={liked} />
           {hl.likesCount > 0 && <span>{hl.likesCount}</span>}
+        </button>
+
+        <button
+          onClick={() => setShowComments((v) => !v)}
+          aria-label="Comments"
+          aria-expanded={showComments}
+          className={`flex items-center gap-1.5 text-sm font-medium transition-all duration-150 active:scale-90 ${
+            showComments ? "text-brand" : "text-slate-400 hover:text-brand"
+          }`}
+        >
+          <ChatIcon className="h-5 w-5" />
+          {commentCount > 0 && <span>{commentCount}</span>}
         </button>
 
         {hl.userId === currentUserId && (
@@ -690,6 +822,16 @@ function HighlightCard({
           </div>
         )}
       </div>
+
+      {/* Comments */}
+      {showComments && (
+        <CommentSection
+          highlightId={hl.id}
+          ownerId={hl.userId}
+          currentUserId={currentUserId}
+          onCountChange={setCommentCount}
+        />
+      )}
     </article>
   );
 }

@@ -102,6 +102,8 @@ export interface UserProfile {
   genderDisplay?: string;
   favoritePositions?: string[];
   playerRating?: { count: number; avg: number | null };
+  bannerColor?: string;
+  bannerImage?: string;
 }
 
 export interface Comment {
@@ -154,6 +156,16 @@ export interface Highlight {
   createdAt: string;
   likesCount: number;
   likedBy: string[];
+  commentsCount: number;
+}
+
+/** A comment on a highlight — anyone can post. */
+export interface HighlightComment {
+  id: string;
+  userId: string;
+  userName: string;
+  body: string;
+  createdAt: string;
 }
 
 export interface NewGameInput {

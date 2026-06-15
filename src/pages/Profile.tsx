@@ -4,7 +4,7 @@ import { useAuth } from "../auth/AuthContext";
 import { getUserHighlights } from "../services/gamesService";
 import { api } from "../lib/api";
 import type { Highlight, SkillLevel } from "../types";
-import { SkillBadge, RatingHero } from "../components/Badges";
+import { SkillBadge, RatingHero, RatingEmpty } from "../components/Badges";
 
 const skills: SkillLevel[] = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 const GENDER_OPTIONS = ["Man", "Woman", "Non-binary", "Prefer not to say"];
@@ -298,7 +298,6 @@ export default function Profile() {
   // Edit-mode state
   const [name, setName] = useState(user?.name ?? "");
   const [skill, setSkill] = useState<SkillLevel>(user?.skill ?? "Intermediate");
-  const [homeArea, setHomeArea] = useState(user?.homeArea ?? "");
   const [bio, setBio] = useState(user?.bio ?? "");
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? "");
   const [birthdate, setBirthdate] = useState(user?.birthdate ?? "");
@@ -393,7 +392,6 @@ export default function Profile() {
       await updateProfile({
         name: name.trim() || "You",
         skill,
-        homeArea: homeArea.trim(),
         bio: bio.trim(),
         avatarUrl,
         birthdate: birthdate || null,
@@ -412,7 +410,6 @@ export default function Profile() {
   const handleCancelEdit = () => {
     setName(user?.name ?? "");
     setSkill(user?.skill ?? "Intermediate");
-    setHomeArea(user?.homeArea ?? "");
     setBio(user?.bio ?? "");
     setAvatarUrl(user?.avatarUrl ?? "");
     setBirthdate(user?.birthdate ?? "");
@@ -505,13 +502,6 @@ export default function Profile() {
               ))}
             </div>
           </div>
-
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-slate-700">Home area</span>
-            <input value={homeArea} onChange={(e) => setHomeArea(e.target.value)}
-              placeholder="e.g. Santa Monica"
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400" />
-          </label>
 
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-slate-700">Birthday</span>
@@ -620,8 +610,8 @@ export default function Profile() {
         </div>
 
         <div className="px-4 pb-5">
-          {/* Avatar — centered, overlapping banner */}
-          <div className="-mt-12 flex justify-center">
+          {/* Avatar — centered, overlapping banner (z-10 keeps it above the banner) */}
+          <div className="relative z-10 -mt-12 flex justify-center">
             <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-3xl font-bold text-white ring-4 ring-white">
               {displayAvatar ? (
                 <img src={displayAvatar} alt={user?.name} className="h-full w-full object-cover" />
@@ -634,9 +624,6 @@ export default function Profile() {
             <p className="text-xl font-bold text-slate-900">{user?.name || "You"}</p>
             <div className="mt-1.5 flex flex-wrap items-center justify-center gap-2">
               <SkillBadge skill={user?.skill ?? "Intermediate"} />
-              {user?.homeArea && (
-                <span className="text-xs text-slate-400">📍 {user.homeArea}</span>
-              )}
             </div>
             {(() => {
               const age = computeAge(user?.birthdate);
@@ -718,32 +705,27 @@ export default function Profile() {
             </div>
           )}
 
-          {/* Bio */}
-          {user?.bio ? (
+          {/* Bio — only shown when present */}
+          {user?.bio && (
             <p className="mt-4 border-t border-slate-50 pt-4 text-sm leading-relaxed text-slate-600">
               {user.bio}
             </p>
-          ) : (
-            <button
-              onClick={() => setEditing(true)}
-              className="mt-4 w-full border-t border-slate-50 pt-4 text-center text-xs text-slate-300 hover:text-brand"
-            >
-              + Add a bio…
-            </button>
           )}
 
-          {/* Player rating */}
-          {user?.playerRating && user.playerRating.count > 0 && (
-            <div className="mt-4">
+          {/* Player rating — always shown for a consistent ratings area */}
+          <div className="mt-4">
+            {user?.playerRating && user.playerRating.count > 0 ? (
               <RatingHero avg={user.playerRating.avg ?? 0} count={user.playerRating.count} />
-            </div>
-          )}
+            ) : (
+              <RatingEmpty />
+            )}
+          </div>
 
           {/* Favorite positions */}
           {user?.favoritePositions && user.favoritePositions.length > 0 && (
-            <div className="mt-4 border-t border-slate-50 pt-4">
+            <div className="mt-4 border-t border-slate-50 pt-4 text-center">
               <p className="mb-1.5 text-xs font-medium text-slate-400">Positions</p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap justify-center gap-1.5">
                 {user.favoritePositions.map((p) => (
                   <span key={p} className="rounded-lg bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand">{p}</span>
                 ))}

@@ -262,6 +262,18 @@ export async function initSchema() {
   await pool.query(
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_image TEXT NOT NULL DEFAULT ''"
   );
+
+  // Feature: comments on highlights (anyone can comment).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS highlight_comments (
+      id           TEXT PRIMARY KEY,
+      highlight_id TEXT NOT NULL REFERENCES highlights(id) ON DELETE CASCADE,
+      user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      body         TEXT NOT NULL,
+      created_at   TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_hl_comments ON highlight_comments(highlight_id, created_at);
+  `);
 }
 
 export function uid(prefix = "id") {
