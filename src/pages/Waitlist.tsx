@@ -39,16 +39,10 @@ export default function Waitlist() {
         .wl-btn:hover:not(:disabled) { background: #e8543f !important; }
       `}</style>
       {/* Nav */}
-      <header className="px-6 py-4 flex items-center justify-between max-w-2xl mx-auto w-full">
+      <header className="px-6 py-4 flex items-center justify-center max-w-2xl mx-auto w-full">
         <span style={{ color: "#f4634e", fontWeight: 800, fontSize: 18, letterSpacing: "0.1em", textTransform: "uppercase" }}>
           Coterie
         </span>
-        <a
-          href="/auth"
-          style={{ color: "#f4634e", fontWeight: 600, fontSize: 14 }}
-        >
-          Sign in
-        </a>
       </header>
 
       {/* Hero */}
