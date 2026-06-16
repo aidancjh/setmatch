@@ -3,6 +3,8 @@
 // Production: node server/index.js                    (host provides env vars)
 import * as Sentry from "@sentry/node";
 
+// DSN comes from the SENTRY_DSN env var. When unset (e.g. local dev), Sentry
+// silently disables itself — start() logs a warning so it's visible in the logs.
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.NODE_ENV || "production",
@@ -1283,6 +1285,7 @@ async function start() {
   await seedPastData();
   await repo.promoteAdminsFromEnv();
   if (!process.env.RESEND_API_KEY) console.warn("[email] RESEND_API_KEY not set — join confirmation emails will be skipped");
+  if (!process.env.SENTRY_DSN) console.warn("[sentry] SENTRY_DSN not set — errors will only be logged to the console, not reported to Sentry");
   app.listen(PORT, () => {
     console.log(`[api] Coterie API listening on http://localhost:${PORT}`);
   });
