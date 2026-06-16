@@ -8,7 +8,6 @@ import {
   isOnWaitlist,
   joinGame,
   leaveGame,
-  setMemberPaid,
   spotsLeft,
   subscribe,
   toggleInterested,
@@ -190,10 +189,10 @@ export default function GameDetail() {
                     <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Location</span>
                     <span className="max-w-[60%] text-right text-sm font-semibold leading-snug text-slate-800">{game.location}</span>
                   </div>
-                  {game.courtFee && (
+                  {game.costPerPerson > 0 && (
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Court fee</span>
-                      <span className="text-sm font-semibold text-slate-800">{game.courtFee}</span>
+                      <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Cost</span>
+                      <span className="text-sm font-semibold text-slate-800">{formatMoney(game.costPerPerson)} per person</span>
                     </div>
                   )}
                 </div>
@@ -260,10 +259,10 @@ export default function GameDetail() {
                     <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Location</span>
                     <span className="max-w-[60%] text-right text-sm font-semibold leading-snug text-slate-800">{game.location}</span>
                   </div>
-                  {game.courtFee && (
+                  {game.costPerPerson > 0 && (
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Court fee</span>
-                      <span className="text-sm font-semibold text-slate-800">{game.courtFee}</span>
+                      <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Cost</span>
+                      <span className="text-sm font-semibold text-slate-800">{formatMoney(game.costPerPerson)} per person</span>
                     </div>
                   )}
                 </div>
@@ -427,9 +426,9 @@ export default function GameDetail() {
             {game.positionsNeeded.join(", ")}
           </InfoRow>
         )}
-        {game.courtFee && (
-          <InfoRow icon="💰" label="Court fee">
-            {game.courtFee}
+        {game.costPerPerson > 0 && (
+          <InfoRow icon="💰" label="Cost per person">
+            {formatMoney(game.costPerPerson)}
           </InfoRow>
         )}
         {game.notes && (
@@ -489,16 +488,6 @@ export default function GameDetail() {
           </div>
         )}
       </div>
-
-      {/* Cost split — shown when the host set a total court cost */}
-      {game.courtCost > 0 && game.players.length > 0 && (
-        <CostSplit
-          game={game}
-          meId={me.id}
-          isHost={isHost}
-          onError={(msg) => setError(msg)}
-        />
-      )}
 
       {shareMsg && (
         <p className="mb-2 text-center text-sm font-medium text-emerald-600">
@@ -641,100 +630,13 @@ export default function GameDetail() {
   );
 }
 
-function CostSplit({
-  game,
-  meId,
-  isHost,
-  onError,
-}: {
-  game: Game;
-  meId: string;
-  isHost: boolean;
-  onError: (msg: string) => void;
-}) {
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const share = game.courtCost / game.players.length;
-  const paidCount = game.players.filter((p) => p.paid).length;
-  const collected = share * paidCount;
-
-  const fmt = (n: number) =>
-    `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-  const toggle = async (p: { id: string; paid?: boolean }) => {
-    setBusyId(p.id);
-    onError("");
-    try {
-      await setMemberPaid(game.id, p.id, !p.paid);
-    } catch (err) {
-      onError(err instanceof Error ? err.message : "Couldn't update payment.");
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  return (
-    <div className="mb-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold text-slate-900">Cost split</h2>
-        <span className="text-xs text-slate-400">
-          {fmt(collected)} of {fmt(game.courtCost)} collected
-        </span>
-      </div>
-
-      <div className="mb-3 flex items-center justify-between rounded-xl bg-brand/5 px-3 py-2.5">
-        <span className="text-sm text-slate-600">
-          {fmt(game.courtCost)} ÷ {game.players.length} player
-          {game.players.length === 1 ? "" : "s"}
-        </span>
-        <span className="text-lg font-bold text-brand">{fmt(share)} each</span>
-      </div>
-
-      <ul className="space-y-1.5">
-        {game.players.map((p) => {
-          const canToggle = isHost || p.id === meId;
-          return (
-            <li
-              key={p.id}
-              className="flex items-center justify-between gap-2 rounded-lg px-1 py-1"
-            >
-              <span className="truncate text-sm text-slate-700">
-                {p.id === game.hostId && "⭐ "}
-                {p.name}
-                {p.id === meId && " (you)"}
-              </span>
-              {canToggle ? (
-                <button
-                  onClick={() => toggle(p)}
-                  disabled={busyId === p.id}
-                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition active:scale-95 disabled:opacity-50 ${
-                    p.paid
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                  }`}
-                >
-                  {p.paid ? "✓ Paid" : "Mark paid"}
-                </button>
-              ) : (
-                <span
-                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-                    p.paid ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-400"
-                  }`}
-                >
-                  {p.paid ? "✓ Paid" : "Unpaid"}
-                </span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-
-      {isHost && (
-        <p className="mt-3 text-xs text-slate-400">
-          Tap a player to mark them paid. Players can also mark themselves.
-        </p>
-      )}
-    </div>
-  );
+/** "$10" for whole dollars, "$10.50" when there are cents. */
+function formatMoney(n: number): string {
+  const hasCents = Math.round(n * 100) % 100 !== 0;
+  return `$${n.toLocaleString(undefined, {
+    minimumFractionDigits: hasCents ? 2 : 0,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 function InfoRow({

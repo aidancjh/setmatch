@@ -198,15 +198,13 @@ export async function initSchema() {
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS show_gender BOOLEAN NOT NULL DEFAULT TRUE"
   );
 
-  // Feature: positions, rotation, court fee, end time on games; favorite positions on users.
+  // Feature: positions, rotation, end time on games; favorite positions on users.
+  // (The old free-text "court_fee" column was dropped — superseded by cost_per_person.)
   await pool.query(
     "ALTER TABLE games ADD COLUMN IF NOT EXISTS positions_needed TEXT NOT NULL DEFAULT '[]'"
   );
   await pool.query(
     "ALTER TABLE games ADD COLUMN IF NOT EXISTS rotation_type TEXT NOT NULL DEFAULT 'Standard'"
-  );
-  await pool.query(
-    "ALTER TABLE games ADD COLUMN IF NOT EXISTS court_fee TEXT NOT NULL DEFAULT ''"
   );
   await pool.query(
     "ALTER TABLE games ADD COLUMN IF NOT EXISTS end_time TEXT NOT NULL DEFAULT ''"
@@ -247,10 +245,23 @@ export async function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_messages_game ON messages(game_id, created_at);
   `);
 
-  // Feature: cost splitting — total court cost on a game, paid flag per member.
+  // Feature: cost per person on a game. Renamed from the old "court_cost"
+  // (which held a total to split); now holds the amount each player pays.
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (SELECT 1 FROM information_schema.columns
+                  WHERE table_name = 'games' AND column_name = 'court_cost')
+         AND NOT EXISTS (SELECT 1 FROM information_schema.columns
+                  WHERE table_name = 'games' AND column_name = 'cost_per_person') THEN
+        ALTER TABLE games RENAME COLUMN court_cost TO cost_per_person;
+      END IF;
+    END $$;
+  `);
   await pool.query(
-    "ALTER TABLE games ADD COLUMN IF NOT EXISTS court_cost NUMERIC NOT NULL DEFAULT 0"
+    "ALTER TABLE games ADD COLUMN IF NOT EXISTS cost_per_person NUMERIC NOT NULL DEFAULT 0"
   );
+  // `paid` flag kept on game_members for backward compatibility (no longer surfaced in the UI).
   await pool.query(
     "ALTER TABLE game_members ADD COLUMN IF NOT EXISTS paid BOOLEAN NOT NULL DEFAULT FALSE"
   );

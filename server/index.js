@@ -179,8 +179,7 @@ function gameInputFrom(body) {
     netHeight: NET_HEIGHTS.includes(body.netHeight) ? body.netHeight : "Venue Standard",
     positionsNeeded: rawPositions.filter((p) => POSITIONS.includes(p)),
     rotationType: ROTATION_TYPES.includes(body.rotationType) ? body.rotationType : "Standard",
-    courtFee: String(body.courtFee || "").trim().slice(0, 50),
-    courtCost: Math.max(0, Math.min(Number(body.courtCost) || 0, 100000)),
+    costPerPerson: Math.max(0, Math.min(Number(body.costPerPerson) || 0, 100000)),
     region: REGIONS.includes(body.region) ? body.region : "",
     date: body.date,
     time: body.time,
@@ -608,7 +607,7 @@ app.post(
         row("Date", calDate(game.date)),
         row("Time", timeDisplay),
         row("Location", esc(game.location)),
-        game.courtFee ? row("Court Fee", esc(game.courtFee)) : "",
+        game.costPerPerson > 0 ? row("Cost", `$${game.costPerPerson} per person`) : "",
         `</table></div>`,
         game.notes ? `<div style="margin:12px 32px 0;background:#f9fafb;border-radius:12px;padding:12px 16px;font-size:13px;color:#4b5563;line-height:1.6;">${esc(game.notes)}</div>` : "",
         `<div style="padding:20px 32px 8px;">`,
@@ -1119,7 +1118,7 @@ function buildConfirmEmail({ game, userName, gcalUrl, appUrl, timeDisplay }) {
             ${row("Time", timeDisplay)}
             ${row("Location", esc(game.location))}
             ${game.area ? row("Area", esc(game.area)) : ""}
-            ${game.courtFee ? row("Court Fee", esc(game.courtFee)) : ""}
+            ${game.costPerPerson > 0 ? row("Cost", `$${game.costPerPerson} per person`) : ""}
           </table>
         </td></tr>
         ${game.notes ? `<tr><td style="padding:12px 32px 0;"><div style="background:#f9fafb;border-radius:14px;padding:12px 16px;font-size:13px;color:#4b5563;line-height:1.6;">${esc(game.notes)}</div></td></tr>` : ""}

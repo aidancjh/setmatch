@@ -20,9 +20,8 @@ export interface Game {
   netHeight: string;
   positionsNeeded: string[];
   rotationType: string;
-  courtFee: string;
-  /** Total court cost to split between confirmed players (0 = not set). */
-  courtCost: number;
+  /** Cost each player pays, in dollars (0 = free / not set). */
+  costPerPerson: number;
   /** Broad area of the island: North | South | East | West (or "" if unset). */
   region: string;
   /** ISO date string, e.g. 2026-06-20 */
@@ -178,8 +177,7 @@ export interface NewGameInput {
   netHeight: string;
   positionsNeeded: string[];
   rotationType: string;
-  courtFee: string;
-  courtCost: number;
+  costPerPerson: number;
   region: string;
   date: string;
   time: string;
