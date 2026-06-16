@@ -86,7 +86,7 @@ export async function getUserProfile(userId) {
     "SELECT * FROM games WHERE host_id = $1 AND date >= $2 ORDER BY date ASC LIMIT 10",
     [userId, today]
   );
-  const hostedUpcoming = await Promise.all(rows.map(serializeGame));
+  const hostedUpcoming = await serializeGames(rows);
   const age = computeAge(u.birthdate);
   const rating = await getPlayerRating(userId);
   return {
@@ -195,7 +195,7 @@ export async function adminListUsers() {
 
 export async function adminListGames() {
   const { rows } = await query("SELECT * FROM games ORDER BY date DESC");
-  return Promise.all(rows.map(serializeGame));
+  return serializeGames(rows);
 }
 
 export async function setUserRole(userId, role) {
@@ -271,41 +271,59 @@ export async function markAllRead(userId) {
 
 // --- Games ----------------------------------------------------------------
 
-async function memberPlayers(gameId, status) {
-  const { rows } = await query(
-    `SELECT u.id, u.name, m.paid
-       FROM game_members m
-       JOIN users u ON u.id = m.user_id
-      WHERE m.game_id = $1 AND m.status = $2
-      ORDER BY m.seq ASC`,
-    [gameId, status]
-  );
-  return rows.map((r) => ({ id: r.id, name: r.name, paid: r.paid === true }));
-}
-
-async function interestedIds(gameId) {
-  const { rows } = await query(
-    "SELECT user_id FROM game_interest WHERE game_id = $1",
-    [gameId]
-  );
-  return rows.map((r) => r.user_id);
-}
-
 function parseJsonArr(val) {
   if (!val) return [];
   try { return JSON.parse(val); } catch { return []; }
 }
 
-/** Build the full Game object the frontend expects from a games row. */
-async function serializeGame(row) {
-  if (!row) return null;
-  const host = await findUserById(row.host_id);
-  const [players, waitlist, interested] = await Promise.all([
-    memberPlayers(row.id, "player"),
-    memberPlayers(row.id, "waitlist"),
-    interestedIds(row.id),
+/**
+ * Build full Game objects for many rows using a FIXED number of queries,
+ * regardless of how many games are passed in (no per-game N+1):
+ *   1) all hosts, 2) all members (players + waitlist), 3) all interest rows.
+ * The per-game data is then grouped in memory. `serializeGame` (single) just
+ * delegates here so there's one source of truth for the shape.
+ */
+async function serializeGames(rows) {
+  const games = rows.filter(Boolean);
+  if (games.length === 0) return [];
+
+  const gameIds = games.map((g) => g.id);
+  const hostIds = [...new Set(games.map((g) => g.host_id))];
+
+  const [hostsRes, membersRes, interestRes] = await Promise.all([
+    query("SELECT id, name FROM users WHERE id = ANY($1)", [hostIds]),
+    query(
+      `SELECT m.game_id, m.status, m.paid, u.id, u.name
+         FROM game_members m
+         JOIN users u ON u.id = m.user_id
+        WHERE m.game_id = ANY($1)
+        ORDER BY m.seq ASC`,
+      [gameIds]
+    ),
+    query("SELECT game_id, user_id FROM game_interest WHERE game_id = ANY($1)", [
+      gameIds,
+    ]),
   ]);
-  return {
+
+  const hostName = new Map(hostsRes.rows.map((h) => [h.id, h.name]));
+
+  // Bucket members per game. Rows arrive in seq order, so each game's list
+  // preserves its join order.
+  const playersByGame = new Map();
+  const waitlistByGame = new Map();
+  for (const m of membersRes.rows) {
+    const byGame = m.status === "waitlist" ? waitlistByGame : playersByGame;
+    if (!byGame.has(m.game_id)) byGame.set(m.game_id, []);
+    byGame.get(m.game_id).push({ id: m.id, name: m.name, paid: m.paid === true });
+  }
+
+  const interestByGame = new Map();
+  for (const i of interestRes.rows) {
+    if (!interestByGame.has(i.game_id)) interestByGame.set(i.game_id, []);
+    interestByGame.get(i.game_id).push(i.user_id);
+  }
+
+  return games.map((row) => ({
     id: row.id,
     title: row.title,
     type: row.type,
@@ -324,18 +342,25 @@ async function serializeGame(row) {
     totalSlots: row.total_slots,
     preFilled: row.pre_filled || 0,
     hostId: row.host_id,
-    hostName: host ? host.name : "Unknown",
+    hostName: hostName.get(row.host_id) || "Unknown",
     notes: row.notes,
-    players,
-    waitlist,
-    interestedIds: interested,
+    players: playersByGame.get(row.id) || [],
+    waitlist: waitlistByGame.get(row.id) || [],
+    interestedIds: interestByGame.get(row.id) || [],
     createdAt: row.created_at,
-  };
+  }));
+}
+
+/** Build the full Game object the frontend expects from a single games row. */
+async function serializeGame(row) {
+  if (!row) return null;
+  const [game] = await serializeGames([row]);
+  return game || null;
 }
 
 export async function listGames() {
   const { rows } = await query("SELECT * FROM games");
-  return Promise.all(rows.map(serializeGame));
+  return serializeGames(rows);
 }
 
 async function getGameRow(id) {
@@ -768,7 +793,7 @@ export async function pendingReviews(userId) {
     ORDER BY g.date DESC
     LIMIT 5
   `, [userId]);
-  return Promise.all(rows.map(serializeGame));
+  return serializeGames(rows);
 }
 
 export async function createReview(gameId, reviewerId, { rating, comment }) {
