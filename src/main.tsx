@@ -7,12 +7,17 @@ import { AuthProvider } from "./auth/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "./index.css";
 
-Sentry.init({
-  dsn: "https://83a12c55babf018af2ba1667de40f393@o4511558969786368.ingest.us.sentry.io/4511561293365248",
-  environment: import.meta.env.MODE,
-  integrations: [Sentry.browserTracingIntegration()],
-  tracesSampleRate: 0.2,
-});
+// DSN comes from VITE_SENTRY_DSN (a browser Sentry DSN is public by design —
+// it can only submit events). When unset, Sentry stays disabled.
+const sentryDsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    environment: import.meta.env.MODE,
+    integrations: [Sentry.browserTracingIntegration()],
+    tracesSampleRate: 0.2,
+  });
+}
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
