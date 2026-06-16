@@ -290,6 +290,16 @@ export async function initSchema() {
     );
     CREATE INDEX IF NOT EXISTS idx_hl_comments ON highlight_comments(highlight_id, created_at);
   `);
+
+  // Waitlist: email capture for pre-launch signups.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS waitlist (
+      id         TEXT PRIMARY KEY,
+      email      TEXT UNIQUE NOT NULL,
+      name       TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
 }
 
 export function uid(prefix = "id") {

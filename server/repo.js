@@ -1108,6 +1108,36 @@ export async function findOrCreateGoogleUser(googleId, email, name) {
 
 // --------------------------------------------------------------------------
 
+// --- Waitlist -----------------------------------------------------------------
+
+export async function addWaitlistEntry(email, name = "") {
+  const id = uid("wl");
+  try {
+    await query(
+      "INSERT INTO waitlist (id, email, name) VALUES ($1, $2, $3)",
+      [id, email.toLowerCase().trim(), name.trim()]
+    );
+    return { ok: true, alreadyExists: false };
+  } catch (err) {
+    if (err.code === "23505") return { ok: true, alreadyExists: true }; // duplicate email
+    throw err;
+  }
+}
+
+export async function getWaitlistCount() {
+  const { rows } = await query("SELECT COUNT(*)::int AS count FROM waitlist");
+  return rows[0].count;
+}
+
+export async function getWaitlistEntries() {
+  const { rows } = await query(
+    "SELECT id, email, name, created_at FROM waitlist ORDER BY created_at DESC"
+  );
+  return rows;
+}
+
+// --------------------------------------------------------------------------
+
 export async function deleteComment(gameId, commentId, userId) {
   const { rows } = await query(
     "SELECT c.user_id, g.host_id FROM game_comments c JOIN games g ON g.id = c.game_id WHERE c.id = $1 AND c.game_id = $2",

@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Auth from "./pages/Auth";
 import Privacy from "./pages/Privacy";
+import Waitlist from "./pages/Waitlist";
 import RequireAuth from "./auth/RequireAuth";
 import { GameCardSkeleton } from "./components/Skeleton";
 
@@ -36,6 +37,7 @@ export default function App() {
       {/* Public — no sign-in required */}
       <Route path="/auth" element={<Auth />} />
       <Route path="/privacy" element={<Privacy />} />
+      <Route path="/waitlist" element={<Waitlist />} />
 
       {/* Post-signup onboarding — requires auth but no nav bar */}
       <Route

@@ -1221,6 +1221,35 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
   });
 }
 
+// --- Waitlist (public — no auth required) ------------------------------------
+const waitlistLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many signups from this IP — try again later." },
+});
+
+app.post("/api/waitlist", waitlistLimiter, async (req, res) => {
+  const { email, name } = req.body || {};
+  if (!email || typeof email !== "string") return res.status(400).json({ error: "Email is required." });
+  const trimmed = email.trim();
+  if (trimmed.length > 200) return res.status(400).json({ error: "Email too long." });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return res.status(400).json({ error: "Invalid email address." });
+  const safeName = typeof name === "string" ? name.slice(0, 100) : "";
+  const result = await repo.addWaitlistEntry(trimmed, safeName);
+  if (result.alreadyExists) return res.json({ ok: true, message: "You're already on the list — we'll be in touch!" });
+  res.json({ ok: true, message: "You're on the list! We'll let you know when Coterie launches in Singapore." });
+});
+
+app.get("/api/waitlist", requireAuth, async (req, res) => {
+  const user = await repo.findUserById(req.userId);
+  if (!user || user.role !== "admin") return res.status(403).json({ error: "Forbidden." });
+  const entries = await repo.getWaitlistEntries();
+  const count = await repo.getWaitlistCount();
+  res.json({ count, entries });
+});
+
 // Unknown API routes → JSON 404 (never HTML).
 app.use("/api", (_req, res) => {
   res.status(404).json({ error: "Not found." });
