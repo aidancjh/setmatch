@@ -4,7 +4,7 @@
 import * as Sentry from "@sentry/node";
 
 Sentry.init({
-  dsn: "https://83a12c55babf018af2ba1667de40f393@o4511558969786368.ingest.us.sentry.io/4511561293365248",
+  dsn: process.env.SENTRY_DSN,
   environment: process.env.NODE_ENV || "production",
 });
 
@@ -16,7 +16,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { hashPassword, verifyPassword, signToken, requireAuth } from "./auth.js";
+import { hashPassword, verifyPassword, signToken, requireAuth, TIMING_HASH } from "./auth.js";
 import * as repo from "./repo.js";
 import { initSchema, query } from "./db.js";
 import { seedIfEmpty, syncDemoPasswords, seedPastData } from "./seed.js";
@@ -81,7 +81,7 @@ app.use(express.json({ limit: "100kb" })); // prevent giant JSON payloads
 // --- Rate limiters --------------------------------------------------------
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many attempts — please wait 15 minutes and try again." },
@@ -124,7 +124,17 @@ app.get("/healthz", async (_req, res) => {
   }
 });
 
-// --- Validation helpers ---------------------------------------------------
+// --- Shared validation helpers --------------------------------------------
+
+/** Only allow uploads from Cloudinary (where our upload widget sends files). */
+function isCloudinaryUrl(url) {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && u.hostname === "res.cloudinary.com";
+  } catch {
+    return false;
+  }
+}
 
 const SKILLS = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 const TYPES = ["Indoor", "Beach", "Grass"];
@@ -135,17 +145,22 @@ const ROTATION_TYPES = ["Standard", "No Rotation", "King of the Court", "Round R
 const REGIONS = ["North", "South", "East", "West"];
 
 function validGameInput(b) {
-  // pre_filled is optional — default 0, max totalSlots - 1
   if (!b || typeof b !== "object") return "Invalid request body.";
   if (!b.title || !String(b.title).trim()) return "Title is required.";
+  if (String(b.title).trim().length > 100) return "Title must be 100 characters or fewer.";
   if (!TYPES.includes(b.type)) return "Invalid game type.";
   if (!SKILLS.includes(b.skill)) return "Invalid skill level.";
   if (b.gender && !GENDERS.includes(b.gender)) return "Invalid gender option.";
   if (b.netHeight && !NET_HEIGHTS.includes(b.netHeight)) return "Invalid net height option.";
   if (b.rotationType && !ROTATION_TYPES.includes(b.rotationType)) return "Invalid rotation type.";
   if (!b.date) return "Date is required.";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(b.date)) return "Invalid date format (expected YYYY-MM-DD).";
   if (!b.time) return "Time is required.";
+  if (!/^\d{2}:\d{2}$/.test(b.time)) return "Invalid time format (expected HH:MM).";
+  if (b.endTime && !/^\d{2}:\d{2}$/.test(b.endTime)) return "Invalid end time format.";
   if (!b.location || !String(b.location).trim()) return "Location is required.";
+  if (String(b.location).trim().length > 150) return "Location must be 150 characters or fewer.";
+  if (b.notes && String(b.notes).length > 2000) return "Notes must be 2000 characters or fewer.";
   const slots = Number(b.totalSlots);
   if (!Number.isInteger(slots) || slots < 2 || slots > 50)
     return "Total slots must be between 2 and 50.";
@@ -169,10 +184,10 @@ function gameInputFrom(body) {
     time: body.time,
     endTime: body.endTime ? String(body.endTime) : "",
     location: String(body.location).trim(),
-    area: String(body.area || body.location).trim(),
+    area: String(body.area || body.location).trim().slice(0, 150),
     totalSlots: Number(body.totalSlots),
     preFilled: Math.max(0, Math.min(Number(body.preFilled) || 0, Number(body.totalSlots) - 1)),
-    notes: String(body.notes || "").trim(),
+    notes: String(body.notes || "").trim().slice(0, 2000),
   };
 }
 
@@ -191,12 +206,16 @@ app.post(
     const { email, password, name } = req.body || {};
     if (!email || !String(email).includes("@"))
       return res.status(400).json({ error: "A valid email is required." });
+    if (String(email).length > 254)
+      return res.status(400).json({ error: "Email address is too long." });
     if (!password || String(password).length < 6)
-      return res
-        .status(400)
-        .json({ error: "Password must be at least 6 characters." });
+      return res.status(400).json({ error: "Password must be at least 6 characters." });
+    if (String(password).length > 128)
+      return res.status(400).json({ error: "Password must be 128 characters or fewer." });
     if (!name || !String(name).trim())
       return res.status(400).json({ error: "Name is required." });
+    if (String(name).trim().length > 50)
+      return res.status(400).json({ error: "Name must be 50 characters or fewer." });
 
     if (await repo.findUserByEmail(email))
       return res
@@ -217,7 +236,10 @@ app.post(
   h(async (req, res) => {
     const { email, password } = req.body || {};
     const user = email ? await repo.findUserByEmail(email) : null;
-    if (!user || !verifyPassword(password || "", user.password_hash))
+    // Always run bcrypt (against real hash or dummy) to prevent timing attacks
+    // that could reveal which emails are registered.
+    const passwordOk = verifyPassword(password || "", user ? user.password_hash : TIMING_HASH);
+    if (!user || !passwordOk)
       return res.status(401).json({ error: "Incorrect email or password." });
     res.json({ token: signToken(user.id), user: repo.publicUser(user) });
   })
@@ -250,6 +272,19 @@ app.patch(
     const { name, skill, homeArea, bio, avatarUrl, birthdate, userGender, showAge, showGender, favoritePositions, bannerColor, bannerImage } = req.body || {};
     if (skill && !SKILLS.includes(skill))
       return res.status(400).json({ error: "Invalid skill level." });
+    const USER_GENDERS = ["Man", "Woman", "Non-binary", "Prefer not to say", ""];
+    if (userGender !== undefined && !USER_GENDERS.includes(String(userGender)))
+      return res.status(400).json({ error: "Invalid gender option." });
+    if (bannerColor !== undefined && bannerColor && !/^#[0-9A-Fa-f]{3,8}$/.test(String(bannerColor)))
+      return res.status(400).json({ error: "Invalid banner color — use a hex value like #FF6B6B." });
+    if (avatarUrl != null && avatarUrl !== "" && !isCloudinaryUrl(String(avatarUrl)))
+      return res.status(400).json({ error: "Avatar must be uploaded via Cloudinary." });
+    if (bannerImage != null && bannerImage !== "" && !isCloudinaryUrl(String(bannerImage)))
+      return res.status(400).json({ error: "Banner image must be uploaded via Cloudinary." });
+    if (name != null && String(name).trim().length > 50)
+      return res.status(400).json({ error: "Name must be 50 characters or fewer." });
+    if (homeArea != null && String(homeArea).length > 100)
+      return res.status(400).json({ error: "Home area must be 100 characters or fewer." });
     const user = await repo.updateUser(req.userId, {
       name: name != null ? String(name).trim() || undefined : undefined,
       skill,
@@ -419,6 +454,7 @@ app.get(
 app.get(
   "/api/debug/email-test",
   requireAuth,
+  requireAdmin,
   h(async (req, res) => {
     const user = await repo.findUserById(req.userId);
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -482,6 +518,8 @@ app.post(
     // Idempotency: a retried request with the same key returns the first result
     // instead of creating duplicate games.
     const idemKey = req.get("Idempotency-Key");
+    if (idemKey && idemKey.length > 128)
+      return res.status(400).json({ error: "Idempotency-Key must be 128 characters or fewer." });
     const existing = await repo.getIdempotentGame(idemKey);
     if (existing) return res.status(201).json(existing);
 
@@ -876,6 +914,8 @@ app.post(
   h(async (req, res) => {
     const { gameId, rating, comment } = req.body || {};
     if (!gameId) return res.status(400).json({ error: "gameId is required." });
+    if (comment && String(comment).length > 500)
+      return res.status(400).json({ error: "Review comment must be 500 characters or fewer." });
     const result = await repo.createReview(gameId, req.userId, {
       rating: Number(rating),
       comment,
@@ -924,7 +964,7 @@ app.get(
   "/api/highlights",
   h(async (req, res) => {
     const limit = Math.min(Number(req.query.limit) || 20, 50);
-    const offset = Number(req.query.offset) || 0;
+    const offset = Math.min(Math.max(Number(req.query.offset) || 0, 0), 10000);
     res.json(await repo.listHighlights(limit, offset));
   })
 );
@@ -936,6 +976,10 @@ app.post(
     const { caption, videoUrl, thumbUrl, mediaType } = req.body || {};
     if (!videoUrl || typeof videoUrl !== "string")
       return res.status(400).json({ error: "Media URL is required." });
+    if (!isCloudinaryUrl(videoUrl))
+      return res.status(400).json({ error: "Media must be uploaded via Cloudinary." });
+    if (thumbUrl && !isCloudinaryUrl(String(thumbUrl)))
+      return res.status(400).json({ error: "Thumbnail must be a valid Cloudinary URL." });
     if (caption && String(caption).length > 300)
       return res.status(400).json({ error: "Caption too long (max 300 characters)." });
     const hl = await repo.createHighlight(req.userId, {
