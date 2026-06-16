@@ -4,7 +4,6 @@ import { useGames } from "../hooks/useGames";
 import { useProfile } from "../hooks/useProfile";
 import { isInGame, spotsLeft } from "../services/gamesService";
 import { isPast } from "../lib/format";
-import type { Game } from "../types";
 import GameCard from "../components/GameCard";
 import { GameCardSkeleton } from "../components/Skeleton";
 
@@ -14,14 +13,14 @@ import { GameCardSkeleton } from "../components/Skeleton";
 
 const regionOptions = ["North", "South", "East", "West"];
 const typeOptions = ["Indoor", "Beach", "Grass"];
-const skillOptions = ["Beginner", "Intermediate", "Advanced", "All Levels"];
+const skillOptions = ["Beginner", "Intermediate", "Advanced"];
 const genderOptions = ["Open", "Mixed", "Men", "Women"];
 const genderLabels: Record<string, string> = { Open: "Open", Mixed: "Mixed", Men: "Men's", Women: "Women's" };
 const netOptions = ["Men's (2.43m)", "Women's (2.24m)", "Recreational (2.35m)", "Venue Standard"];
 const netLabels: Record<string, string> = {
-  "Men's (2.43m)": "Men's",
-  "Women's (2.24m)": "Women's",
-  "Recreational (2.35m)": "Rec",
+  "Men's (2.43m)": "Men's (2.43m)",
+  "Women's (2.24m)": "Women's (2.24m)",
+  "Recreational (2.35m)": "Rec (2.35m)",
   "Venue Standard": "Venue",
 };
 const positionOptions = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist"];
@@ -34,29 +33,25 @@ const positionLabels: Record<string, string> = {
   "Defensive Specialist": "DS",
 };
 
-type Price = "Any" | "Free" | "Paid";
-
 interface Filters {
-  region: string;
+  regions: string[];
   type: string;
-  skill: string;
+  skills: string[];
   gender: string;
   netHeight: string;
-  position: string;
-  price: Price;
+  positions: string[];
   minTime: number; // minutes since midnight, 0
   maxTime: number; // minutes since midnight, 1440
   minOpenSpots: number; // 0 = any
 }
 
 const DEFAULT_FILTERS: Filters = {
-  region: "",
+  regions: [],
   type: "",
-  skill: "",
+  skills: [],
   gender: "",
   netHeight: "",
-  position: "",
-  price: "Any",
+  positions: [],
   minTime: 0,
   maxTime: 1440,
   minOpenSpots: 0,
@@ -77,21 +72,14 @@ function fmtClock(min: number): string {
   return `${hh}:${m.toString().padStart(2, "0")} ${ap}`;
 }
 
-function isFreeGame(g: Game): boolean {
-  if (g.courtCost > 0) return false;
-  const fee = g.courtFee.trim().toLowerCase();
-  return fee === "" || /free|^\$?0(\.0+)?$/.test(fee);
-}
-
 function activeFilterCount(f: Filters): number {
   return (
-    (f.region ? 1 : 0) +
+    (f.regions.length > 0 ? 1 : 0) +
     (f.type ? 1 : 0) +
-    (f.skill ? 1 : 0) +
+    (f.skills.length > 0 ? 1 : 0) +
     (f.gender ? 1 : 0) +
     (f.netHeight ? 1 : 0) +
-    (f.position ? 1 : 0) +
-    (f.price !== "Any" ? 1 : 0) +
+    (f.positions.length > 0 ? 1 : 0) +
     (f.minTime > 0 || f.maxTime < 1440 ? 1 : 0) +
     (f.minOpenSpots > 0 ? 1 : 0)
   );
@@ -111,19 +99,19 @@ export default function BrowseGames() {
     return games
       .filter((g) => !isPast(g.date))
       .filter((g) => (f.type ? g.type === f.type : true))
-      .filter((g) => (f.skill ? g.skill === f.skill : true))
-      .filter((g) => (f.region ? g.region === f.region : true))
+      .filter((g) => (f.skills.length > 0 ? f.skills.includes(g.skill) : true))
+      .filter((g) => (f.regions.length > 0 ? f.regions.includes(g.region) : true))
       .filter((g) => (f.gender ? g.gender === f.gender : true))
       .filter((g) => (f.netHeight ? g.netHeight === f.netHeight : true))
       .filter((g) =>
-        f.position
-          ? g.positionsNeeded.includes(f.position) ||
-            g.positionsNeeded.length === 0 ||
-            g.positionsNeeded.includes("Any")
+        f.positions.length > 0
+          ? f.positions.some(
+              (pos) =>
+                g.positionsNeeded.includes(pos) ||
+                g.positionsNeeded.length === 0 ||
+                g.positionsNeeded.includes("Any")
+            )
           : true
-      )
-      .filter((g) =>
-        f.price === "Any" ? true : f.price === "Free" ? isFreeGame(g) : !isFreeGame(g)
       )
       .filter((g) => {
         const t = toMinutes(g.time);
@@ -291,8 +279,8 @@ function FilterModal({
           <div className="px-4 py-4">
             <div className="grid grid-cols-2 gap-x-4 gap-y-4">
               <ChipGroup label="Court type" options={typeOptions} value={f.type} onChange={(v) => set({ type: v })} />
-              <ChipGroup label="Standard" options={skillOptions} value={f.skill} onChange={(v) => set({ skill: v })} />
-              <ChipGroup label="Region" options={regionOptions} value={f.region} onChange={(v) => set({ region: v })} />
+              <MultiChipGroup label="Standard" options={skillOptions} values={f.skills} onChange={(v) => set({ skills: v })} />
+              <MultiChipGroup label="Region" options={regionOptions} values={f.regions} onChange={(v) => set({ regions: v })} />
               <ChipGroup label="Who it's for" options={genderOptions} labels={genderLabels} value={f.gender} onChange={(v) => set({ gender: v })} />
             </div>
           </div>
@@ -300,22 +288,10 @@ function FilterModal({
           {/* Section 2 — Court & positions */}
           <div className="space-y-4 px-4 py-4">
             <ChipGroup label="Net height" options={netOptions} labels={netLabels} value={f.netHeight} onChange={(v) => set({ netHeight: v })} />
-            <ChipGroup label="Position needed" options={positionOptions} labels={positionLabels} value={f.position} onChange={(v) => set({ position: v })} />
+            <MultiChipGroup label="Position needed" options={positionOptions} labels={positionLabels} values={f.positions} onChange={(v) => set({ positions: v })} />
           </div>
 
-          {/* Section 3 — Price */}
-          <div className="px-4 py-4">
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Price</p>
-            <div className="flex flex-wrap gap-1.5">
-              {(["Any", "Free", "Paid"] as Price[]).map((p) => (
-                <Chip key={p} active={f.price === p} onClick={() => set({ price: p })}>
-                  {p}
-                </Chip>
-              ))}
-            </div>
-          </div>
-
-          {/* Section 4 — Timing */}
+          {/* Section 3 — Timing */}
           <div className="space-y-5 px-4 py-4">
             {/* Dual-handle time range */}
             <div>
@@ -409,6 +385,36 @@ function ChipGroup({
         <Chip active={!value} onClick={() => onChange("")}>Any</Chip>
         {options.map((o) => (
           <Chip key={o} active={value === o} onClick={() => onChange(value === o ? "" : o)}>
+            {labels?.[o] ?? o}
+          </Chip>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MultiChipGroup({
+  label,
+  options,
+  values,
+  onChange,
+  labels,
+}: {
+  label: string;
+  options: string[];
+  values: string[];
+  onChange: (v: string[]) => void;
+  labels?: Record<string, string>;
+}) {
+  const toggle = (o: string) =>
+    onChange(values.includes(o) ? values.filter((v) => v !== o) : [...values, o]);
+  return (
+    <div>
+      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+      <div className="flex flex-wrap gap-1.5">
+        <Chip active={values.length === 0} onClick={() => onChange([])}>Any</Chip>
+        {options.map((o) => (
+          <Chip key={o} active={values.includes(o)} onClick={() => toggle(o)}>
             {labels?.[o] ?? o}
           </Chip>
         ))}
