@@ -62,6 +62,12 @@ app.use(
 
 // --- CORS (lock to the app's own origin in production) --------------------
 const appOrigin = process.env.APP_URL || null;
+// Railway auto-sets RAILWAY_PUBLIC_DOMAIN (e.g. "xxx.up.railway.app"). Allow that
+// origin too, so requests from the Railway URL aren't rejected when APP_URL points
+// at a custom domain (or has a trailing-slash / scheme mismatch).
+const railwayOrigin = process.env.RAILWAY_PUBLIC_DOMAIN
+  ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+  : null;
 app.use(
   cors({
     origin(origin, callback) {
@@ -69,10 +75,16 @@ app.use(
       if (!origin) return callback(null, true);
       // In development allow any localhost
       if (!appOrigin || origin.startsWith("http://localhost")) return callback(null, true);
-      // In production only allow our own domain
-      if (origin === appOrigin || origin === appOrigin.replace(/\/$/, ""))
+      // In production only allow our own domain(s)
+      const normalizedApp = appOrigin.replace(/\/$/, "");
+      if (origin === appOrigin || origin === normalizedApp || origin === railwayOrigin)
         return callback(null, true);
-      return callback(new Error(`CORS: origin ${origin} not allowed`), false);
+      // Reject gracefully: omit CORS headers (the browser blocks cross-origin reads)
+      // rather than throwing. A thrown error becomes a 500 "Something went wrong on
+      // the server" that hits every POST from a mismatched origin (incl. logins) and
+      // spams Sentry. Safe here because auth uses Bearer tokens, not cookies.
+      console.warn(`[cors] origin not allowed: ${origin}`);
+      return callback(null, false);
     },
     credentials: true,
   })
