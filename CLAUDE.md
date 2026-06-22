@@ -27,9 +27,9 @@ Local dev requires a `DATABASE_URL` in `.env`. The Railway-hosted Postgres is pr
 | `db.js` | `pg.Pool` connection, `initSchema()` (idempotent, runs on startup), `uid(prefix)` for IDs |
 | `repo.js` | All SQL queries — single data-access layer |
 | `auth.js` | `hashPassword`, `verifyPassword`, `signToken`, `requireAuth` middleware (JWT in `Authorization: Bearer`) |
-| `seed.js` | `seedIfEmpty()` (once, empty DB), `syncDemoPasswords()` (every startup), `seedPastData()` (idempotent, via admin endpoint) |
+| `seed.js` | `seedIfEmpty()` (once, empty DB), `syncDemoPasswords()` (every startup), `seedPastData()` (idempotent; runs on every startup **and** via the admin endpoint) |
 
-Schema tables: `users`, `games`, `game_members`, `game_reviews`, `player_ratings`, `comments`, `notifications`, `feedback`, `highlights`, `highlight_likes`, `password_reset_tokens`.
+Schema tables: `users`, `games`, `game_members`, `game_interest`, `game_comments`, `messages`, `game_reviews`, `player_ratings`, `notifications`, `feedback`, `highlights`, `highlight_likes`, `highlight_comments`, `password_reset_tokens`, `idempotency_keys`, `waitlist`.
 
 **Two separate rating systems:**
 - `game_reviews` — reviewer rates the HOST after a game they played in (not hosted). `UNIQUE(game_id, reviewer_id)`. Exposed as host star rating on profiles.
@@ -69,12 +69,12 @@ To seed past games + fake reviews/ratings into an already-populated DB: log in a
 
 Railway auto-deploys on every push to `main` on GitHub. No manual steps needed — just `git push`. Deploy takes ~2 min. Production URL: `https://coterie.com.de`.
 
-The server calls `initSchema()` → `syncDemoPasswords()` → `seedIfEmpty()` on startup, in that order.
+On startup the server calls, in order: `initSchema()` → `seedIfEmpty()` → `syncDemoPasswords()` → `seedPastData()` → `promoteAdminsFromEnv()` (see `start()` in `server/index.js`).
 
 ## Key conventions
 
 - **IDs**: `uid(prefix)` generates `prefix_<random>`. Demo/seed records use static IDs (e.g. `game_past_1`, `user_maria`) for idempotency.
-- **Auth**: JWT stored in `localStorage` as `token`. `requireAuth` middleware sets `req.userId`. `requireAdmin` checks `users.role = 'admin'`.
+- **Auth**: JWT stored in `localStorage` as `vb.token` (see `TOKEN_KEY` in `src/lib/api.ts`). `requireAuth` middleware sets `req.userId`. `requireAdmin` checks `users.role = 'admin'`.
 - **Roles**: `user` (default) | `staff` | `admin`. Only admins can access `/api/admin/*`.
 - **Game time logic**: `date` is ISO date string (`2026-06-20`), `time`/`endTime` are 24h strings (`"18:30"`). `isPast(date)` checks if date < today.
 - **Tailwind**: Using Tailwind CSS 4.0 (Vite plugin, not PostCSS). Brand color is `text-brand` / `bg-brand` (coral `#FF6B6B` defined as CSS variable `--color-brand`).

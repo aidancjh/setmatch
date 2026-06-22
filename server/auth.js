@@ -16,7 +16,7 @@ if (process.env.NODE_ENV === "production" && JWT_SECRET === DEV_SECRET) {
   process.exit(1);
 }
 
-const TOKEN_TTL = "30d";
+const TOKEN_TTL = "14d";
 
 export function hashPassword(plain) {
   return bcrypt.hashSync(plain, 10);

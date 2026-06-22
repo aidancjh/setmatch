@@ -800,7 +800,7 @@ export async function createReview(gameId, reviewerId, { rating, comment }) {
   const game = await getGameRow(gameId);
   if (!game) return { ok: false, code: 404, error: 'Game not found.' };
   if (game.host_id === reviewerId) return { ok: false, code: 400, error: "You can't review your own game." };
-  if (rating < 1 || rating > 5) return { ok: false, code: 400, error: 'Rating must be 1–5.' };
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) return { ok: false, code: 400, error: 'Rating must be 1–5.' };
   try {
     await query(
       `INSERT INTO game_reviews (id, game_id, reviewer_id, host_id, rating, comment, created_at)
@@ -888,7 +888,7 @@ export async function getRatables(gameId, userId) {
 
 export async function ratePlayer(gameId, raterId, ratedId, rating) {
   if (raterId === ratedId) return { ok: false, code: 400, error: "Can't rate yourself." };
-  if (rating < 1 || rating > 5) return { ok: false, code: 400, error: 'Rating must be 1–5.' };
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) return { ok: false, code: 400, error: 'Rating must be 1–5.' };
   const { rows: rater } = await query(
     "SELECT 1 FROM game_members WHERE game_id = $1 AND user_id = $2 AND status = 'player'",
     [gameId, raterId]

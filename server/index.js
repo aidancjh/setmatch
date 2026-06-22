@@ -107,6 +107,17 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many requests — slow down." },
 });
+// Tighter per-user limiter for user-generated content (comments, chat) to
+// curb spam. Keyed by the authenticated user id (these routes sit behind
+// requireAuth), so it limits a person rather than a shared NAT/IP.
+const contentLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.userId || req.ip,
+  message: { error: "You're posting too fast — please slow down." },
+});
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/signup", authLimiter);
 app.use("/api/auth/forgot-password", authLimiter);
@@ -149,6 +160,15 @@ function isCloudinaryUrl(url) {
     return false;
   }
 }
+
+/** Basic but real email format check, length-capped (RFC max 254). */
+function isValidEmail(email) {
+  const s = String(email || "").trim();
+  return s.length > 0 && s.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+
+// Minimum password length (signup + reset). Raised from 6 → 10 for launch.
+const PASSWORD_MIN = 10;
 
 const SKILLS = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 const TYPES = ["Indoor", "Beach", "Grass"];
@@ -217,12 +237,10 @@ app.post(
   "/api/auth/signup",
   h(async (req, res) => {
     const { email, password, name } = req.body || {};
-    if (!email || !String(email).includes("@"))
-      return res.status(400).json({ error: "A valid email is required." });
-    if (String(email).length > 254)
-      return res.status(400).json({ error: "Email address is too long." });
-    if (!password || String(password).length < 6)
-      return res.status(400).json({ error: "Password must be at least 6 characters." });
+    if (!isValidEmail(email))
+      return res.status(400).json({ error: "Please enter a valid email address." });
+    if (!password || String(password).length < PASSWORD_MIN)
+      return res.status(400).json({ error: `Password must be at least ${PASSWORD_MIN} characters.` });
     if (String(password).length > 128)
       return res.status(400).json({ error: "Password must be 128 characters or fewer." });
     if (!name || !String(name).trim())
@@ -273,6 +291,15 @@ app.delete(
   "/api/auth/me",
   requireAuth,
   h(async (req, res) => {
+    const user = await repo.findUserById(req.userId);
+    if (!user) return res.status(401).json({ error: "Account not found." });
+    // Password accounts must re-enter their password to confirm deletion.
+    // OAuth-only accounts (no password set) rely on the explicit client confirm.
+    if (user.password_hash) {
+      const { password } = req.body || {};
+      if (!password || !verifyPassword(String(password), user.password_hash))
+        return res.status(403).json({ error: "Incorrect password." });
+    }
     await repo.deleteAccount(req.userId);
     res.status(204).end();
   })
@@ -324,7 +351,8 @@ app.post(
   "/api/auth/forgot-password",
   h(async (req, res) => {
     const { email } = req.body || {};
-    if (!email) return res.status(400).json({ error: "Email is required." });
+    if (!isValidEmail(email))
+      return res.status(400).json({ error: "Please enter a valid email address." });
     const user = await repo.findUserByEmail(email);
     // Always return OK — never reveal whether an email exists.
     if (!user) return res.json({ ok: true });
@@ -366,8 +394,8 @@ app.post(
   h(async (req, res) => {
     const { token, password } = req.body || {};
     if (!token) return res.status(400).json({ error: "Reset token is required." });
-    if (!password || String(password).length < 6)
-      return res.status(400).json({ error: "Password must be at least 6 characters." });
+    if (!password || String(password).length < PASSWORD_MIN)
+      return res.status(400).json({ error: `Password must be at least ${PASSWORD_MIN} characters.` });
 
     const record = await repo.verifyPasswordResetToken(token);
     if (!record)
@@ -387,10 +415,12 @@ app.post(
 // Fine for a single-process server. If you ever run multiple replicas, move
 // this to Redis or Postgres.
 const oauthStates = new Map(); // state -> expiry timestamp
-setInterval(() => {
+const oauthCleanup = setInterval(() => {
   const now = Date.now();
   for (const [k, exp] of oauthStates) if (now > exp) oauthStates.delete(k);
 }, 60_000);
+// Don't let this timer keep the process alive (matters for tests / CLI imports).
+if (typeof oauthCleanup.unref === "function") oauthCleanup.unref();
 
 app.get("/api/auth/google", (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -645,9 +675,15 @@ app.post(
         if (r.ok) {
           console.log(`[email] delivered OK to ${user.email}`);
         } else {
-          r.text().then((t) => console.error(`[email] Resend error ${r.status}:`, t));
+          r.text().then((t) => {
+            console.error(`[email] Resend error ${r.status}:`, t);
+            Sentry.captureMessage(`Resend join-email failed (${r.status}): ${t}`, "error");
+          });
         }
-      }).catch((e) => console.error("[email] network error:", e));
+      }).catch((e) => {
+        console.error("[email] network error:", e);
+        Sentry.captureException(e);
+      });
     }
 
     res.json(game);
@@ -749,6 +785,7 @@ app.get(
 app.post(
   "/api/games/:id/comments",
   requireAuth,
+  contentLimiter,
   h(async (req, res) => {
     const body = String((req.body && req.body.body) || "").trim();
     if (!body) return res.status(400).json({ error: "Comment can't be empty." });
@@ -799,6 +836,7 @@ app.get(
 app.post(
   "/api/games/:id/messages",
   requireAuth,
+  contentLimiter,
   h(async (req, res) => {
     if (!(await repo.canAccessChat(req.params.id, req.userId)))
       return res
@@ -1046,6 +1084,7 @@ app.get(
 app.post(
   "/api/highlights/:id/comments",
   requireAuth,
+  contentLimiter,
   h(async (req, res) => {
     const body = String((req.body || {}).body || "").trim();
     if (!body) return res.status(400).json({ error: "Comment can't be empty." });
@@ -1090,118 +1129,6 @@ function buildGCalUrl(game, appUrl) {
     location: `${game.location}, ${game.area}`,
   });
   return `https://calendar.google.com/calendar/render?${params}`;
-}
-
-// --- Join confirmation email -----------------------------------------------
-
-function buildConfirmEmail({ game, userName, gcalUrl, appUrl, timeDisplay }) {
-  const brand = "#E8734A";
-  const row = (label, value) => `
-    <tr>
-      <td style="padding:6px 0;font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#9ca3af;">${label}</td>
-      <td style="padding:6px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">${value}</td>
-    </tr>`;
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
-<body style="margin:0;padding:24px 16px;background:#f5ede3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;margin:0 auto;">
-    <tr><td>
-      <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.10);">
-        <!-- top notch -->
-        <tr><td style="text-align:center;padding:20px 0 8px;">
-          <div style="display:inline-block;width:36px;height:36px;background:#111827;border-radius:50%;"></div>
-        </td></tr>
-        <!-- checkmark -->
-        <tr><td style="text-align:center;padding:4px 0 12px;">
-          <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:${brand};border-radius:50%;font-size:26px;color:white;">✓</div>
-        </td></tr>
-        <!-- heading -->
-        <tr><td style="text-align:center;padding:4px 32px 6px;">
-          <h1 style="margin:0;font-size:34px;font-weight:800;color:#111827;letter-spacing:-.5px;">You're In!</h1>
-          <p style="margin:8px 0 0;font-size:14px;color:#6b7280;line-height:1.5;">
-            Hi ${esc(userName)}, your spot for <strong style="color:#374151;">${esc(game.title)}</strong> is confirmed.
-          </p>
-        </td></tr>
-        <!-- divider -->
-        <tr><td style="padding:16px 32px;"><div style="height:1px;background:#f3f4f6;"></div></td></tr>
-        <!-- details table -->
-        <tr><td style="padding:0 32px;">
-          <table width="100%" cellpadding="0" cellspacing="0">
-            ${row("Date", calDate(game.date))}
-            ${row("Time", timeDisplay)}
-            ${row("Location", esc(game.location))}
-            ${game.area ? row("Area", esc(game.area)) : ""}
-            ${game.costPerPerson > 0 ? row("Cost", `$${game.costPerPerson} per person`) : ""}
-          </table>
-        </td></tr>
-        ${game.notes ? `<tr><td style="padding:12px 32px 0;"><div style="background:#f9fafb;border-radius:14px;padding:12px 16px;font-size:13px;color:#4b5563;line-height:1.6;">${esc(game.notes)}</div></td></tr>` : ""}
-        <!-- buttons -->
-        <tr><td style="padding:20px 32px 8px;">
-          <a href="${gcalUrl}" style="display:block;background:${brand};color:#ffffff;text-decoration:none;text-align:center;padding:15px 24px;border-radius:14px;font-size:15px;font-weight:700;">
-            Add to Google Calendar
-          </a>
-        </td></tr>
-        <tr><td style="padding:0 32px 24px;">
-          <a href="${appUrl}/game/${game.id}" style="display:block;border:1.5px solid #e5e7eb;color:#374151;text-decoration:none;text-align:center;padding:13px 24px;border-radius:14px;font-size:14px;font-weight:500;">
-            View Game Details
-          </a>
-        </td></tr>
-        <!-- footer -->
-        <tr><td style="text-align:center;padding:12px 0 24px;">
-          <span style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#d1d5db;">COTERIE</span>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
-}
-
-// --- Calendar ICS builder (kept for potential future use) ------------------
-
-function icsTime(dateISO, timeHHMM, addHours = 0) {
-  const [y, m, d] = dateISO.split("-").map(Number);
-  const [hh, mm] = timeHHMM.split(":").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d, hh + addHours, mm));
-  const p = (n) => String(n).padStart(2, "0");
-  return `${dt.getUTCFullYear()}${p(dt.getUTCMonth() + 1)}${p(
-    dt.getUTCDate()
-  )}T${p(dt.getUTCHours())}${p(dt.getUTCMinutes())}00`;
-}
-
-function icsEscape(s) {
-  return String(s)
-    .replace(/\\/g, "\\\\")
-    .replace(/;/g, "\\;")
-    .replace(/,/g, "\\,")
-    .replace(/\r?\n/g, "\\n");
-}
-
-function buildICS(game, base) {
-  const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
-  const desc =
-    `Hosted by ${game.hostName}.` +
-    (game.notes ? ` ${game.notes}` : "") +
-    ` View: ${base}/game/${game.id}`;
-  return [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Coterie//EN",
-    "CALSCALE:GREGORIAN",
-    "BEGIN:VEVENT",
-    `UID:${game.id}@setmatch`,
-    `DTSTAMP:${stamp}`,
-    `DTSTART:${icsTime(game.date, game.time)}`,
-    `DTEND:${game.endTime ? icsTime(game.date, game.endTime) : icsTime(game.date, game.time, 2)}`,
-    `SUMMARY:${icsEscape(game.title)}`,
-    `LOCATION:${icsEscape(`${game.location}, ${game.area}`)}`,
-    `DESCRIPTION:${icsEscape(desc)}`,
-    "BEGIN:VALARM",
-    "TRIGGER:-PT2H",
-    "ACTION:DISPLAY",
-    "DESCRIPTION:Volleyball game reminder",
-    "END:VALARM",
-    "END:VEVENT",
-    "END:VCALENDAR",
-  ].join("\r\n");
 }
 
 // --- Serve the built frontend in production -------------------------------
@@ -1320,9 +1247,16 @@ function injectMeta(html, base, title, desc) {
 
 async function start() {
   await initSchema();
-  await seedIfEmpty();
-  await syncDemoPasswords();
-  await seedPastData();
+  // Demo data (sample users, demo-password reset, fake past games/reviews) is
+  // seeded unless SEED_DEMO is "false". Set SEED_DEMO=false in production to
+  // launch with a clean database — no public demo logins, no fake content.
+  if (process.env.SEED_DEMO !== "false") {
+    await seedIfEmpty();
+    await syncDemoPasswords();
+    await seedPastData();
+  } else {
+    console.log("[seed] SEED_DEMO=false — skipping demo users and sample data");
+  }
   await repo.promoteAdminsFromEnv();
   if (!process.env.RESEND_API_KEY) console.warn("[email] RESEND_API_KEY not set — join confirmation emails will be skipped");
   if (!process.env.SENTRY_DSN) console.warn("[sentry] SENTRY_DSN not set — errors will only be logged to the console, not reported to Sentry");
@@ -1331,7 +1265,14 @@ async function start() {
   });
 }
 
-start().catch((err) => {
-  console.error("[api] failed to start:", err);
-  process.exit(1);
-});
+// Skip auto-start under test so the app can be imported without a DB or a
+// listening socket (see tests/). Production / dev run normally.
+if (process.env.NODE_ENV !== "test") {
+  start().catch((err) => {
+    console.error("[api] failed to start:", err);
+    process.exit(1);
+  });
+}
+
+// Exported for unit / integration tests (tests/).
+export { app, validGameInput, gameInputFrom, isValidEmail, isCloudinaryUrl, addWeeksISO, PASSWORD_MIN };

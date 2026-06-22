@@ -49,6 +49,10 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (mode === "signup" && password.length < 10) {
+      setError("Password must be at least 10 characters.");
+      return;
+    }
     setBusy(true);
     try {
       if (mode === "signup") {
@@ -82,7 +86,7 @@ export default function Auth() {
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (newPassword.length < 10) { setError("Password must be at least 10 characters."); return; }
     setBusy(true);
     setError("");
     try {
@@ -115,7 +119,7 @@ export default function Auth() {
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="New password (min 6 characters)"
+            placeholder="New password (min 10 characters)"
             className={inputCls}
             autoComplete="new-password"
           />
@@ -235,7 +239,7 @@ export default function Auth() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder={mode === "signup" ? "Password (min 6 characters)" : "Password"}
+          placeholder={mode === "signup" ? "Password (min 10 characters)" : "Password"}
           className={inputCls}
           autoComplete={mode === "signup" ? "new-password" : "current-password"}
         />
@@ -294,20 +298,6 @@ export default function Auth() {
           className="font-semibold text-brand underline"
         >
           {mode === "signup" ? "Sign in" : "Create one"}
-        </button>
-      </p>
-
-      <p className="mt-6 text-center text-xs text-slate-400">
-        Just exploring? Sign in with{" "}
-        <button
-          onClick={() => {
-            setMode("login");
-            setEmail("1@demo.test");
-            setPassword("111111");
-          }}
-          className="font-medium text-slate-500 underline"
-        >
-          a demo account
         </button>
       </p>
 

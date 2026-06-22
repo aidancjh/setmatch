@@ -10,9 +10,20 @@ Practical guide for running Coterie in production (Railway + PostgreSQL).
 |---|---|---|
 | `DATABASE_URL` | Postgres connection string | ✅ |
 | `DATABASE_SSL` | `true` for cloud DB (public URL), `false` for internal | ✅ |
-| `JWT_SECRET` | signs login tokens — long random string | ✅ |
+| `JWT_SECRET` | signs login tokens — long random string (server refuses to boot in production if unset) | ✅ |
+| `APP_URL` | public base URL, e.g. `https://coterie.com.de` — used for CORS, OAuth redirect URIs, and email links | ✅ (prod) |
 | `PORT` | set automatically by Railway | auto |
 | `ADMIN_EMAILS` | comma-separated emails auto-granted admin on boot | optional |
+| `SEED_DEMO` | `false` to launch with a clean DB (no demo logins like `1@demo.test/111111`, no fake sample games/reviews). Defaults to enabled | optional |
+| `RESEND_API_KEY` | transactional email (join confirmations, password resets); emails skipped if unset | optional |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | enables "Sign in with Google" | optional |
+| `SENTRY_DSN` | backend error reporting | optional |
+| `VITE_SENTRY_DSN` | frontend error reporting (safe to expose) | optional |
+| `VITE_CLOUDINARY_CLOUD_NAME` / `VITE_CLOUDINARY_UPLOAD_PRESET` | avatar + highlight uploads | optional |
+
+> **Before a public / app-store launch:** set `SEED_DEMO=false` so the production
+> database has no publicly-known demo credentials or fake content. (Existing demo
+> rows from earlier boots must be removed manually via SQL if already seeded.)
 
 ---
 

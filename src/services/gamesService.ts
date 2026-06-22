@@ -192,8 +192,8 @@ export async function submitFeedback(
   await api.post("/feedback", { type, subject, body });
 }
 
-export async function deleteAccount(): Promise<void> {
-  await api.del("/auth/me");
+export async function deleteAccount(password?: string): Promise<void> {
+  await api.del("/auth/me", password ? { password } : undefined);
 }
 
 export async function getUserHighlights(userId: string): Promise<import("../types").Highlight[]> {

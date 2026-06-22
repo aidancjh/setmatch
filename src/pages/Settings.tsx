@@ -158,6 +158,7 @@ export default function Settings() {
   const [panel, setPanel] = useState<"feedback" | "bug" | "delete" | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
 
   function handleSignOut() {
     logout();
@@ -168,7 +169,7 @@ export default function Settings() {
     setDeleting(true);
     setDeleteError("");
     try {
-      await deleteAccount();
+      await deleteAccount(deletePassword);
       setToken(null);
       logout();
       navigate("/auth");
@@ -245,6 +246,15 @@ export default function Settings() {
             <p className="text-sm text-slate-500 mb-4">
               This permanently deletes your profile, games, highlights, and reviews. There is no undo.
             </p>
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="Enter your password to confirm"
+              autoComplete="current-password"
+              className="mb-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-slate-400"
+            />
+            <p className="mb-3 text-xs text-slate-400">Signed in with Google? Leave this blank.</p>
             {deleteError && (
               <p className="mb-3 text-sm text-rose-600">{deleteError}</p>
             )}
