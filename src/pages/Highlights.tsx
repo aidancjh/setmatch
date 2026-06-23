@@ -16,8 +16,30 @@ function cloudinaryConfigured() {
   return Boolean(CLOUD_NAME && UPLOAD_PRESET);
 }
 
+// Accepted media. Checked by MIME type first, then by file extension as a
+// fallback — browsers commonly report an EMPTY file.type for files chosen via
+// the OS "All files" filter (e.g. .mov, .mkv, .heic), which would otherwise be
+// rejected even though they're valid videos/photos.
+const VIDEO_EXTS = ["mp4", "mov", "m4v", "webm", "ogv", "avi", "mkv", "3gp", "mpeg", "mpg"];
+const PHOTO_EXTS = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "avif", "bmp"];
+
+function fileExt(name: string): string {
+  const dot = name.lastIndexOf(".");
+  return dot >= 0 ? name.slice(dot + 1).toLowerCase() : "";
+}
+
+/** Returns "video" | "photo", or null when the file is neither. */
+function detectMediaType(file: File): "video" | "photo" | null {
+  if (file.type.startsWith("image/")) return "photo";
+  if (file.type.startsWith("video/")) return "video";
+  const ext = fileExt(file.name);
+  if (PHOTO_EXTS.includes(ext)) return "photo";
+  if (VIDEO_EXTS.includes(ext)) return "video";
+  return null;
+}
+
 function getMediaType(file: File): "video" | "photo" {
-  return file.type.startsWith("image/") ? "photo" : "video";
+  return detectMediaType(file) ?? "video";
 }
 
 function uploadToCloudinary(
@@ -377,15 +399,21 @@ function UploadModal({
   const fileRef = useRef<HTMLInputElement>(null);
 
   function pickFile(f: File) {
-    if (!f.type.startsWith("video/") && !f.type.startsWith("image/")) {
-      setError("Please choose a video or photo file.");
+    const type = detectMediaType(f);
+    if (!type) {
+      const ext = fileExt(f.name);
+      setError(
+        ext
+          ? `".${ext}" files aren't supported. Pick a video (MP4, MOV, WebM) or a photo (JPG, PNG, HEIC, WebP).`
+          : "That file isn't a video or photo. Pick a video (MP4, MOV, WebM) or a photo (JPG, PNG, HEIC, WebP)."
+      );
       return;
     }
     if (f.size > 200 * 1024 * 1024) {
-      setError("File must be under 200 MB.");
+      const sizeMb = Math.round(f.size / (1024 * 1024));
+      setError(`That file is ${sizeMb} MB — the maximum is 200 MB. Trim or compress it and try again.`);
       return;
     }
-    const type = getMediaType(f);
     const url = URL.createObjectURL(f);
     setRawPreview(url);
     setMediaType(type);
@@ -584,7 +612,11 @@ function UploadModal({
           type="file"
           accept="video/*,image/*"
           className="hidden"
-          onChange={(e) => e.target.files?.[0] && pickFile(e.target.files[0])}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) pickFile(f);
+            e.target.value = ""; // let the user re-pick the same file after an error
+          }}
         />
       </div>
     </div>
