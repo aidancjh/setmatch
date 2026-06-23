@@ -61,18 +61,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       loading,
       async signup(email, password, name) {
+        // Retry on transient gateway errors (502/503/504) — the free host
+        // cold-starts after idle and the first request can fail while it boots.
         const r = await api.post<{ token: string; user: User }>(
           "/auth/signup",
-          { email, password, name }
+          { email, password, name },
+          undefined,
+          { retry: true }
         );
         setToken(r.token);
         setUser(r.user);
       },
       async login(email, password) {
-        const r = await api.post<{ token: string; user: User }>("/auth/login", {
-          email,
-          password,
-        });
+        // Retry on transient gateway errors (502/503/504) — see signup above.
+        const r = await api.post<{ token: string; user: User }>(
+          "/auth/login",
+          { email, password },
+          undefined,
+          { retry: true }
+        );
         setToken(r.token);
         setUser(r.user);
       },

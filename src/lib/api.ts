@@ -109,8 +109,12 @@ export function newIdempotencyKey(): string {
 
 export const api = {
   get: <T>(path: string) => request<T>(path, { retry: true }),
-  post: <T>(path: string, body?: unknown, headers?: Record<string, string>) =>
-    request<T>(path, { method: "POST", body, headers }),
+  post: <T>(
+    path: string,
+    body?: unknown,
+    headers?: Record<string, string>,
+    opts?: { retry?: boolean }
+  ) => request<T>(path, { method: "POST", body, headers, retry: opts?.retry }),
   patch: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "PATCH", body }),
   del: <T>(path: string, body?: unknown) => request<T>(path, { method: "DELETE", body }),

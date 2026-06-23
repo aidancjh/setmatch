@@ -5,6 +5,7 @@ import * as Sentry from "@sentry/react";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { registerSW } from "virtual:pwa-register";
 import "./index.css";
 
 // PWA auto-update: the service worker uses skipWaiting + clientsClaim, so a new
@@ -19,6 +20,25 @@ if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
     window.location.reload();
   });
 }
+
+// Register the worker and aggressively check for new deploys: immediately on
+// load (so a plain refresh picks up the latest build), whenever the app regains
+// focus, and on an interval while it stays open. A found update activates right
+// away and the controllerchange handler above reloads — no need to close and
+// reopen the app.
+registerSW({
+  immediate: true,
+  onRegisteredSW(_swUrl, registration) {
+    if (!registration) return;
+    const check = () => registration.update().catch(() => {});
+    setInterval(check, 60_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+  },
+});
 
 // DSN comes from VITE_SENTRY_DSN (a browser Sentry DSN is public by design —
 // it can only submit events). When unset, Sentry stays disabled.
