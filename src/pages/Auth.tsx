@@ -7,6 +7,15 @@ import { VolleyballIcon } from "../components/icons";
 
 type Mode = "signup" | "login" | "forgot" | "reset";
 
+// Public demo accounts for quick testing (all share password "111111").
+const DEMO_USERS = [
+  { email: "1@demo.test", name: "Maria L.", level: "Intermediate" },
+  { email: "2@demo.test", name: "Theo R.", level: "Advanced" },
+  { email: "3@demo.test", name: "Grace P.", level: "Beginner" },
+  { email: "4@demo.test", name: "Dre M.", level: "Advanced" },
+  { email: "5@demo.test", name: "Nina K.", level: "All Levels" },
+];
+
 export default function Auth() {
   const { user, login, signup } = useAuth();
   const navigate = useNavigate();
@@ -32,6 +41,7 @@ export default function Auth() {
       : ""
   );
   const [busy, setBusy] = useState(false);
+  const [demoBusy, setDemoBusy] = useState<string | null>(null);
 
   // Google OAuth: token returned in URL → store and go home
   useEffect(() => {
@@ -66,6 +76,19 @@ export default function Auth() {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const demoLogin = async (demoEmail: string) => {
+    setError("");
+    setDemoBusy(demoEmail);
+    try {
+      await login(demoEmail, "111111");
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Demo sign-in failed.");
+    } finally {
+      setDemoBusy(null);
     }
   };
 
@@ -287,6 +310,30 @@ export default function Auth() {
         </svg>
         Continue with Google
       </a>
+
+      {mode === "login" && (
+        <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50 p-3">
+          <p className="mb-2 text-center text-xs text-slate-500">
+            Just exploring? Sign in with a demo account
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {DEMO_USERS.map((d) => (
+              <button
+                key={d.email}
+                type="button"
+                disabled={!!demoBusy}
+                onClick={() => demoLogin(d.email)}
+                className="flex flex-col items-start rounded-lg border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-brand hover:bg-rose-50 disabled:opacity-60"
+              >
+                <span className="text-sm font-semibold text-slate-800">
+                  {demoBusy === d.email ? "Signing in…" : d.name}
+                </span>
+                <span className="text-xs text-slate-400">{d.level}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <p className="mt-4 text-center text-sm text-slate-500">
         {mode === "signup" ? "Already have an account? " : "New to Coterie? "}
