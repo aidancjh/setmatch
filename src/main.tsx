@@ -7,6 +7,19 @@ import { AuthProvider } from "./auth/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "./index.css";
 
+// PWA auto-update: the service worker uses skipWaiting + clientsClaim, so a new
+// deploy's worker takes control immediately. If this page was already controlled
+// by a worker (i.e. a real update, not a first visit), reload once so the user
+// sees the fresh build instead of a stale cached one.
+if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloaded) return;
+    reloaded = true;
+    window.location.reload();
+  });
+}
+
 // DSN comes from VITE_SENTRY_DSN (a browser Sentry DSN is public by design —
 // it can only submit events). When unset, Sentry stays disabled.
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
