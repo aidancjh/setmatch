@@ -26,7 +26,8 @@ export default function Privacy() {
             When you create an account we store your name, email address, and a
             securely hashed password. As you use Coterie we store the games you
             post or join, your skill level and home area, messages you post in
-            game chats, and notifications generated for you.
+            game chats, any highlight photos you upload, and notifications
+            generated for you.
           </p>
         </section>
 
@@ -54,16 +55,20 @@ export default function Privacy() {
           <p>
             Data is stored in a managed PostgreSQL database. We take reasonable
             measures to protect it, including hashed passwords and encrypted
-            connections.
+            connections. We rely on a few service providers to run Coterie —
+            cloud hosting, an image host for uploaded photos, an email provider
+            for account messages, and error-monitoring to keep the app stable —
+            and we do not sell your data or use it for advertising.
           </p>
         </section>
 
         <section>
           <h2 className="mb-1 font-semibold text-slate-900">Your choices</h2>
           <p>
-            You can edit your profile at any time. To delete your account and
-            associated data, contact us using the email below and we'll remove
-            it.
+            You can edit your profile at any time. You can permanently delete
+            your account and all associated data yourself from Settings → Delete
+            account, or contact us using the email below and we'll remove it for
+            you.
           </p>
         </section>
 
