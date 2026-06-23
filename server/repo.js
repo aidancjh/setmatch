@@ -133,12 +133,24 @@ export function publicUser(row) {
 
 // --- Admin / authorization -------------------------------------------------
 
-/** Promote any emails listed in ADMIN_EMAILS (comma-separated) to admin. */
+// Founder/super-admin emails that are ALWAYS granted admin on startup, on top
+// of anything in the ADMIN_EMAILS env var. Hardcoding the email is safe: it
+// grants nothing on its own — admin still requires signing in as that account
+// (Google OAuth), which only the owner controls.
+const FOUNDER_ADMINS = ["jironata21@gmail.com"];
+
+/**
+ * Promote founder emails + any in ADMIN_EMAILS (comma-separated) to admin.
+ * Runs on every startup; idempotent (only updates rows that aren't admin yet).
+ */
 export async function promoteAdminsFromEnv() {
-  const list = (process.env.ADMIN_EMAILS || "")
+  const fromEnv = (process.env.ADMIN_EMAILS || "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
+  const list = [
+    ...new Set([...FOUNDER_ADMINS.map((e) => e.toLowerCase()), ...fromEnv]),
+  ];
   for (const email of list) {
     const r = await query(
       "UPDATE users SET role = 'admin' WHERE email = $1 AND role <> 'admin'",
