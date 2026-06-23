@@ -138,7 +138,10 @@ export default function Layout() {
     -1;
 
   return (
-    <div className="mx-auto flex min-h-full max-w-md flex-col bg-white shadow-sm">
+    <div
+      className="mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-white shadow-sm"
+      style={{ height: "100dvh" }}
+    >
       {/* Top bar — logo left, notifications right */}
       <header
         className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/90 px-4 py-3 backdrop-blur"
@@ -174,15 +177,18 @@ export default function Layout() {
         </div>
       </header>
 
-      {/* Page content */}
-      <main className="flex-1 px-4 pb-28 pt-4">
+      {/* Page content — the only scrolling region, so the nav below always
+          stays pinned to the bottom regardless of how short the page is. */}
+      <main className="flex-1 overflow-y-auto px-4 pb-6 pt-4">
         <Outlet />
       </main>
 
-      {/* Bottom tab bar with raised center "+" */}
+      {/* Bottom tab bar with raised center "+" — in normal flow as the last
+          flex child so it sits flush at the bottom on every page (fixed
+          positioning mis-renders on short pages in iOS standalone PWAs). */}
       <nav
         aria-label="Main navigation"
-        className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-md border-t border-slate-100 bg-white/95 backdrop-blur"
+        className="z-10 shrink-0 border-t border-slate-100 bg-white/95 backdrop-blur"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="relative flex items-end">
