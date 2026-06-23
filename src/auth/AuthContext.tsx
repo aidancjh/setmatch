@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { SkillLevel, User } from "../types";
 import { api, getToken, setToken } from "../lib/api";
+import { clearCache } from "../lib/cache";
 
 interface AuthState {
   user: User | null;
@@ -69,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           undefined,
           { retry: true }
         );
+        clearCache(); // start the new account with a clean cache
         setToken(r.token);
         setUser(r.user);
       },
@@ -80,10 +82,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           undefined,
           { retry: true }
         );
+        clearCache(); // start the new account with a clean cache
         setToken(r.token);
         setUser(r.user);
       },
       logout() {
+        clearCache(); // don't leave one account's data for the next sign-in
         setToken(null);
         setUser(null);
       },

@@ -2,7 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { api } from "../lib/api";
+import { readCache, writeCache } from "../lib/cache";
 import type { Highlight, HighlightComment } from "../types";
+
+const HL_CACHE_KEY = "highlights";
 import { ChatIcon, HeartIcon, TrashIcon, UploadIcon } from "../components/icons";
 import { HighlightCardSkeleton } from "../components/Skeleton";
 
@@ -882,8 +885,13 @@ export default function Highlights() {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [highlights, setHighlights] = useState<Highlight[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Paint the cached feed instantly, then revalidate in the background.
+  const [highlights, setHighlights] = useState<Highlight[]>(
+    () => readCache<Highlight[]>(HL_CACHE_KEY) ?? []
+  );
+  const [loading, setLoading] = useState(
+    () => readCache<Highlight[]>(HL_CACHE_KEY) === undefined
+  );
   const [slow, setSlow] = useState(false);
   const [error, setError] = useState("");
   const [showUpload, setShowUpload] = useState(false);
@@ -901,8 +909,12 @@ export default function Highlights() {
     try {
       const data = await api.get<Highlight[]>("/highlights");
       setHighlights(data);
+      writeCache(HL_CACHE_KEY, data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't load highlights.");
+      // Keep showing cached highlights if we have any; only error when empty.
+      if (readCache<Highlight[]>(HL_CACHE_KEY) === undefined) {
+        setError(e instanceof Error ? e.message : "Couldn't load highlights.");
+      }
     } finally {
       clearTimeout(slowTimer);
       setLoading(false);
