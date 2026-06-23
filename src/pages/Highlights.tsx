@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { api } from "../lib/api";
 import { readCache, writeCache } from "../lib/cache";
+import { celebrate } from "../lib/celebrate";
 import type { Highlight, HighlightComment } from "../types";
 
 const HL_CACHE_KEY = "highlights";
@@ -472,6 +473,7 @@ function UploadModal({
         mediaType: mt,
       });
       onUploaded(hl);
+      celebrate("post");
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");

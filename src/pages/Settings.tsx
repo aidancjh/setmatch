@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { submitFeedback, deleteAccount } from "../services/gamesService";
 import { setToken } from "../lib/api";
+import { feedbackEnabled, setFeedbackEnabled, playSound } from "../lib/feedback";
 
 // ---------------------------------------------------------------------------
 // FAQ data
@@ -70,6 +71,29 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white">
         {children}
       </div>
+    </div>
+  );
+}
+
+function ToggleRow({ label, sub, on, onToggle }: { label: string; sub?: string; on: boolean; onToggle: () => void }) {
+  return (
+    <div className="flex w-full items-center justify-between px-4 py-3.5 text-left border-b border-slate-50 last:border-0">
+      <div className="pr-3">
+        <p className="text-sm font-medium text-slate-800">{label}</p>
+        {sub && <p className="text-xs text-slate-400">{sub}</p>}
+      </div>
+      <button
+        role="switch"
+        aria-checked={on}
+        aria-label={label}
+        onClick={onToggle}
+        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${on ? "bg-brand" : "bg-slate-200"}`}
+      >
+        <span
+          className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
+          style={{ transform: on ? "translateX(20px)" : "translateX(0)" }}
+        />
+      </button>
     </div>
   );
 }
@@ -156,7 +180,15 @@ export default function Settings() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [panel, setPanel] = useState<"feedback" | "bug" | "delete" | null>(null);
+  const [soundOn, setSoundOn] = useState(feedbackEnabled());
   const [deleting, setDeleting] = useState(false);
+
+  function toggleSound() {
+    const next = !soundOn;
+    setSoundOn(next);
+    setFeedbackEnabled(next);
+    if (next) playSound("success"); // let them hear it turn on
+  }
   const [deleteError, setDeleteError] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
 
@@ -227,6 +259,16 @@ export default function Settings() {
             />
           </>
         )}
+      </Section>
+
+      {/* Preferences */}
+      <Section title="Preferences">
+        <ToggleRow
+          label="Sounds & haptics"
+          sub="Play a sound and vibrate on wins like joining or posting"
+          on={soundOn}
+          onToggle={toggleSound}
+        />
       </Section>
 
       {/* Account */}

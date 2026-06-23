@@ -18,6 +18,7 @@ import { formatDate, formatTime, formatTimeRange, isPast, relativeDay } from "..
 import { SkillBadge, SpotsBadge, TypeBadge } from "../components/Badges";
 import GameComments from "../components/GameComments";
 import { api } from "../lib/api";
+import { celebrate } from "../lib/celebrate";
 
 export default function GameDetail() {
   const { id = "" } = useParams();
@@ -97,6 +98,9 @@ export default function GameDetail() {
     const willBePlayer = left > 0;
     try {
       await joinGame(game.id);
+      // Confetti + bright sound for actually getting a spot; a softer checkmark
+      // confirmation when landing on the waitlist.
+      celebrate(willBePlayer ? "join" : "post");
       setJoinModal(willBePlayer ? "confirmed" : "waitlist");
     } catch (err) {
       setJoinError(err instanceof Error ? err.message : "Something went wrong. Please try again.");

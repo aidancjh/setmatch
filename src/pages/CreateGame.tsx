@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import type { NewGameInput } from "../types";
 import { createGame } from "../services/gamesService";
+import { celebrate } from "../lib/celebrate";
 import GameForm, { blankGame } from "../components/GameForm";
 
 export default function CreateGame() {
@@ -8,6 +9,7 @@ export default function CreateGame() {
 
   const handleSubmit = async (input: NewGameInput, repeatWeeks: number) => {
     const game = await createGame(input, repeatWeeks);
+    celebrate("post"); // checkmark + sound; the host below persists across the nav
     navigate(`/game/${game.id}`);
   };
 

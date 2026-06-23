@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
+import CelebrationHost from "./CelebrationHost";
 import {
   CalendarIcon,
   ChatIcon,
@@ -180,7 +181,10 @@ export default function Layout() {
       {/* Page content — the only scrolling region, so the nav below always
           stays pinned to the bottom regardless of how short the page is. */}
       <main className="flex-1 overflow-y-auto px-4 pb-6 pt-4">
-        <Outlet />
+        {/* Keyed by route so the page gently fades/rises in on every navigation */}
+        <div key={pathname} className="animate-page-enter">
+          <Outlet />
+        </div>
       </main>
 
       {/* Bottom tab bar with raised center "+" — in normal flow as the last
@@ -229,6 +233,9 @@ export default function Layout() {
       </nav>
 
       {showPost && <PostSheet onClose={() => setShowPost(false)} />}
+
+      {/* Celebration visuals (confetti / checkmark) — persist across navigation */}
+      <CelebrationHost />
     </div>
   );
 }
