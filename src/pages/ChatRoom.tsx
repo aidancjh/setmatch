@@ -77,7 +77,7 @@ export default function ChatRoom() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-9rem)] flex-col">
+    <div className="flex min-h-[calc(100dvh-9rem)] flex-col">
       {/* Header */}
       <div className="mb-3 flex items-center gap-2">
         <button

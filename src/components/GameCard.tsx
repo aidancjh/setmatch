@@ -67,7 +67,7 @@ export default function GameCard({
           </div>
 
           {/* Location */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          <div className="flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
             <MapPinIcon className="size-3.5 shrink-0 text-slate-400" />
             <span className="truncate">{game.location}</span>
             <span className="shrink-0 text-slate-400">· {game.area}</span>
@@ -91,9 +91,11 @@ export default function GameCard({
           </div>
 
           {/* Host + skill */}
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] text-slate-400">hosted by {game.hostName}</span>
-            <SkillBadge skill={game.skill} />
+          <div className="flex items-center justify-between gap-2">
+            <span className="min-w-0 truncate text-[11px] text-slate-400">hosted by {game.hostName}</span>
+            <span className="shrink-0">
+              <SkillBadge skill={game.skill} />
+            </span>
           </div>
         </div>
       </div>
