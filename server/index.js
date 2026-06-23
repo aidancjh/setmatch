@@ -93,6 +93,29 @@ app.use(
 app.use(express.json({ limit: "100kb" })); // prevent giant JSON payloads
 
 // --- Rate limiters --------------------------------------------------------
+// Login: only FAILED attempts count (skipSuccessfulRequests), so legitimate
+// users — including several people behind one shared IP/NAT — are never blocked
+// by simply signing in. Only repeated wrong-password attempts (the brute-force
+// signature) trip it.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many failed login attempts — please wait 15 minutes and try again." },
+});
+// Signup: caps mass account creation per IP, but lenient enough for several
+// people on the same network (e.g. testers on shared Wi-Fi).
+const signupLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many sign-ups from this network — please try again later." },
+});
+// Password reset / forgot: sensitive and rarely used legitimately, so kept
+// strict to prevent reset-email spam and token guessing.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5,
@@ -118,8 +141,8 @@ const contentLimiter = rateLimit({
   keyGenerator: (req) => req.userId || req.ip,
   message: { error: "You're posting too fast — please slow down." },
 });
-app.use("/api/auth/login", authLimiter);
-app.use("/api/auth/signup", authLimiter);
+app.use("/api/auth/login", loginLimiter);
+app.use("/api/auth/signup", signupLimiter);
 app.use("/api/auth/forgot-password", authLimiter);
 app.use("/api/auth/reset-password", authLimiter);
 app.use("/api", apiLimiter);
