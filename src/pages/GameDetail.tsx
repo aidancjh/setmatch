@@ -19,6 +19,7 @@ import { SkillBadge, SpotsBadge, TypeBadge } from "../components/Badges";
 import GameComments from "../components/GameComments";
 import { api } from "../lib/api";
 import { celebrate } from "../lib/celebrate";
+import ReportButton from "../components/ReportButton";
 
 export default function GameDetail() {
   const { id = "" } = useParams();
@@ -582,6 +583,17 @@ export default function GameDetail() {
             >
               Delete game
             </button>
+          </div>
+        )}
+
+        {!isHost && (
+          <div className="border-t border-slate-100 pt-3 text-center">
+            <ReportButton
+              targetType="game"
+              targetId={game.id}
+              label="Report this game"
+              className="text-xs font-medium text-slate-400 transition hover:text-rose-500"
+            />
           </div>
         )}
       </div>

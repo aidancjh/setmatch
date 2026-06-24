@@ -18,7 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { hashPassword, verifyPassword, signToken, requireAuth, TIMING_HASH } from "./auth.js";
+import { hashPassword, verifyPassword, signToken, requireAuth, verifyToken, TIMING_HASH } from "./auth.js";
 import * as repo from "./repo.js";
 import { initSchema, query } from "./db.js";
 import { seedIfEmpty, syncDemoPasswords, seedPastData } from "./seed.js";
@@ -161,6 +161,39 @@ app.use((req, res, next) => {
   next();
 });
 
+// Maintenance mode: when the flag is on, block normal /api traffic with a 503
+// so the frontend can show a maintenance screen. Auth, config, admin routes,
+// and admins themselves stay open so an admin can sign in and turn it back off.
+app.use("/api", async (req, res, next) => {
+  try {
+    const p = req.path; // mount-relative, e.g. "/games", "/config"
+    if (p === "/config" || p.startsWith("/auth") || p.startsWith("/admin")) return next();
+    if (!(await repo.getFlag("maintenance_mode"))) return next();
+    const header = req.headers.authorization || "";
+    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+    const userId = token ? verifyToken(token) : null;
+    if (userId && (await repo.getRole(userId)) === "admin") return next();
+    return res
+      .status(503)
+      .json({ error: "Coterie is down for maintenance. We'll be back shortly.", maintenance: true });
+  } catch {
+    next(); // never let the gate take the whole API down
+  }
+});
+
+// Public app config — flags the client needs (no auth required).
+app.get("/api/config", async (_req, res) => {
+  try {
+    const flags = await repo.getFlags();
+    res.json({
+      maintenanceMode: flags.maintenance_mode === true,
+      signupsEnabled: flags.signups_enabled !== false,
+    });
+  } catch {
+    res.json({ maintenanceMode: false, signupsEnabled: true });
+  }
+});
+
 // Health check for uptime monitors — verifies the DB is reachable.
 app.get("/healthz", async (_req, res) => {
   try {
@@ -259,6 +292,8 @@ const h = (fn) => (req, res) =>
 app.post(
   "/api/auth/signup",
   h(async (req, res) => {
+    if (!(await repo.getFlag("signups_enabled")))
+      return res.status(403).json({ error: "New sign-ups are temporarily closed." });
     const { email, password, name } = req.body || {};
     if (!isValidEmail(email))
       return res.status(400).json({ error: "Please enter a valid email address." });
@@ -510,6 +545,10 @@ app.get(
     if (!googleUser.email)
       return res.redirect(`${appUrl}/auth?error=google_failed`);
 
+    if (!(await repo.getFlag("signups_enabled"))) {
+      const existing = await repo.findUserByEmail(googleUser.email);
+      if (!existing) return res.redirect(`${appUrl}/auth?error=signups_closed`);
+    }
     const user = await repo.findOrCreateGoogleUser(
       googleUser.id,
       googleUser.email,
@@ -1084,6 +1123,64 @@ app.get(
   requireAuth,
   requireAdmin,
   h(async (_req, res) => res.json(await repo.adminListAudit()))
+);
+
+// --- Reports (users flag content; admins review) ---------------------------
+
+app.post(
+  "/api/reports",
+  requireAuth,
+  contentLimiter,
+  h(async (req, res) => {
+    const { targetType, targetId, reason } = req.body || {};
+    const result = await repo.createReport(req.userId, targetType, targetId, reason);
+    if (!result.ok) return res.status(result.code || 400).json({ error: result.error });
+    res.status(201).json({ ok: true });
+  })
+);
+
+app.get(
+  "/api/admin/reports",
+  requireAuth,
+  requireAdmin,
+  h(async (_req, res) => res.json(await repo.adminListReports()))
+);
+
+app.patch(
+  "/api/admin/reports/:id",
+  requireAuth,
+  requireAdmin,
+  h(async (req, res) => {
+    const status = req.body && req.body.status;
+    if (!(await repo.adminSetReportStatus(req.params.id, status)))
+      return res.status(400).json({ error: "Invalid status." });
+    await repo.logAdminAction(req.userId, "report_status", `Marked a report ${status}`);
+    res.json({ ok: true, status });
+  })
+);
+
+// --- Feature flags ---------------------------------------------------------
+
+app.get(
+  "/api/admin/flags",
+  requireAuth,
+  requireAdmin,
+  h(async (_req, res) => res.json(await repo.getFlags()))
+);
+
+app.patch(
+  "/api/admin/flags/:key",
+  requireAuth,
+  requireAdmin,
+  h(async (req, res) => {
+    const key = req.params.key;
+    if (!["maintenance_mode", "signups_enabled"].includes(key))
+      return res.status(400).json({ error: "Unknown flag." });
+    const enabled = !!(req.body && req.body.enabled);
+    await repo.setFlag(key, enabled);
+    await repo.logAdminAction(req.userId, "set_flag", `Set ${key} to ${enabled ? "ON" : "OFF"}`);
+    res.json({ ok: true, key, enabled });
+  })
 );
 
 // --- User profiles --------------------------------------------------------

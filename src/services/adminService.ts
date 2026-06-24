@@ -4,6 +4,7 @@ import type {
   AdminComment,
   AdminFeedback,
   AdminAuditEntry,
+  AdminReport,
   Game,
   Highlight,
 } from "../types";
@@ -29,4 +30,10 @@ export const adminApi = {
     api.patch<{ ok: boolean; resolved: boolean }>(`/admin/feedback/${id}/resolve`, { resolved }),
   deleteFeedback: (id: string) => api.del<void>(`/admin/feedback/${id}`),
   audit: () => api.get<AdminAuditEntry[]>("/admin/audit"),
+  reports: () => api.get<AdminReport[]>("/admin/reports"),
+  setReportStatus: (id: string, status: AdminReport["status"]) =>
+    api.patch<{ ok: boolean; status: string }>(`/admin/reports/${id}`, { status }),
+  flags: () => api.get<Record<string, boolean>>("/admin/flags"),
+  setFlag: (key: string, enabled: boolean) =>
+    api.patch<{ ok: boolean }>(`/admin/flags/${key}`, { enabled }),
 };

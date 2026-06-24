@@ -383,6 +383,91 @@ export async function adminDeleteFeedback(id) {
   await query("DELETE FROM feedback WHERE id = $1", [id]);
 }
 
+// --- Reports queue ---------------------------------------------------------
+
+const REPORT_TYPES = ["game", "highlight", "game_comment", "highlight_comment"];
+
+/** Create a report. Dedupes open reports per user+target. */
+export async function createReport(reporterId, targetType, targetId, reason) {
+  if (!REPORT_TYPES.includes(targetType) || !targetId)
+    return { ok: false, code: 400, error: "Invalid report." };
+  const { rows: dup } = await query(
+    `SELECT 1 FROM reports
+      WHERE reporter_id = $1 AND target_type = $2 AND target_id = $3 AND status = 'open'`,
+    [reporterId, targetType, targetId]
+  );
+  if (dup[0]) return { ok: true, already: true };
+  await query(
+    `INSERT INTO reports (id, reporter_id, target_type, target_id, reason, status, created_at)
+     VALUES ($1, $2, $3, $4, $5, 'open', $6)`,
+    [uid("rpt"), reporterId, targetType, targetId, (reason || "").slice(0, 500), new Date().toISOString()]
+  );
+  return { ok: true };
+}
+
+export async function adminListReports() {
+  const { rows } = await query(
+    `SELECT r.id, r.target_type, r.target_id, r.reason, r.status, r.created_at,
+            u.name AS reporter_name
+       FROM reports r
+       LEFT JOIN users u ON u.id = r.reporter_id
+      ORDER BY (r.status = 'open') DESC, r.created_at DESC
+      LIMIT 200`
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    targetType: r.target_type,
+    targetId: r.target_id,
+    reason: r.reason || "",
+    status: r.status,
+    reporterName: r.reporter_name || "(deleted user)",
+    createdAt: r.created_at,
+  }));
+}
+
+export async function adminSetReportStatus(id, status) {
+  if (!["open", "resolved", "dismissed"].includes(status)) return false;
+  await query("UPDATE reports SET status = $1 WHERE id = $2", [status, id]);
+  return true;
+}
+
+export async function openReportsCount() {
+  const { rows } = await query(
+    "SELECT COUNT(*) AS c FROM reports WHERE status = 'open'"
+  );
+  return Number(rows[0].c);
+}
+
+// --- Feature flags ---------------------------------------------------------
+
+let flagsCache = null;
+let flagsCacheAt = 0;
+const FLAGS_TTL_MS = 15000;
+
+/** All flags as a {key: boolean} map, cached briefly to avoid per-request DB hits. */
+export async function getFlags() {
+  if (flagsCache && Date.now() - flagsCacheAt < FLAGS_TTL_MS) return flagsCache;
+  const { rows } = await query("SELECT key, enabled FROM feature_flags");
+  const map = {};
+  for (const r of rows) map[r.key] = r.enabled === true;
+  flagsCache = map;
+  flagsCacheAt = Date.now();
+  return map;
+}
+
+export async function getFlag(key) {
+  return (await getFlags())[key] === true;
+}
+
+export async function setFlag(key, enabled) {
+  await query(
+    `INSERT INTO feature_flags (key, enabled, updated_at) VALUES ($1, $2, $3)
+     ON CONFLICT (key) DO UPDATE SET enabled = $2, updated_at = $3`,
+    [key, enabled === true, new Date().toISOString()]
+  );
+  flagsCache = null; // bust cache so the change takes effect immediately
+}
+
 // --- Notifications --------------------------------------------------------
 
 export async function createNotification(userId, type, message, gameId) {

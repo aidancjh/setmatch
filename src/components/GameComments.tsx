@@ -4,6 +4,7 @@ import type { Comment } from "../types";
 import { addComment, deleteComment, getComments } from "../services/gamesService";
 import { useAuth } from "../auth/AuthContext";
 import { timeAgo } from "../lib/format";
+import ReportButton from "./ReportButton";
 
 /**
  * Per-game discussion thread. Anyone can read; signed-in users can post.
@@ -109,7 +110,7 @@ export default function GameComments({
                     <span className="text-xs text-slate-400">
                       {timeAgo(c.createdAt)}
                     </span>
-                    {canDelete && (
+                    {canDelete ? (
                       <button
                         onClick={() => handleDelete(c.id)}
                         className="ml-auto text-xs text-slate-300 hover:text-rose-500"
@@ -117,7 +118,13 @@ export default function GameComments({
                       >
                         ✕
                       </button>
-                    )}
+                    ) : user && user.id !== c.userId ? (
+                      <ReportButton
+                        targetType="game_comment"
+                        targetId={c.id}
+                        className="ml-auto text-xs font-medium text-slate-300 hover:text-rose-500"
+                      />
+                    ) : null}
                   </div>
                   <p className="whitespace-pre-wrap break-words text-sm text-slate-700">
                     {c.body}

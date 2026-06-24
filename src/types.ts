@@ -120,6 +120,27 @@ export interface AdminAuditEntry {
   createdAt: string;
 }
 
+export type ReportTargetType =
+  | "game"
+  | "highlight"
+  | "game_comment"
+  | "highlight_comment";
+
+export interface AdminReport {
+  id: string;
+  targetType: ReportTargetType;
+  targetId: string;
+  reason: string;
+  status: "open" | "resolved" | "dismissed";
+  reporterName: string;
+  createdAt: string;
+}
+
+export interface AppConfig {
+  maintenanceMode: boolean;
+  signupsEnabled: boolean;
+}
+
 /** The authenticated user returned by the API (same shape as Profile). */
 export type User = Profile;
 

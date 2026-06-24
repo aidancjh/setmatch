@@ -2,6 +2,8 @@ import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
 import CelebrationHost from "./CelebrationHost";
+import { useAuth } from "../auth/AuthContext";
+import { useAppConfig } from "../hooks/useAppConfig";
 import {
   CalendarIcon,
   ChatIcon,
@@ -129,7 +131,31 @@ function Tab({
 export default function Layout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { user } = useAuth();
+  const config = useAppConfig();
   const [showPost, setShowPost] = useState(false);
+
+  const isAdmin = user?.role === "admin";
+
+  // Maintenance mode: non-admins see a friendly screen; admins keep working
+  // (with a banner) so they can turn it back off.
+  if (config.maintenanceMode && !isAdmin) {
+    return (
+      <div
+        className="mx-auto flex max-w-md flex-col items-center justify-center gap-4 px-8 text-center"
+        style={{ height: "100dvh" }}
+      >
+        <VolleyballIcon className="h-12 w-12 text-brand" />
+        <h1 className="text-xl font-extrabold tracking-tight text-slate-900">
+          We'll be right back
+        </h1>
+        <p className="text-sm text-slate-500">
+          Coterie is down for a quick bit of maintenance. Please check back shortly —
+          thanks for your patience!
+        </p>
+      </div>
+    );
+  }
 
   const activeSlot =
     pathname === "/" ? 0 :
@@ -177,6 +203,12 @@ export default function Layout() {
           </button>
         </div>
       </header>
+
+      {config.maintenanceMode && isAdmin && (
+        <div className="bg-amber-500 px-4 py-1.5 text-center text-xs font-semibold text-white">
+          Maintenance mode is ON — only admins can use the app
+        </div>
+      )}
 
       {/* Page content — the only scrolling region, so the nav below always
           stays pinned to the bottom regardless of how short the page is. */}

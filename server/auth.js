@@ -44,6 +44,15 @@ export function requireAuth(req, res, next) {
   }
 }
 
+/** Decode a bearer token to a userId, or null if missing/invalid. */
+export function verifyToken(token) {
+  try {
+    return jwt.verify(token, JWT_SECRET).sub;
+  } catch {
+    return null;
+  }
+}
+
 /** Optional auth: sets req.userId if a valid token is present, else null. */
 export function optionalAuth(req, _res, next) {
   const header = req.headers.authorization || "";

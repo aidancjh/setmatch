@@ -9,6 +9,7 @@ import type { Highlight, HighlightComment } from "../types";
 const HL_CACHE_KEY = "highlights";
 import { ChatIcon, HeartIcon, TrashIcon, UploadIcon } from "../components/icons";
 import { HighlightCardSkeleton } from "../components/Skeleton";
+import ReportButton from "../components/ReportButton";
 
 // ---------------------------------------------------------------------------
 // Cloudinary unsigned upload
@@ -712,7 +713,7 @@ function CommentSection({
                 </p>
                 <p className="mt-0.5 text-[11px] text-slate-400">{relativeTime(c.createdAt)}</p>
               </div>
-              {(c.userId === currentUserId || ownerId === currentUserId) && (
+              {(c.userId === currentUserId || ownerId === currentUserId) ? (
                 <button
                   onClick={() => remove(c.id)}
                   aria-label="Delete comment"
@@ -720,6 +721,12 @@ function CommentSection({
                 >
                   <TrashIcon className="h-3.5 w-3.5" />
                 </button>
+              ) : (
+                <ReportButton
+                  targetType="highlight_comment"
+                  targetId={c.id}
+                  className="shrink-0 text-[11px] font-medium text-slate-300 transition hover:text-rose-500"
+                />
               )}
             </li>
           ))}
@@ -862,6 +869,12 @@ function HighlightCard({
                 <TrashIcon className="h-4 w-4" />
               </button>
             )}
+          </div>
+        )}
+
+        {hl.userId !== currentUserId && (
+          <div className="ml-auto">
+            <ReportButton targetType="highlight" targetId={hl.id} />
           </div>
         )}
       </div>

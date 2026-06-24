@@ -299,6 +299,35 @@ export async function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_admin_audit ON admin_audit(created_at DESC);
   `);
 
+  // Admin Phase 3: user reports queue + feature flags / maintenance mode.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS reports (
+      id          TEXT PRIMARY KEY,
+      reporter_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+      target_type TEXT NOT NULL,
+      target_id   TEXT NOT NULL,
+      reason      TEXT NOT NULL DEFAULT '',
+      status      TEXT NOT NULL DEFAULT 'open',
+      created_at  TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status, created_at DESC);
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS feature_flags (
+      key        TEXT PRIMARY KEY,
+      enabled    BOOLEAN NOT NULL DEFAULT FALSE,
+      updated_at TEXT NOT NULL
+    );
+  `);
+  // Seed the known flags (no-op if they already exist).
+  await pool.query(
+    `INSERT INTO feature_flags (key, enabled, updated_at) VALUES
+       ('maintenance_mode', FALSE, $1),
+       ('signups_enabled', TRUE, $1)
+     ON CONFLICT (key) DO NOTHING`,
+    [new Date().toISOString()]
+  );
+
   // Feature: comments on highlights (anyone can comment).
   await pool.query(`
     CREATE TABLE IF NOT EXISTS highlight_comments (

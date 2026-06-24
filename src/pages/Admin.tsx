@@ -6,6 +6,7 @@ import type {
   AdminComment,
   AdminFeedback,
   AdminAuditEntry,
+  AdminReport,
   Game,
   Highlight,
 } from "../types";
@@ -13,7 +14,15 @@ import { adminApi } from "../services/adminService";
 import { useAuth } from "../auth/AuthContext";
 import { formatDate } from "../lib/format";
 
-type Tab = "overview" | "users" | "content" | "feedback" | "activity" | "games";
+type Tab =
+  | "overview"
+  | "users"
+  | "content"
+  | "reports"
+  | "feedback"
+  | "activity"
+  | "system"
+  | "games";
 
 function shortDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -30,6 +39,8 @@ export default function Admin() {
   const [comments, setComments] = useState<AdminComment[]>([]);
   const [feedback, setFeedback] = useState<AdminFeedback[]>([]);
   const [audit, setAudit] = useState<AdminAuditEntry[]>([]);
+  const [reports, setReports] = useState<AdminReport[]>([]);
+  const [flags, setFlags] = useState<Record<string, boolean>>({});
   const [userQuery, setUserQuery] = useState("");
   const [error, setError] = useState("");
 
@@ -44,6 +55,8 @@ export default function Admin() {
     adminApi.comments().then(setComments).catch(() => {});
     adminApi.feedback().then(setFeedback).catch(() => {});
     adminApi.audit().then(setAudit).catch(() => {});
+    adminApi.reports().then(setReports).catch(() => {});
+    adminApi.flags().then(setFlags).catch(() => {});
   }, [isAdmin]);
 
   if (!isAdmin) {
@@ -151,6 +164,42 @@ export default function Admin() {
     }
   };
 
+  const setReportStatus = async (r: AdminReport, status: AdminReport["status"]) => {
+    setError("");
+    try {
+      await adminApi.setReportStatus(r.id, status);
+      setReports((prev) => prev.map((x) => (x.id === r.id ? { ...x, status } : x)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not update report.");
+    }
+  };
+
+  const deleteReported = async (r: AdminReport) => {
+    if (!confirm("Delete the reported content for everyone?")) return;
+    setError("");
+    try {
+      if (r.targetType === "game") await adminApi.deleteGame(r.targetId);
+      else if (r.targetType === "highlight") await adminApi.deleteHighlight(r.targetId);
+      else if (r.targetType === "game_comment") await adminApi.deleteComment("game", r.targetId);
+      else if (r.targetType === "highlight_comment") await adminApi.deleteComment("highlight", r.targetId);
+      await adminApi.setReportStatus(r.id, "resolved");
+      setReports((prev) => prev.map((x) => (x.id === r.id ? { ...x, status: "resolved" } : x)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not delete the content.");
+    }
+  };
+
+  const toggleFlag = async (key: string) => {
+    setError("");
+    const next = !flags[key];
+    try {
+      await adminApi.setFlag(key, next);
+      setFlags((prev) => ({ ...prev, [key]: next }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not update setting.");
+    }
+  };
+
   const filteredUsers = useMemo(() => {
     const q = userQuery.trim().toLowerCase();
     if (!q) return users;
@@ -160,13 +209,16 @@ export default function Admin() {
   }, [users, userQuery]);
 
   const openFeedback = feedback.filter((f) => !f.resolved).length;
+  const openReports = reports.filter((r) => r.status === "open").length;
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "overview", label: "Overview" },
     { key: "users", label: `Users${users.length ? ` (${users.length})` : ""}` },
     { key: "content", label: "Content" },
+    { key: "reports", label: `Reports${openReports ? ` (${openReports})` : ""}` },
     { key: "feedback", label: `Feedback${openFeedback ? ` (${openFeedback})` : ""}` },
     { key: "activity", label: "Activity" },
+    { key: "system", label: "System" },
     { key: "games", label: `Games${games.length ? ` (${games.length})` : ""}` },
   ];
 
@@ -381,6 +433,110 @@ export default function Admin() {
         </div>
       )}
 
+      {tab === "reports" && (
+        <div className="space-y-2">
+          {reports.map((r) => {
+            const label =
+              r.targetType === "game"
+                ? "Game"
+                : r.targetType === "highlight"
+                ? "Highlight"
+                : r.targetType === "game_comment"
+                ? "Game comment"
+                : "Highlight comment";
+            return (
+              <div
+                key={r.id}
+                className={`rounded-xl border p-3 shadow-sm ${
+                  r.status === "open" ? "border-slate-100 bg-white" : "border-slate-100 bg-slate-50"
+                }`}
+              >
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                    {label}
+                  </span>
+                  <span
+                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                      r.status === "open"
+                        ? "bg-amber-100 text-amber-700"
+                        : r.status === "resolved"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-slate-200 text-slate-500"
+                    }`}
+                  >
+                    {r.status}
+                  </span>
+                  <span className="ml-auto text-[11px] text-slate-400">{shortDate(r.createdAt)}</span>
+                </div>
+                <p className="text-sm font-medium text-slate-800">Reason: {r.reason || "—"}</p>
+                <p className="mt-0.5 text-xs text-slate-400">Reported by {r.reporterName}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {r.targetType === "game" && (
+                    <Link
+                      to={`/game/${r.targetId}`}
+                      className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                    >
+                      View game
+                    </Link>
+                  )}
+                  {r.targetType === "highlight" && (
+                    <Link
+                      to="/highlights"
+                      className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                    >
+                      View highlights
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => deleteReported(r)}
+                    className="rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-100"
+                  >
+                    Delete content
+                  </button>
+                  {r.status !== "resolved" && (
+                    <button
+                      onClick={() => setReportStatus(r, "resolved")}
+                      className="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                    >
+                      Resolve
+                    </button>
+                  )}
+                  {r.status === "open" && (
+                    <button
+                      onClick={() => setReportStatus(r, "dismissed")}
+                      className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-200"
+                    >
+                      Dismiss
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {reports.length === 0 && (
+            <p className="py-6 text-center text-sm text-slate-400">No reports.</p>
+          )}
+        </div>
+      )}
+
+      {tab === "system" && (
+        <div className="space-y-3">
+          <FlagRow
+            label="Maintenance mode"
+            sub="Blocks the app for everyone except admins (you still get in)."
+            on={!!flags.maintenance_mode}
+            danger
+            onToggle={() => toggleFlag("maintenance_mode")}
+          />
+          <FlagRow
+            label="Allow new sign-ups"
+            sub="When off, new accounts can't be created (existing users unaffected)."
+            on={flags.signups_enabled !== false}
+            onToggle={() => toggleFlag("signups_enabled")}
+          />
+        </div>
+      )}
+
       {tab === "feedback" && (
         <div className="space-y-2">
           {feedback.map((f) => (
@@ -483,6 +639,45 @@ export default function Admin() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function FlagRow({
+  label,
+  sub,
+  on,
+  onToggle,
+  danger,
+}: {
+  label: string;
+  sub: string;
+  on: boolean;
+  onToggle: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="min-w-0">
+        <p className={`text-sm font-semibold ${danger && on ? "text-amber-600" : "text-slate-900"}`}>
+          {label}
+        </p>
+        <p className="text-xs text-slate-400">{sub}</p>
+      </div>
+      <button
+        role="switch"
+        aria-checked={on}
+        aria-label={label}
+        onClick={onToggle}
+        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${
+          on ? (danger ? "bg-amber-500" : "bg-brand") : "bg-slate-200"
+        }`}
+      >
+        <span
+          className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
+          style={{ transform: on ? "translateX(20px)" : "translateX(0)" }}
+        />
+      </button>
     </div>
   );
 }
