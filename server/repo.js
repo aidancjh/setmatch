@@ -137,7 +137,7 @@ export function publicUser(row) {
 // of anything in the ADMIN_EMAILS env var. Hardcoding the email is safe: it
 // grants nothing on its own — admin still requires signing in as that account
 // (Google OAuth), which only the owner controls.
-const FOUNDER_ADMINS = ["jironata21@gmail.com", "2@demo.test"];
+const FOUNDER_ADMINS = ["jironata21@gmail.com"];
 
 /**
  * Promote founder emails + any in ADMIN_EMAILS (comma-separated) to admin.
