@@ -69,9 +69,13 @@ export interface Profile {
 export interface AdminStats {
   users: number;
   newUsers7d: number;
+  newUsers30d: number;
+  suspendedUsers: number;
   games: number;
   upcomingGames: number;
+  highlights: number;
   comments: number;
+  signupsByWeek: { week: string; count: number }[];
 }
 
 export interface AdminUser {
@@ -81,8 +85,19 @@ export interface AdminUser {
   role: "user" | "staff" | "admin";
   skill: SkillLevel;
   createdAt: string;
+  suspended: boolean;
   hosted: number;
   joined: number;
+}
+
+export interface AdminComment {
+  id: string;
+  kind: "game" | "highlight";
+  body: string;
+  author: string;
+  refId: string;
+  refTitle: string;
+  createdAt: string;
 }
 
 /** The authenticated user returned by the API (same shape as Profile). */

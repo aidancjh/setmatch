@@ -295,6 +295,8 @@ app.post(
     const passwordOk = verifyPassword(password || "", user ? user.password_hash : TIMING_HASH);
     if (!user || !passwordOk)
       return res.status(401).json({ error: "Incorrect email or password." });
+    if (user.suspended)
+      return res.status(403).json({ error: "This account has been suspended." });
     res.json({ token: signToken(user.id), user: repo.publicUser(user) });
   })
 );
@@ -305,6 +307,8 @@ app.get(
   h(async (req, res) => {
     const user = await repo.findUserById(req.userId);
     if (!user) return res.status(401).json({ error: "Account not found." });
+    if (user.suspended)
+      return res.status(403).json({ error: "This account has been suspended." });
     const playerRating = await repo.getPlayerRating(req.userId);
     res.json({ user: { ...repo.publicUser(user), playerRating } });
   })
@@ -511,6 +515,8 @@ app.get(
       googleUser.email,
       googleUser.name || googleUser.email.split("@")[0]
     );
+    if (user.suspended)
+      return res.redirect(`${appUrl}/auth?error=suspended`);
     res.redirect(`${appUrl}/auth?token=${signToken(user.id)}`);
   })
 );
@@ -946,6 +952,72 @@ app.delete(
   requireAdmin,
   h(async (req, res) => {
     await repo.adminDeleteGame(req.params.id);
+    res.status(204).end();
+  })
+);
+
+// Suspend / unsuspend a user. Admin accounts are protected (prevents an admin
+// — including you — from being locked out).
+app.patch(
+  "/api/admin/users/:id/suspend",
+  requireAuth,
+  requireAdmin,
+  h(async (req, res) => {
+    const target = await repo.findUserById(req.params.id);
+    if (!target) return res.status(404).json({ error: "User not found." });
+    if ((target.role || "user") === "admin")
+      return res.status(400).json({ error: "Admin accounts can't be suspended." });
+    const user = await repo.setUserSuspended(req.params.id, req.body && req.body.suspended === true);
+    res.json(repo.publicUser(user));
+  })
+);
+
+// Permanently delete a user and all their data. Admin accounts are protected.
+app.delete(
+  "/api/admin/users/:id",
+  requireAuth,
+  requireAdmin,
+  h(async (req, res) => {
+    const target = await repo.findUserById(req.params.id);
+    if (!target) return res.status(404).json({ error: "User not found." });
+    if ((target.role || "user") === "admin")
+      return res.status(400).json({ error: "Admin accounts can't be deleted here." });
+    await repo.adminDeleteUser(req.params.id);
+    res.status(204).end();
+  })
+);
+
+app.get(
+  "/api/admin/highlights",
+  requireAuth,
+  requireAdmin,
+  h(async (_req, res) => res.json(await repo.adminListHighlights()))
+);
+
+app.delete(
+  "/api/admin/highlights/:id",
+  requireAuth,
+  requireAdmin,
+  h(async (req, res) => {
+    await repo.adminDeleteHighlight(req.params.id);
+    res.status(204).end();
+  })
+);
+
+app.get(
+  "/api/admin/comments",
+  requireAuth,
+  requireAdmin,
+  h(async (_req, res) => res.json(await repo.adminListComments()))
+);
+
+app.delete(
+  "/api/admin/comments/:kind/:id",
+  requireAuth,
+  requireAdmin,
+  h(async (req, res) => {
+    const kind = req.params.kind === "highlight" ? "highlight" : "game";
+    await repo.adminDeleteComment(kind, req.params.id);
     res.status(204).end();
   })
 );

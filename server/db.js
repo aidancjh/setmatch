@@ -279,6 +279,11 @@ export async function initSchema() {
     "ALTER TABLE games ADD COLUMN IF NOT EXISTS region TEXT NOT NULL DEFAULT ''"
   );
 
+  // Admin moderation: suspended users are blocked from signing in / using the API.
+  await pool.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended BOOLEAN NOT NULL DEFAULT FALSE"
+  );
+
   // Feature: comments on highlights (anyone can comment).
   await pool.query(`
     CREATE TABLE IF NOT EXISTS highlight_comments (

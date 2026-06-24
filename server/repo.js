@@ -170,24 +170,46 @@ export async function adminStats() {
     Number((await query(sql, params)).rows[0].c);
   const today = new Date().toISOString().slice(0, 10);
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+
+  // Signups per week for the last 8 weeks (oldest first) — a simple growth chart.
+  const { rows: weekRows } = await query(
+    `SELECT to_char(date_trunc('week', created_at::timestamptz), 'YYYY-MM-DD') AS week,
+            COUNT(*)::int AS c
+       FROM users
+      WHERE created_at::timestamptz >= NOW() - INTERVAL '8 weeks'
+      GROUP BY week
+      ORDER BY week ASC`
+  );
+  const signupsByWeek = weekRows.map((r) => ({ week: r.week, count: Number(r.c) }));
+
   return {
     users: await one("SELECT COUNT(*) AS c FROM users"),
     newUsers7d: await one(
       "SELECT COUNT(*) AS c FROM users WHERE created_at >= $1",
       [weekAgo]
     ),
+    newUsers30d: await one(
+      "SELECT COUNT(*) AS c FROM users WHERE created_at >= $1",
+      [monthAgo]
+    ),
+    suspendedUsers: await one(
+      "SELECT COUNT(*) AS c FROM users WHERE suspended = TRUE"
+    ),
     games: await one("SELECT COUNT(*) AS c FROM games"),
     upcomingGames: await one(
       "SELECT COUNT(*) AS c FROM games WHERE date >= $1",
       [today]
     ),
+    highlights: await one("SELECT COUNT(*) AS c FROM highlights"),
     comments: await one("SELECT COUNT(*) AS c FROM game_comments"),
+    signupsByWeek,
   };
 }
 
 export async function adminListUsers() {
   const { rows } = await query(
-    `SELECT u.id, u.name, u.email, u.role, u.skill, u.created_at,
+    `SELECT u.id, u.name, u.email, u.role, u.skill, u.created_at, u.suspended,
             (SELECT COUNT(*) FROM games g WHERE g.host_id = u.id) AS hosted,
             (SELECT COUNT(*) FROM game_members m WHERE m.user_id = u.id) AS joined
        FROM users u
@@ -200,6 +222,7 @@ export async function adminListUsers() {
     role: r.role || "user",
     skill: r.skill,
     createdAt: r.created_at,
+    suspended: r.suspended === true,
     hosted: Number(r.hosted),
     joined: Number(r.joined),
   }));
@@ -216,8 +239,73 @@ export async function setUserRole(userId, role) {
   return findUserById(userId);
 }
 
+export async function setUserSuspended(userId, suspended) {
+  await query("UPDATE users SET suspended = $1 WHERE id = $2", [
+    suspended === true,
+    userId,
+  ]);
+  return findUserById(userId);
+}
+
+/** Permanently delete a user and all their data (FKs cascade). */
+export async function adminDeleteUser(userId) {
+  await query("DELETE FROM users WHERE id = $1", [userId]);
+}
+
 export async function adminDeleteGame(gameId) {
   await query("DELETE FROM games WHERE id = $1", [gameId]);
+}
+
+// --- Admin content moderation ---------------------------------------------
+
+/** Recent highlights across all users, for moderation. */
+export async function adminListHighlights(limit = 100) {
+  const { rows } = await query(
+    `${HL_SELECT} ORDER BY h.created_at DESC LIMIT $1`,
+    [limit]
+  );
+  return rows.map(serializeHighlight);
+}
+
+export async function adminDeleteHighlight(id) {
+  await query("DELETE FROM highlights WHERE id = $1", [id]);
+}
+
+/** Recent comments (game + highlight) merged, newest first, for moderation. */
+export async function adminListComments(limit = 60) {
+  const { rows } = await query(
+    `SELECT * FROM (
+       SELECT c.id, 'game' AS kind, c.body, c.created_at,
+              u.name AS author, c.game_id AS ref_id, g.title AS ref_title
+         FROM game_comments c
+         JOIN users u ON u.id = c.user_id
+         JOIN games g ON g.id = c.game_id
+       UNION ALL
+       SELECT c.id, 'highlight' AS kind, c.body, c.created_at,
+              u.name AS author, c.highlight_id AS ref_id,
+              COALESCE(NULLIF(h.caption, ''), 'Highlight') AS ref_title
+         FROM highlight_comments c
+         JOIN users u ON u.id = c.user_id
+         JOIN highlights h ON h.id = c.highlight_id
+     ) merged
+     ORDER BY created_at DESC
+     LIMIT $1`,
+    [limit]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    kind: r.kind,
+    body: r.body,
+    author: r.author,
+    refId: r.ref_id,
+    refTitle: r.ref_title,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function adminDeleteComment(kind, id) {
+  const table = kind === "highlight" ? "highlight_comments" : "game_comments";
+  await query(`DELETE FROM ${table} WHERE id = $1`, [id]);
 }
 
 // --- Notifications --------------------------------------------------------
