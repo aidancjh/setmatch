@@ -1,4 +1,12 @@
-import type { AdminStats, AdminUser, AdminComment, Game, Highlight } from "../types";
+import type {
+  AdminStats,
+  AdminUser,
+  AdminComment,
+  AdminFeedback,
+  AdminAuditEntry,
+  Game,
+  Highlight,
+} from "../types";
 import { api } from "../lib/api";
 
 export const adminApi = {
@@ -16,4 +24,9 @@ export const adminApi = {
   comments: () => api.get<AdminComment[]>("/admin/comments"),
   deleteComment: (kind: AdminComment["kind"], id: string) =>
     api.del<void>(`/admin/comments/${kind}/${id}`),
+  feedback: () => api.get<AdminFeedback[]>("/admin/feedback"),
+  resolveFeedback: (id: string, resolved: boolean) =>
+    api.patch<{ ok: boolean; resolved: boolean }>(`/admin/feedback/${id}/resolve`, { resolved }),
+  deleteFeedback: (id: string) => api.del<void>(`/admin/feedback/${id}`),
+  audit: () => api.get<AdminAuditEntry[]>("/admin/audit"),
 };

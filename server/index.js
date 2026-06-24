@@ -935,6 +935,7 @@ app.patch(
   h(async (req, res) => {
     const user = await repo.setUserRole(req.params.id, req.body && req.body.role);
     if (!user) return res.status(400).json({ error: "Invalid role." });
+    await repo.logAdminAction(req.userId, "set_role", `Set ${user.name}'s role to ${user.role}`);
     res.json(repo.publicUser(user));
   })
 );
@@ -951,7 +952,8 @@ app.delete(
   requireAuth,
   requireAdmin,
   h(async (req, res) => {
-    await repo.adminDeleteGame(req.params.id);
+    const title = await repo.adminDeleteGame(req.params.id);
+    await repo.logAdminAction(req.userId, "delete_game", `Deleted game "${title}"`);
     res.status(204).end();
   })
 );
@@ -968,6 +970,11 @@ app.patch(
     if ((target.role || "user") === "admin")
       return res.status(400).json({ error: "Admin accounts can't be suspended." });
     const user = await repo.setUserSuspended(req.params.id, req.body && req.body.suspended === true);
+    await repo.logAdminAction(
+      req.userId,
+      "suspend_user",
+      `${user.suspended ? "Suspended" : "Unsuspended"} ${user.name} (${user.email})`
+    );
     res.json(repo.publicUser(user));
   })
 );
@@ -983,6 +990,7 @@ app.delete(
     if ((target.role || "user") === "admin")
       return res.status(400).json({ error: "Admin accounts can't be deleted here." });
     await repo.adminDeleteUser(req.params.id);
+    await repo.logAdminAction(req.userId, "delete_user", `Removed ${target.name} (${target.email})`);
     res.status(204).end();
   })
 );
@@ -999,7 +1007,8 @@ app.delete(
   requireAuth,
   requireAdmin,
   h(async (req, res) => {
-    await repo.adminDeleteHighlight(req.params.id);
+    const owner = await repo.adminDeleteHighlight(req.params.id);
+    await repo.logAdminAction(req.userId, "delete_highlight", `Deleted highlight by ${owner}`);
     res.status(204).end();
   })
 );
@@ -1018,6 +1027,7 @@ app.delete(
   h(async (req, res) => {
     const kind = req.params.kind === "highlight" ? "highlight" : "game";
     await repo.adminDeleteComment(kind, req.params.id);
+    await repo.logAdminAction(req.userId, "delete_comment", `Deleted a ${kind} comment`);
     res.status(204).end();
   })
 );
@@ -1026,10 +1036,54 @@ app.post(
   "/api/admin/seed-past-data",
   requireAuth,
   requireAdmin,
-  h(async (_req, res) => {
+  h(async (req, res) => {
     await seedPastData();
+    await repo.logAdminAction(req.userId, "seed_past_data", "Ran: seed past data");
     res.json({ ok: true });
   })
+);
+
+// --- Admin: feedback inbox + audit log (Phase 2) --------------------------
+
+app.get(
+  "/api/admin/feedback",
+  requireAuth,
+  requireAdmin,
+  h(async (_req, res) => res.json(await repo.adminListFeedback()))
+);
+
+app.patch(
+  "/api/admin/feedback/:id/resolve",
+  requireAuth,
+  requireAdmin,
+  h(async (req, res) => {
+    const resolved = !!(req.body && req.body.resolved);
+    await repo.setFeedbackResolved(req.params.id, resolved);
+    await repo.logAdminAction(
+      req.userId,
+      "feedback_resolve",
+      `Marked feedback ${resolved ? "resolved" : "open"}`
+    );
+    res.json({ ok: true, resolved });
+  })
+);
+
+app.delete(
+  "/api/admin/feedback/:id",
+  requireAuth,
+  requireAdmin,
+  h(async (req, res) => {
+    await repo.adminDeleteFeedback(req.params.id);
+    await repo.logAdminAction(req.userId, "feedback_delete", "Deleted a feedback item");
+    res.status(204).end();
+  })
+);
+
+app.get(
+  "/api/admin/audit",
+  requireAuth,
+  requireAdmin,
+  h(async (_req, res) => res.json(await repo.adminListAudit()))
 );
 
 // --- User profiles --------------------------------------------------------

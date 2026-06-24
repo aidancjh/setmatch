@@ -253,7 +253,9 @@ export async function adminDeleteUser(userId) {
 }
 
 export async function adminDeleteGame(gameId) {
+  const { rows } = await query("SELECT title FROM games WHERE id = $1", [gameId]);
   await query("DELETE FROM games WHERE id = $1", [gameId]);
+  return rows[0]?.title || gameId;
 }
 
 // --- Admin content moderation ---------------------------------------------
@@ -268,7 +270,12 @@ export async function adminListHighlights(limit = 100) {
 }
 
 export async function adminDeleteHighlight(id) {
+  const { rows } = await query(
+    "SELECT u.name FROM highlights h JOIN users u ON u.id = h.user_id WHERE h.id = $1",
+    [id]
+  );
   await query("DELETE FROM highlights WHERE id = $1", [id]);
+  return rows[0]?.name || id;
 }
 
 /** Recent comments (game + highlight) merged, newest first, for moderation. */
@@ -306,6 +313,74 @@ export async function adminListComments(limit = 60) {
 export async function adminDeleteComment(kind, id) {
   const table = kind === "highlight" ? "highlight_comments" : "game_comments";
   await query(`DELETE FROM ${table} WHERE id = $1`, [id]);
+}
+
+// --- Admin audit log -------------------------------------------------------
+
+/** Record an admin action. Best-effort: never throws into the request path. */
+export async function logAdminAction(adminId, action, detail = "") {
+  try {
+    await query(
+      `INSERT INTO admin_audit (id, admin_id, action, detail, created_at)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [uid("aud"), adminId || null, action, detail || "", new Date().toISOString()]
+    );
+  } catch (err) {
+    console.error("[audit] failed to log admin action:", err);
+  }
+}
+
+export async function adminListAudit(limit = 100) {
+  const { rows } = await query(
+    `SELECT a.id, a.action, a.detail, a.created_at,
+            u.name AS admin_name, u.email AS admin_email
+       FROM admin_audit a
+       LEFT JOIN users u ON u.id = a.admin_id
+      ORDER BY a.created_at DESC
+      LIMIT $1`,
+    [limit]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    action: r.action,
+    detail: r.detail,
+    adminName: r.admin_name || "(removed admin)",
+    adminEmail: r.admin_email || "",
+    createdAt: r.created_at,
+  }));
+}
+
+// --- Admin feedback inbox --------------------------------------------------
+
+export async function adminListFeedback() {
+  const { rows } = await query(
+    `SELECT f.id, f.type, f.subject, f.body, f.created_at, f.resolved,
+            u.name AS user_name, u.email AS user_email
+       FROM feedback f
+       LEFT JOIN users u ON u.id = f.user_id
+      ORDER BY f.resolved ASC, f.created_at DESC`
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    type: r.type,
+    subject: r.subject || "",
+    body: r.body,
+    resolved: r.resolved === true,
+    userName: r.user_name || "(deleted user)",
+    userEmail: r.user_email || "",
+    createdAt: r.created_at,
+  }));
+}
+
+export async function setFeedbackResolved(id, resolved) {
+  await query("UPDATE feedback SET resolved = $1 WHERE id = $2", [
+    resolved === true,
+    id,
+  ]);
+}
+
+export async function adminDeleteFeedback(id) {
+  await query("DELETE FROM feedback WHERE id = $1", [id]);
 }
 
 // --- Notifications --------------------------------------------------------

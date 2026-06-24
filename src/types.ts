@@ -100,6 +100,26 @@ export interface AdminComment {
   createdAt: string;
 }
 
+export interface AdminFeedback {
+  id: string;
+  type: "feedback" | "bug" | "other";
+  subject: string;
+  body: string;
+  resolved: boolean;
+  userName: string;
+  userEmail: string;
+  createdAt: string;
+}
+
+export interface AdminAuditEntry {
+  id: string;
+  action: string;
+  detail: string;
+  adminName: string;
+  adminEmail: string;
+  createdAt: string;
+}
+
 /** The authenticated user returned by the API (same shape as Profile). */
 export type User = Profile;
 

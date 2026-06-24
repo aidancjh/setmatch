@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import type { AdminStats, AdminUser, AdminComment, Game, Highlight } from "../types";
+import type {
+  AdminStats,
+  AdminUser,
+  AdminComment,
+  AdminFeedback,
+  AdminAuditEntry,
+  Game,
+  Highlight,
+} from "../types";
 import { adminApi } from "../services/adminService";
 import { useAuth } from "../auth/AuthContext";
 import { formatDate } from "../lib/format";
 
-type Tab = "overview" | "users" | "content" | "games";
+type Tab = "overview" | "users" | "content" | "feedback" | "activity" | "games";
 
 function shortDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -20,6 +28,8 @@ export default function Admin() {
   const [games, setGames] = useState<Game[]>([]);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [comments, setComments] = useState<AdminComment[]>([]);
+  const [feedback, setFeedback] = useState<AdminFeedback[]>([]);
+  const [audit, setAudit] = useState<AdminAuditEntry[]>([]);
   const [userQuery, setUserQuery] = useState("");
   const [error, setError] = useState("");
 
@@ -32,6 +42,8 @@ export default function Admin() {
     adminApi.games().then(setGames).catch(() => {});
     adminApi.highlights().then(setHighlights).catch(() => {});
     adminApi.comments().then(setComments).catch(() => {});
+    adminApi.feedback().then(setFeedback).catch(() => {});
+    adminApi.audit().then(setAudit).catch(() => {});
   }, [isAdmin]);
 
   if (!isAdmin) {
@@ -116,6 +128,29 @@ export default function Admin() {
     }
   };
 
+  const resolveFeedback = async (f: AdminFeedback) => {
+    setError("");
+    try {
+      await adminApi.resolveFeedback(f.id, !f.resolved);
+      setFeedback((prev) =>
+        prev.map((x) => (x.id === f.id ? { ...x, resolved: !f.resolved } : x))
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not update feedback.");
+    }
+  };
+
+  const removeFeedback = async (f: AdminFeedback) => {
+    if (!confirm("Delete this feedback item?")) return;
+    setError("");
+    try {
+      await adminApi.deleteFeedback(f.id);
+      setFeedback((prev) => prev.filter((x) => x.id !== f.id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not delete feedback.");
+    }
+  };
+
   const filteredUsers = useMemo(() => {
     const q = userQuery.trim().toLowerCase();
     if (!q) return users;
@@ -124,10 +159,14 @@ export default function Admin() {
     );
   }, [users, userQuery]);
 
+  const openFeedback = feedback.filter((f) => !f.resolved).length;
+
   const tabs: { key: Tab; label: string }[] = [
     { key: "overview", label: "Overview" },
     { key: "users", label: `Users${users.length ? ` (${users.length})` : ""}` },
     { key: "content", label: "Content" },
+    { key: "feedback", label: `Feedback${openFeedback ? ` (${openFeedback})` : ""}` },
+    { key: "activity", label: "Activity" },
     { key: "games", label: `Games${games.length ? ` (${games.length})` : ""}` },
   ];
 
@@ -140,12 +179,12 @@ export default function Admin() {
         Signed in as {user?.name} · admin
       </p>
 
-      <div className="mb-4 flex gap-1 rounded-xl bg-slate-100 p-1">
+      <div className="mb-4 flex gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition ${
+            className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition ${
               tab === t.key ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
             }`}
           >
@@ -339,6 +378,85 @@ export default function Admin() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {tab === "feedback" && (
+        <div className="space-y-2">
+          {feedback.map((f) => (
+            <div
+              key={f.id}
+              className={`rounded-xl border p-3 shadow-sm ${
+                f.resolved ? "border-slate-100 bg-slate-50" : "border-slate-100 bg-white"
+              }`}
+            >
+              <div className="mb-1 flex items-center gap-2">
+                <span
+                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                    f.type === "bug"
+                      ? "bg-rose-100 text-rose-600"
+                      : f.type === "feedback"
+                      ? "bg-sky-100 text-sky-700"
+                      : "bg-slate-200 text-slate-600"
+                  }`}
+                >
+                  {f.type}
+                </span>
+                {f.resolved && (
+                  <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+                    resolved
+                  </span>
+                )}
+                <span className="ml-auto text-[11px] text-slate-400">{shortDate(f.createdAt)}</span>
+              </div>
+              {f.subject && <p className="text-sm font-semibold text-slate-900">{f.subject}</p>}
+              <p className="whitespace-pre-wrap text-sm text-slate-700">{f.body}</p>
+              <p className="mt-1 text-xs text-slate-400">
+                {f.userName}
+                {f.userEmail ? ` · ${f.userEmail}` : ""}
+              </p>
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={() => resolveFeedback(f)}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                    f.resolved
+                      ? "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  }`}
+                >
+                  {f.resolved ? "Reopen" : "Mark resolved"}
+                </button>
+                <button
+                  onClick={() => removeFeedback(f)}
+                  className="rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-100"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+          {feedback.length === 0 && (
+            <p className="py-6 text-center text-sm text-slate-400">No feedback yet.</p>
+          )}
+        </div>
+      )}
+
+      {tab === "activity" && (
+        <div className="space-y-2">
+          <p className="text-xs text-slate-400">
+            Every admin action is recorded here (most recent first).
+          </p>
+          {audit.map((a) => (
+            <div key={a.id} className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
+              <p className="text-sm text-slate-800">{a.detail || a.action}</p>
+              <p className="mt-1 text-xs text-slate-400">
+                {a.adminName} · {new Date(a.createdAt).toLocaleString()}
+              </p>
+            </div>
+          ))}
+          {audit.length === 0 && (
+            <p className="py-6 text-center text-sm text-slate-400">No admin activity yet.</p>
+          )}
         </div>
       )}
 

@@ -284,6 +284,21 @@ export async function initSchema() {
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended BOOLEAN NOT NULL DEFAULT FALSE"
   );
 
+  // Admin Phase 2: feedback inbox (mark items handled) + audit log of admin actions.
+  await pool.query(
+    "ALTER TABLE feedback ADD COLUMN IF NOT EXISTS resolved BOOLEAN NOT NULL DEFAULT FALSE"
+  );
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS admin_audit (
+      id         TEXT PRIMARY KEY,
+      admin_id   TEXT REFERENCES users(id) ON DELETE SET NULL,
+      action     TEXT NOT NULL,
+      detail     TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_admin_audit ON admin_audit(created_at DESC);
+  `);
+
   // Feature: comments on highlights (anyone can comment).
   await pool.query(`
     CREATE TABLE IF NOT EXISTS highlight_comments (
