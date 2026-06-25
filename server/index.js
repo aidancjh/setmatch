@@ -1159,6 +1159,23 @@ app.patch(
   })
 );
 
+// --- Broadcast (send an announcement to all users) -------------------------
+
+app.post(
+  "/api/admin/broadcast",
+  requireAuth,
+  requireAdmin,
+  h(async (req, res) => {
+    const message = (req.body && req.body.message ? String(req.body.message) : "").trim();
+    if (!message) return res.status(400).json({ error: "Message is required." });
+    if (message.length > 280)
+      return res.status(400).json({ error: "Keep announcements under 280 characters." });
+    const count = await repo.broadcastAnnouncement(message);
+    await repo.logAdminAction(req.userId, "broadcast", `Sent announcement to ${count} users: "${message.slice(0, 80)}"`);
+    res.json({ ok: true, count });
+  })
+);
+
 // --- Feature flags ---------------------------------------------------------
 
 app.get(

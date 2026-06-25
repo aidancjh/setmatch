@@ -15,6 +15,7 @@ const ICON: Record<string, string> = {
   edited: "✏️",
   cancelled: "❌",
   comment: "💬",
+  announcement: "📣",
 };
 
 export default function NotificationBell() {

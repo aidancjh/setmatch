@@ -521,6 +521,10 @@ export default function Admin() {
 
       {tab === "system" && (
         <div className="space-y-3">
+          <BroadcastBox />
+          <p className="px-1 pt-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Settings
+          </p>
           <FlagRow
             label="Maintenance mode"
             sub="Blocks the app for everyone except admins (you still get in)."
@@ -639,6 +643,59 @@ export default function Admin() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function BroadcastBox() {
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState("");
+  const [err, setErr] = useState("");
+
+  async function send() {
+    const m = msg.trim();
+    if (!m) return;
+    if (!confirm(`Send this announcement to ALL users?\n\n"${m}"`)) return;
+    setBusy(true);
+    setErr("");
+    setResult("");
+    try {
+      const r = await adminApi.broadcast(m);
+      setResult(`Sent to ${r.count} ${r.count === 1 ? "user" : "users"}.`);
+      setMsg("");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not send the announcement.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <p className="text-sm font-semibold text-slate-900">📣 Broadcast announcement</p>
+      <p className="mb-3 text-xs text-slate-400">
+        Sends an in-app notification to every user. Use sparingly.
+      </p>
+      <textarea
+        value={msg}
+        onChange={(e) => setMsg(e.target.value.slice(0, 280))}
+        rows={3}
+        placeholder="e.g. New feature: you can now rate teammates after a game!"
+        className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+      />
+      <div className="mt-1 flex items-center justify-between">
+        <span className="text-xs text-slate-400">{msg.length}/280</span>
+        <button
+          onClick={send}
+          disabled={busy || !msg.trim()}
+          className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:opacity-40"
+        >
+          {busy ? "Sending…" : "Send to everyone"}
+        </button>
+      </div>
+      {result && <p className="mt-2 text-sm font-medium text-emerald-600">{result}</p>}
+      {err && <p className="mt-2 text-sm text-rose-600">{err}</p>}
     </div>
   );
 }

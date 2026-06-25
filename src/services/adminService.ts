@@ -36,4 +36,6 @@ export const adminApi = {
   flags: () => api.get<Record<string, boolean>>("/admin/flags"),
   setFlag: (key: string, enabled: boolean) =>
     api.patch<{ ok: boolean }>(`/admin/flags/${key}`, { enabled }),
+  broadcast: (message: string) =>
+    api.post<{ ok: boolean; count: number }>("/admin/broadcast", { message }),
 };

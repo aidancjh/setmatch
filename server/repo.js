@@ -478,6 +478,18 @@ export async function createNotification(userId, type, message, gameId) {
   );
 }
 
+/** Admin broadcast: send one announcement notification to every user. Returns recipient count. */
+export async function broadcastAnnouncement(message) {
+  const r = await query(
+    `INSERT INTO notifications (id, user_id, type, message, game_id, read, created_at)
+     SELECT 'ntf_' || substr(md5(random()::text || u.id || clock_timestamp()::text), 1, 16),
+            u.id, 'announcement', $1, NULL, FALSE, $2
+       FROM users u`,
+    [message, new Date().toISOString()]
+  );
+  return r.rowCount;
+}
+
 /** Notify several users at once (skips empties and de-dupes). */
 async function notifyUsers(userIds, type, message, gameId) {
   const unique = [...new Set(userIds.filter(Boolean))];
