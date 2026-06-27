@@ -850,6 +850,15 @@ app.post(
   })
 );
 
+app.post(
+  "/api/notifications/:id/read",
+  requireAuth,
+  h(async (req, res) => {
+    const unreadCount = await repo.markNotificationRead(req.userId, req.params.id);
+    res.json({ ok: true, unreadCount });
+  })
+);
+
 // --- Comments -------------------------------------------------------------
 
 app.get(
@@ -927,6 +936,20 @@ app.post(
         .json({ error: "Message is too long (max 1000 characters)." });
     const msg = await repo.addMessage(req.params.id, req.userId, body);
     res.status(201).json(msg);
+  })
+);
+
+app.delete(
+  "/api/games/:id/messages/:messageId",
+  requireAuth,
+  h(async (req, res) => {
+    const result = await repo.deleteMessage(
+      req.params.id,
+      req.params.messageId,
+      req.userId
+    );
+    if (result.ok) return res.status(204).end();
+    res.status(result.code).json({ error: result.error });
   })
 );
 

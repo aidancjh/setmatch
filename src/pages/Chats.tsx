@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { ChatSummary } from "../types";
 import { getChats } from "../services/gamesService";
 import { formatDate, isPast, timeAgo } from "../lib/format";
+import { isChatUnread } from "../lib/chatSeen";
 
 export default function Chats() {
   const [chats, setChats] = useState<ChatSummary[] | null>(null);
@@ -64,6 +65,7 @@ export default function Chats() {
         <div className="space-y-2">
           {chats!.map((c) => {
             const past = isPast(c.date);
+            const unread = isChatUnread(c.gameId, c.lastMessageAt);
             const preview = c.lastMessage
               ? `${c.lastSender ? c.lastSender.split(" ")[0] + ": " : ""}${c.lastMessage}`
               : "No messages yet — say hi 👋";
@@ -87,13 +89,23 @@ export default function Chats() {
                   </div>
                   <p
                     className={`truncate text-xs ${
-                      c.lastMessage ? "text-slate-500" : "text-slate-400 italic"
+                      !c.lastMessage
+                        ? "text-slate-400 italic"
+                        : unread
+                        ? "font-semibold text-slate-700"
+                        : "text-slate-500"
                     }`}
                   >
                     {preview}
                   </p>
                 </div>
-                {past && (
+                {unread && (
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full bg-brand"
+                    aria-label="Unread messages"
+                  />
+                )}
+                {past && !unread && (
                   <span className="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
                     ended
                   </span>

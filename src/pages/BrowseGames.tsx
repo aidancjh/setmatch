@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useGames } from "../hooks/useGames";
 import { useProfile } from "../hooks/useProfile";
 import { isInGame, spotsLeft } from "../services/gamesService";
@@ -86,13 +86,66 @@ function activeFilterCount(f: Filters): number {
   );
 }
 
+// --- URL <-> filter state (so a filtered view survives refresh + is shareable) ---
+
+function filtersToParams(f: Filters, search: string): URLSearchParams {
+  const p = new URLSearchParams();
+  if (search.trim()) p.set("q", search.trim());
+  if (f.type) p.set("type", f.type);
+  if (f.gender) p.set("gender", f.gender);
+  if (f.netHeight) p.set("net", f.netHeight);
+  if (f.regions.length) p.set("regions", f.regions.join(","));
+  if (f.skills.length) p.set("skills", f.skills.join(","));
+  if (f.positions.length) p.set("pos", f.positions.join(","));
+  if (f.minTime > 0 || f.maxTime < 1440) p.set("time", `${f.minTime}-${f.maxTime}`);
+  if (f.minOpenSpots > 0) p.set("open", String(f.minOpenSpots));
+  return p;
+}
+
+function paramsToState(p: URLSearchParams): { filters: Filters; search: string } {
+  const list = (k: string) => {
+    const v = p.get(k);
+    return v ? v.split(",").filter(Boolean) : [];
+  };
+  let minTime = 0;
+  let maxTime = 1440;
+  const time = p.get("time");
+  if (time && /^\d+-\d+$/.test(time)) {
+    const [a, b] = time.split("-").map(Number);
+    minTime = Math.min(Math.max(a, 0), 1440);
+    maxTime = Math.min(Math.max(b, 0), 1440);
+  }
+  return {
+    search: p.get("q") || "",
+    filters: {
+      regions: list("regions"),
+      type: p.get("type") || "",
+      skills: list("skills"),
+      gender: p.get("gender") || "",
+      netHeight: p.get("net") || "",
+      positions: list("pos"),
+      minTime,
+      maxTime,
+      minOpenSpots: Math.max(0, Number(p.get("open")) || 0),
+    },
+  };
+}
+
 export default function BrowseGames() {
   const { games, loading, slow, error, reload } = useGames();
   const me = useProfile();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  // Seed state from the URL once on mount, then mirror changes back into it.
+  const initial = useMemo(() => paramsToState(searchParams), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [search, setSearch] = useState(initial.search);
+  const [filters, setFilters] = useState<Filters>(initial.filters);
+
+  useEffect(() => {
+    setSearchParams(filtersToParams(filters, search), { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, search]);
   const [showFilters, setShowFilters] = useState(false);
 
   const visible = useMemo(() => {

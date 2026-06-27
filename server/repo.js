@@ -571,6 +571,15 @@ export async function markAllRead(userId) {
   );
 }
 
+/** Mark a single notification read (scoped to its owner). Returns the new unread count. */
+export async function markNotificationRead(userId, id) {
+  await query(
+    "UPDATE notifications SET read = TRUE WHERE id = $1 AND user_id = $2",
+    [id, userId]
+  );
+  return unreadCount(userId);
+}
+
 // --- Games ----------------------------------------------------------------
 
 function parseJsonArr(val) {
@@ -1057,6 +1066,22 @@ export async function addMessage(gameId, userId, body) {
     gameId
   );
   return { id, userId, userName: actor ? actor.name : "", body, createdAt: now };
+}
+
+/** Delete a chat message. The author or the game host may remove it. */
+export async function deleteMessage(gameId, messageId, userId) {
+  const { rows } = await query(
+    "SELECT user_id FROM messages WHERE id = $1 AND game_id = $2",
+    [messageId, gameId]
+  );
+  if (rows.length === 0) return { ok: false, code: 404, error: "Message not found." };
+  const game = await getGameRow(gameId);
+  const isAuthor = rows[0].user_id === userId;
+  const isHost = game && game.host_id === userId;
+  if (!isAuthor && !isHost)
+    return { ok: false, code: 403, error: "You can only delete your own messages." };
+  await query("DELETE FROM messages WHERE id = $1", [messageId]);
+  return { ok: true };
 }
 
 /**

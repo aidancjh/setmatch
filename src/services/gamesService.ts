@@ -32,6 +32,11 @@ function notify() {
   listeners.forEach((fn) => fn());
 }
 
+/** Force every subscriber (game lists, etc.) to re-fetch — used by pull-to-refresh. */
+export function refreshAll() {
+  notify();
+}
+
 // --- Reads ----------------------------------------------------------------
 
 export async function getGames(): Promise<Game[]> {
@@ -136,6 +141,13 @@ export async function sendMessage(
   return api.post<Message>(`/games/${gameId}/messages`, { body });
 }
 
+export async function deleteMessage(
+  gameId: string,
+  messageId: string
+): Promise<void> {
+  await api.del<void>(`/games/${gameId}/messages/${messageId}`);
+}
+
 // --- Cost splitting -------------------------------------------------------
 
 export async function setMemberPaid(
@@ -164,6 +176,14 @@ export async function getNotifications(): Promise<{
 
 export async function markNotificationsRead(): Promise<void> {
   await api.post<void>("/notifications/read-all");
+}
+
+export async function markNotificationRead(
+  id: string
+): Promise<{ ok: boolean; unreadCount: number }> {
+  return api.post<{ ok: boolean; unreadCount: number }>(
+    `/notifications/${id}/read`
+  );
 }
 
 // --- Derived helpers (pure) -----------------------------------------------

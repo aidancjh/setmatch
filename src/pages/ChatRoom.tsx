@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Game, Message } from "../types";
-import { getGame, getMessages, sendMessage } from "../services/gamesService";
+import { deleteMessage, getGame, getMessages, sendMessage } from "../services/gamesService";
 import { useAuth } from "../auth/AuthContext";
 import { formatDate, timeAgo } from "../lib/format";
+import { markChatSeen } from "../lib/chatSeen";
 
 const POLL_MS = 4000;
 
@@ -34,6 +35,8 @@ export default function ChatRoom() {
         if (active) {
           setMessages(m);
           setAccessDenied(false);
+          // Viewing the chat marks it read on this device.
+          if (m.length) markChatSeen(id, m[m.length - 1].createdAt);
         }
       } catch (e) {
         if (!active) return;
@@ -58,6 +61,20 @@ export default function ChatRoom() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
   }, [messages?.length]);
+
+  const isHost = !!game && game.hostId === user?.id;
+
+  async function handleDelete(messageId: string) {
+    // Optimistically remove; restore on failure.
+    const prev = messages;
+    setMessages((cur) => (cur ? cur.filter((m) => m.id !== messageId) : cur));
+    try {
+      await deleteMessage(id, messageId);
+    } catch (err) {
+      setMessages(prev);
+      setError(err instanceof Error ? err.message : "Couldn't delete the message.");
+    }
+  }
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -155,8 +172,17 @@ export default function ChatRoom() {
                     >
                       <p className="whitespace-pre-wrap break-words">{m.body}</p>
                     </div>
-                    <span className="mt-0.5 px-1 text-[10px] text-slate-400">
+                    <span className="mt-0.5 flex items-center gap-1.5 px-1 text-[10px] text-slate-400">
                       {timeAgo(m.createdAt)}
+                      {(mine || isHost) && (
+                        <button
+                          onClick={() => handleDelete(m.id)}
+                          className="text-slate-300 transition hover:text-rose-500"
+                          aria-label="Delete message"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </span>
                   </div>
                 );
