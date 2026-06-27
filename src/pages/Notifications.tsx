@@ -15,6 +15,8 @@ const ICON: Record<string, string> = {
   edited: "✏️",
   cancelled: "❌",
   comment: "💬",
+  message: "💬",
+  reminder: "⏰",
   announcement: "📣",
 };
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { UserProfile as Profile } from "../types";
-import { getUserProfile } from "../services/gamesService";
+import { getUserProfile, blockUser, unblockUser } from "../services/gamesService";
 import { useProfile } from "../hooks/useProfile";
 import { isInGame } from "../services/gamesService";
 import GameCard from "../components/GameCard";
@@ -26,16 +26,33 @@ export default function UserProfile() {
   const navigate = useNavigate();
   const me = useProfile();
   const [profile, setProfile] = useState<Profile | undefined | null>(undefined);
+  const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
     let active = true;
     getUserProfile(id)
-      .then((p) => active && setProfile(p))
+      .then((p) => {
+        if (!active) return;
+        setProfile(p);
+        setBlocked(!!p.blocked);
+      })
       .catch(() => active && setProfile(null));
     return () => {
       active = false;
     };
   }, [id]);
+
+  const toggleBlock = async () => {
+    if (!profile) return;
+    const next = !blocked;
+    setBlocked(next);
+    try {
+      if (next) await blockUser(profile.id);
+      else await unblockUser(profile.id);
+    } catch {
+      setBlocked(!next); // revert on failure
+    }
+  };
 
   if (profile === undefined) {
     return <p className="py-10 text-center text-sm text-slate-400">Loading…</p>;
@@ -168,6 +185,26 @@ export default function UserProfile() {
           {profile.hostedUpcoming.map((g) => (
             <GameCard key={g.id} game={g} youAreIn={isInGame(g, me.id)} />
           ))}
+        </div>
+      )}
+
+      {!isMe && (
+        <div className="mt-6 border-t border-slate-100 pt-4 text-center">
+          <button
+            onClick={toggleBlock}
+            className={`text-xs font-medium transition ${
+              blocked
+                ? "text-slate-500 hover:text-slate-700"
+                : "text-slate-400 hover:text-rose-500"
+            }`}
+          >
+            {blocked ? `Unblock ${profile.name}` : `Block ${profile.name}`}
+          </button>
+          {blocked && (
+            <p className="mt-1 text-[11px] text-slate-400">
+              You won't see their highlights or comments.
+            </p>
+          )}
         </div>
       )}
     </div>

@@ -195,6 +195,70 @@ export async function pruneExpired() {
   };
 }
 
+/**
+ * Notify members of games happening tomorrow (once). `reminder_sent` guards
+ * against repeat reminders. Called on an interval from start() in index.js.
+ */
+export async function sendDueReminders() {
+  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  const { rows } = await query(
+    "SELECT id, title FROM games WHERE date = $1 AND reminder_sent = FALSE",
+    [tomorrow]
+  );
+  let notified = 0;
+  for (const g of rows) {
+    const members = await memberUserIds(g.id);
+    await notifyUsers(members, "reminder", `Reminder: "${g.title}" is tomorrow`, g.id);
+    await query("UPDATE games SET reminder_sent = TRUE WHERE id = $1", [g.id]);
+    notified += members.length;
+  }
+  return { games: rows.length, notified };
+}
+
+// --- User blocking ---------------------------------------------------------
+
+export async function blockUser(blockerId, blockedId) {
+  if (blockerId === blockedId)
+    return { ok: false, code: 400, error: "You can't block yourself." };
+  const target = await findUserById(blockedId);
+  if (!target) return { ok: false, code: 404, error: "User not found." };
+  await query(
+    `INSERT INTO blocks (blocker_id, blocked_id, created_at) VALUES ($1, $2, $3)
+     ON CONFLICT (blocker_id, blocked_id) DO NOTHING`,
+    [blockerId, blockedId, new Date().toISOString()]
+  );
+  return { ok: true };
+}
+
+export async function unblockUser(blockerId, blockedId) {
+  await query("DELETE FROM blocks WHERE blocker_id = $1 AND blocked_id = $2", [
+    blockerId,
+    blockedId,
+  ]);
+  return { ok: true };
+}
+
+export async function listBlocked(blockerId) {
+  const { rows } = await query(
+    `SELECT b.blocked_id AS id, u.name, u.avatar_url
+       FROM blocks b JOIN users u ON u.id = b.blocked_id
+      WHERE b.blocker_id = $1
+      ORDER BY b.created_at DESC`,
+    [blockerId]
+  );
+  return rows.map((r) => ({ id: r.id, name: r.name, avatarUrl: r.avatar_url || "" }));
+}
+
+export async function isBlocked(blockerId, blockedId) {
+  const { rows } = await query(
+    "SELECT 1 FROM blocks WHERE blocker_id = $1 AND blocked_id = $2",
+    [blockerId, blockedId]
+  );
+  return rows.length > 0;
+}
+
 export async function adminStats() {
   const one = async (sql, params = []) =>
     Number((await query(sql, params)).rows[0].c);
@@ -658,6 +722,7 @@ async function serializeGames(rows) {
     players: playersByGame.get(row.id) || [],
     waitlist: waitlistByGame.get(row.id) || [],
     interestedIds: interestByGame.get(row.id) || [],
+    seriesId: row.series_id || null,
     createdAt: row.created_at,
   }));
 }
@@ -689,8 +754,8 @@ export async function createGame(hostId, input) {
   await query(
     `INSERT INTO games
        (id, title, type, skill, date, time, end_time, location, area, total_slots, pre_filled, host_id, notes,
-        gender, net_height, positions_needed, rotation_type, cost_per_person, region, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
+        gender, net_height, positions_needed, rotation_type, cost_per_person, region, series_id, created_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`,
     [
       id,
       input.title,
@@ -711,6 +776,7 @@ export async function createGame(hostId, input) {
       input.rotationType || "Standard",
       Number(input.costPerPerson) || 0,
       input.region || "",
+      input.seriesId || null,
       now,
     ]
   );
@@ -868,6 +934,75 @@ export async function leaveGame(gameId, userId) {
   return getGame(gameId);
 }
 
+/** Host removes a player or waitlister. Frees the slot (auto-promotes waitlist). */
+export async function removeMember(gameId, hostId, targetUserId) {
+  const game = await getGameRow(gameId);
+  if (!game) return { ok: false, code: 404, error: "Game not found." };
+  if (game.host_id !== hostId)
+    return { ok: false, code: 403, error: "Only the host can manage the roster." };
+  if (targetUserId === hostId)
+    return { ok: false, code: 400, error: "The host can't remove themselves." };
+
+  const promoted = await withTransaction(async (client) => {
+    await client.query("SELECT 1 FROM games WHERE id = $1 FOR UPDATE", [gameId]);
+    const { rowCount } = await client.query(
+      "DELETE FROM game_members WHERE game_id = $1 AND user_id = $2",
+      [gameId, targetUserId]
+    );
+    if (rowCount === 0) return null;
+    return promoteWaitlistToFill(client, gameId, game.total_slots);
+  });
+  if (promoted === null)
+    return { ok: false, code: 404, error: "That player isn't in this game." };
+
+  await createNotification(
+    targetUserId,
+    "cancelled",
+    `You were removed from "${game.title}" by the host`,
+    gameId
+  );
+  await notifyUsers(promoted, "promoted", `A spot opened up in "${game.title}" — you're in!`, gameId);
+  return { ok: true, game: await getGame(gameId) };
+}
+
+/** Host manually promotes a specific waitlister into an open slot. */
+export async function promoteMember(gameId, hostId, targetUserId) {
+  const game = await getGameRow(gameId);
+  if (!game) return { ok: false, code: 404, error: "Game not found." };
+  if (game.host_id !== hostId)
+    return { ok: false, code: 403, error: "Only the host can manage the roster." };
+
+  const result = await withTransaction(async (client) => {
+    await client.query("SELECT 1 FROM games WHERE id = $1 FOR UPDATE", [gameId]);
+    const { rows } = await client.query(
+      "SELECT status FROM game_members WHERE game_id = $1 AND user_id = $2",
+      [gameId, targetUserId]
+    );
+    if (rows.length === 0) return { code: 404, error: "That player isn't on the waitlist." };
+    if (rows[0].status === "player") return { code: 400, error: "That player is already in the game." };
+    const { rows: pc } = await client.query(
+      "SELECT COUNT(*) AS c FROM game_members WHERE game_id = $1 AND status = 'player'",
+      [gameId]
+    );
+    if (Number(pc[0].c) >= game.total_slots)
+      return { code: 400, error: "The game is full — remove a player first." };
+    await client.query(
+      "UPDATE game_members SET status = 'player' WHERE game_id = $1 AND user_id = $2",
+      [gameId, targetUserId]
+    );
+    return { ok: true };
+  });
+  if (!result.ok) return { ok: false, code: result.code, error: result.error };
+
+  await createNotification(
+    targetUserId,
+    "promoted",
+    `The host moved you into "${game.title}" — you're in!`,
+    gameId
+  );
+  return { ok: true, game: await getGame(gameId) };
+}
+
 export async function updateGame(gameId, userId, input) {
   const row = await getGameRow(gameId);
   if (!row) return { ok: false, code: 404, error: "Game not found." };
@@ -967,16 +1102,44 @@ export async function deleteGame(gameId, userId) {
   return { ok: true };
 }
 
+/**
+ * Cancel this and all later occurrences of a recurring series (host only).
+ * Notifies members of each cancelled game. Returns how many were removed.
+ */
+export async function cancelSeries(seriesId, hostId, fromDate) {
+  const { rows } = await query(
+    "SELECT id, title FROM games WHERE series_id = $1 AND host_id = $2 AND date >= $3",
+    [seriesId, hostId, fromDate]
+  );
+  if (rows.length === 0)
+    return { ok: false, code: 404, error: "No upcoming games in this series." };
+  for (const g of rows) {
+    const others = (await memberUserIds(g.id)).filter((uidv) => uidv !== hostId);
+    await notifyUsers(others, "cancelled", `"${g.title}" was cancelled by the host`, g.id);
+  }
+  await query(
+    "DELETE FROM games WHERE series_id = $1 AND host_id = $2 AND date >= $3",
+    [seriesId, hostId, fromDate]
+  );
+  return { ok: true, count: rows.length };
+}
+
 // --- Comments (per-game discussion) ---------------------------------------
 
-export async function listComments(gameId) {
+export async function listComments(gameId, viewerId = null) {
+  const params = [gameId];
+  let blockClause = "";
+  if (viewerId) {
+    params.push(viewerId);
+    blockClause = ` AND c.user_id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = $${params.length})`;
+  }
   const { rows } = await query(
     `SELECT c.id, c.user_id, c.body, c.created_at, u.name AS user_name
        FROM game_comments c
        JOIN users u ON u.id = c.user_id
-      WHERE c.game_id = $1
+      WHERE c.game_id = $1${blockClause}
       ORDER BY c.created_at ASC`,
-    [gameId]
+    params
   );
   return rows.map((r) => ({
     id: r.id,
@@ -1295,10 +1458,16 @@ const HL_SELECT = `
     FROM highlights h JOIN users u ON u.id = h.user_id
 `;
 
-export async function listHighlights(limit = 20, offset = 0) {
+export async function listHighlights(limit = 20, offset = 0, viewerId = null) {
+  const params = [limit, offset];
+  let blockClause = "";
+  if (viewerId) {
+    params.push(viewerId);
+    blockClause = ` WHERE h.user_id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = $${params.length})`;
+  }
   const { rows } = await query(
-    `${HL_SELECT} ORDER BY h.created_at DESC LIMIT $1 OFFSET $2`,
-    [limit, offset]
+    `${HL_SELECT}${blockClause} ORDER BY h.created_at DESC LIMIT $1 OFFSET $2`,
+    params
   );
   return rows.map(serializeHighlight);
 }
@@ -1354,14 +1523,20 @@ export async function getUserHighlights(userId) {
 
 // --- Highlight comments (anyone can comment) ------------------------------
 
-export async function listHighlightComments(highlightId) {
+export async function listHighlightComments(highlightId, viewerId = null) {
+  const params = [highlightId];
+  let blockClause = "";
+  if (viewerId) {
+    params.push(viewerId);
+    blockClause = ` AND c.user_id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = $${params.length})`;
+  }
   const { rows } = await query(
     `SELECT c.id, c.user_id, c.body, c.created_at, u.name AS user_name
        FROM highlight_comments c
        JOIN users u ON u.id = c.user_id
-      WHERE c.highlight_id = $1
+      WHERE c.highlight_id = $1${blockClause}
       ORDER BY c.created_at ASC`,
-    [highlightId]
+    params
   );
   return rows.map((r) => ({
     id: r.id,

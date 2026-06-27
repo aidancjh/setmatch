@@ -293,6 +293,19 @@ const h = (fn) => (req, res) =>
     res.status(500).json({ error: "Something went wrong on the server." });
   });
 
+/**
+ * Like requireAuth but never rejects: sets req.userId when a valid token is
+ * present, otherwise continues anonymously. Used on public read routes that
+ * want to personalize results (e.g. hide blocked users) when signed in.
+ */
+function optionalAuth(req, _res, next) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  const userId = token ? verifyToken(token) : null;
+  if (userId) req.userId = userId;
+  next();
+}
+
 // --- Auth routes ----------------------------------------------------------
 
 app.post(
@@ -629,6 +642,20 @@ app.get(
   })
 );
 
+// Downloadable calendar event (.ics) for a game — public, like the game page.
+app.get(
+  "/api/games/:id/ics",
+  h(async (req, res) => {
+    const game = await repo.getGame(req.params.id);
+    if (!game) return res.status(404).json({ error: "Game not found." });
+    const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+    const safeName = String(game.title).replace(/[^a-z0-9]+/gi, "-").slice(0, 40) || "game";
+    res.setHeader("Content-Type", "text/calendar; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${safeName}.ics"`);
+    res.send(buildICS(game, appUrl));
+  })
+);
+
 app.post(
   "/api/games",
   requireAuth,
@@ -645,12 +672,15 @@ app.post(
 
     const input = gameInputFrom(req.body);
     // Recurring: create N weekly occurrences (capped). Return the first one.
+    // A shared series_id links them so the host can cancel all future ones.
     const repeat = Math.min(Math.max(Number(req.body.repeat) || 1, 1), 12);
+    const seriesId = repeat > 1 ? `series_${crypto.randomBytes(8).toString("hex")}` : null;
     let first = null;
     for (let i = 0; i < repeat; i++) {
       const game = await repo.createGame(req.userId, {
         ...input,
         date: addWeeksISO(input.date, i),
+        seriesId,
       });
       if (i === 0) first = game;
     }
@@ -799,6 +829,23 @@ app.delete(
   })
 );
 
+// Cancel this and all later occurrences of a recurring series (host only).
+app.post(
+  "/api/games/:id/cancel-series",
+  requireAuth,
+  h(async (req, res) => {
+    const game = await repo.getGame(req.params.id);
+    if (!game) return res.status(404).json({ error: "Game not found." });
+    if (game.hostId !== req.userId)
+      return res.status(403).json({ error: "Only the host can cancel this series." });
+    if (!game.seriesId)
+      return res.status(400).json({ error: "This game isn't part of a series." });
+    const result = await repo.cancelSeries(game.seriesId, req.userId, game.date);
+    if (!result.ok) return res.status(result.code).json({ error: result.error });
+    res.json({ ok: true, count: result.count });
+  })
+);
+
 // --- Player ratings -------------------------------------------------------
 
 app.get(
@@ -863,8 +910,9 @@ app.post(
 
 app.get(
   "/api/games/:id/comments",
+  optionalAuth,
   h(async (req, res) => {
-    res.json(await repo.listComments(req.params.id));
+    res.json(await repo.listComments(req.params.id, req.userId || null));
   })
 );
 
@@ -954,6 +1002,27 @@ app.delete(
 );
 
 // --- Cost splitting -------------------------------------------------------
+
+// Host roster management — remove a player/waitlister or promote a waitlister.
+app.post(
+  "/api/games/:id/members/:memberId/remove",
+  requireAuth,
+  h(async (req, res) => {
+    const result = await repo.removeMember(req.params.id, req.userId, req.params.memberId);
+    if (result.ok) return res.json(result.game);
+    res.status(result.code).json({ error: result.error });
+  })
+);
+
+app.post(
+  "/api/games/:id/members/:memberId/promote",
+  requireAuth,
+  h(async (req, res) => {
+    const result = await repo.promoteMember(req.params.id, req.userId, req.params.memberId);
+    if (result.ok) return res.json(result.game);
+    res.status(result.code).json({ error: result.error });
+  })
+);
 
 app.post(
   "/api/games/:id/members/:memberId/paid",
@@ -1240,7 +1309,35 @@ app.get(
   h(async (req, res) => {
     const profile = await repo.getUserProfile(req.params.id);
     if (!profile) return res.status(404).json({ error: "Player not found." });
-    res.json(profile);
+    const blocked = await repo.isBlocked(req.userId, req.params.id);
+    res.json({ ...profile, blocked });
+  })
+);
+
+// --- User blocking --------------------------------------------------------
+
+app.get(
+  "/api/blocks",
+  requireAuth,
+  h(async (req, res) => res.json(await repo.listBlocked(req.userId)))
+);
+
+app.post(
+  "/api/users/:id/block",
+  requireAuth,
+  h(async (req, res) => {
+    const result = await repo.blockUser(req.userId, req.params.id);
+    if (result.ok) return res.status(201).json({ ok: true });
+    res.status(result.code).json({ error: result.error });
+  })
+);
+
+app.delete(
+  "/api/users/:id/block",
+  requireAuth,
+  h(async (req, res) => {
+    await repo.unblockUser(req.userId, req.params.id);
+    res.status(204).end();
   })
 );
 
@@ -1308,10 +1405,11 @@ app.post(
 
 app.get(
   "/api/highlights",
+  optionalAuth,
   h(async (req, res) => {
     const limit = Math.min(Number(req.query.limit) || 20, 50);
     const offset = Math.min(Math.max(Number(req.query.offset) || 0, 0), 10000);
-    res.json(await repo.listHighlights(limit, offset));
+    res.json(await repo.listHighlights(limit, offset, req.userId || null));
   })
 );
 
@@ -1372,7 +1470,7 @@ app.get(
   "/api/highlights/:id/comments",
   requireAuth,
   h(async (req, res) => {
-    res.json(await repo.listHighlightComments(req.params.id));
+    res.json(await repo.listHighlightComments(req.params.id, req.userId));
   })
 );
 
@@ -1406,6 +1504,37 @@ app.delete(
 );
 
 // --- Google Calendar URL builder ------------------------------------------
+
+/** Build a downloadable .ics calendar event for a game (floating local time). */
+function buildICS(game, appUrl) {
+  const [y, m, d] = game.date.split("-").map(Number);
+  const [sh, sm] = game.time.split(":").map(Number);
+  const p = (n) => String(n).padStart(2, "0");
+  const fmt = (h, min) => `${y}${p(m)}${p(d)}T${p(h)}${p(min)}00`;
+  const start = fmt(sh, sm);
+  const end = game.endTime
+    ? (() => { const [eh, em] = game.endTime.split(":").map(Number); return fmt(eh, em); })()
+    : fmt(sh + 2, sm);
+  // Escape per RFC 5545 (commas, semicolons, newlines, backslashes).
+  const esc545 = (s) =>
+    String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  const desc = `Hosted by ${game.hostName}.${game.notes ? " " + game.notes : ""} ${appUrl}/game/${game.id}`;
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Coterie//Games//EN",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${game.id}@coterie`,
+    `SUMMARY:${esc545(game.title)}`,
+    `DTSTART:${start}`,
+    `DTEND:${end}`,
+    `LOCATION:${esc545([game.location, game.area].filter(Boolean).join(", "))}`,
+    `DESCRIPTION:${esc545(desc)}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+}
 
 function buildGCalUrl(game, appUrl) {
   const [y, m, d] = game.date.split("-").map(Number);
@@ -1569,6 +1698,19 @@ async function start() {
   runPrune();
   const pruneTimer = setInterval(runPrune, 6 * 60 * 60 * 1000);
   if (typeof pruneTimer.unref === "function") pruneTimer.unref();
+
+  // Pre-game reminders: notify members of games happening tomorrow. Runs on
+  // startup, then hourly; reminder_sent prevents duplicates.
+  const runReminders = () =>
+    repo
+      .sendDueReminders()
+      .then((r) => {
+        if (r.games) console.log(`[reminders] notified ${r.notified} members across ${r.games} game(s)`);
+      })
+      .catch((err) => console.error("[reminders] failed:", err));
+  runReminders();
+  const reminderTimer = setInterval(runReminders, 60 * 60 * 1000);
+  if (typeof reminderTimer.unref === "function") reminderTimer.unref();
 
   if (!process.env.RESEND_API_KEY) console.warn("[email] RESEND_API_KEY not set — join confirmation emails will be skipped");
   if (!process.env.SENTRY_DSN) console.warn("[sentry] SENTRY_DSN not set — errors will only be logged to the console, not reported to Sentry");

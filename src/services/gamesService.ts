@@ -98,10 +98,57 @@ export async function deleteGame(id: string): Promise<void> {
   notify();
 }
 
+/** Cancel this and all later occurrences of a recurring series. */
+export async function cancelSeries(id: string): Promise<{ count: number }> {
+  const r = await api.post<{ ok: boolean; count: number }>(`/games/${id}/cancel-series`);
+  notify();
+  return { count: r.count };
+}
+
+// --- Host roster management ------------------------------------------------
+
+export async function removeMember(
+  gameId: string,
+  memberId: string
+): Promise<Game> {
+  const game = await api.post<Game>(`/games/${gameId}/members/${memberId}/remove`);
+  notify();
+  return game;
+}
+
+export async function promoteMember(
+  gameId: string,
+  memberId: string
+): Promise<Game> {
+  const game = await api.post<Game>(`/games/${gameId}/members/${memberId}/promote`);
+  notify();
+  return game;
+}
+
 // --- User profiles --------------------------------------------------------
 
 export async function getUserProfile(userId: string): Promise<UserProfile> {
   return api.get<UserProfile>(`/users/${userId}/profile`);
+}
+
+// --- Blocking --------------------------------------------------------------
+
+export interface BlockedUser {
+  id: string;
+  name: string;
+  avatarUrl: string;
+}
+
+export async function getBlocked(): Promise<BlockedUser[]> {
+  return api.get<BlockedUser[]>("/blocks");
+}
+
+export async function blockUser(userId: string): Promise<void> {
+  await api.post(`/users/${userId}/block`);
+}
+
+export async function unblockUser(userId: string): Promise<void> {
+  await api.del(`/users/${userId}/block`);
 }
 
 // --- Comments -------------------------------------------------------------
