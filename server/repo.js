@@ -2,7 +2,7 @@
 // frontend's TypeScript types (Game, Player, Profile) so the React app needs no
 // changes to how it reads data. All functions are async (Postgres is networked).
 import crypto from "node:crypto";
-import { query, uid } from "./db.js";
+import { query, uid, withTransaction } from "./db.js";
 
 // --- Users ----------------------------------------------------------------
 
@@ -133,24 +133,18 @@ export function publicUser(row) {
 
 // --- Admin / authorization -------------------------------------------------
 
-// Founder/super-admin emails that are ALWAYS granted admin on startup, on top
-// of anything in the ADMIN_EMAILS env var. Hardcoding the email is safe: it
-// grants nothing on its own — admin still requires signing in as that account
-// (Google OAuth), which only the owner controls.
-const FOUNDER_ADMINS = ["jironata21@gmail.com"];
-
 /**
- * Promote founder emails + any in ADMIN_EMAILS (comma-separated) to admin.
+ * Promote any emails in ADMIN_EMAILS (comma-separated) to admin.
  * Runs on every startup; idempotent (only updates rows that aren't admin yet).
+ * Set ADMIN_EMAILS in your environment (.env locally, host variables in prod)
+ * to grant admin — no emails are hardcoded in source.
  */
 export async function promoteAdminsFromEnv() {
   const fromEnv = (process.env.ADMIN_EMAILS || "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-  const list = [
-    ...new Set([...FOUNDER_ADMINS.map((e) => e.toLowerCase()), ...fromEnv]),
-  ];
+  const list = [...new Set(fromEnv)];
   for (const email of list) {
     const r = await query(
       "UPDATE users SET role = 'admin' WHERE email = $1 AND role <> 'admin'",
@@ -163,6 +157,42 @@ export async function promoteAdminsFromEnv() {
 export async function getRole(userId) {
   const u = await findUserById(userId);
   return u ? u.role || "user" : null;
+}
+
+// --- Maintenance / cleanup -------------------------------------------------
+
+/**
+ * Delete rows that have served their purpose so these tables don't grow without
+ * bound. Safe to run repeatedly; called on startup and on an interval from
+ * start() in index.js. Returns a summary for logging.
+ *
+ * created_at / expires_at are stored as ISO-8601 strings, so lexical comparison
+ * against an ISO timestamp is also chronological.
+ */
+export async function pruneExpired() {
+  const now = new Date().toISOString();
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const tokens = await query(
+    "DELETE FROM password_reset_tokens WHERE expires_at < $1",
+    [now]
+  );
+  // Idempotency keys only need to outlive a client's retry window.
+  const keys = await query(
+    "DELETE FROM idempotency_keys WHERE created_at < $1",
+    [dayAgo]
+  );
+  // Old notifications the user has already seen.
+  const notifs = await query(
+    "DELETE FROM notifications WHERE read = TRUE AND created_at < $1",
+    [monthAgo]
+  );
+  return {
+    resetTokens: tokens.rowCount,
+    idempotencyKeys: keys.rowCount,
+    notifications: notifs.rowCount,
+  };
 }
 
 export async function adminStats() {
@@ -702,14 +732,6 @@ export async function saveIdempotentKey(key, gameId) {
   );
 }
 
-async function nextSeq(gameId) {
-  const { rows } = await query(
-    "SELECT COALESCE(MAX(seq), -1) AS m FROM game_members WHERE game_id = $1",
-    [gameId]
-  );
-  return Number(rows[0].m) + 1;
-}
-
 async function playerCount(gameId) {
   const { rows } = await query(
     "SELECT COUNT(*) AS c FROM game_members WHERE game_id = $1 AND status = 'player'",
@@ -721,18 +743,28 @@ async function playerCount(gameId) {
 /**
  * Promote waitlisted players (earliest first) until the game is full.
  * Returns the user_ids that were promoted, so callers can notify them.
+ *
+ * Runs every read+write on `exec` (a transaction client) so the caller can
+ * hold a `FOR UPDATE` lock on the game row for the whole promotion — without
+ * that lock two concurrent leaves could promote the same waitlister twice or
+ * over-fill the game.
  */
-async function promoteWaitlistToFill(gameId, totalSlots) {
+async function promoteWaitlistToFill(exec, gameId, totalSlots) {
   const promoted = [];
-  while ((await playerCount(gameId)) < totalSlots) {
-    const { rows } = await query(
+  for (;;) {
+    const { rows: pc } = await exec.query(
+      "SELECT COUNT(*) AS c FROM game_members WHERE game_id = $1 AND status = 'player'",
+      [gameId]
+    );
+    if (Number(pc[0].c) >= totalSlots) break;
+    const { rows } = await exec.query(
       `SELECT user_id FROM game_members
         WHERE game_id = $1 AND status = 'waitlist'
         ORDER BY seq ASC LIMIT 1`,
       [gameId]
     );
     if (rows.length === 0) break;
-    await query(
+    await exec.query(
       "UPDATE game_members SET status = 'player' WHERE game_id = $1 AND user_id = $2",
       [gameId, rows[0].user_id]
     );
@@ -744,18 +776,41 @@ async function promoteWaitlistToFill(gameId, totalSlots) {
 export async function joinGame(gameId, userId) {
   const game = await getGameRow(gameId);
   if (!game) return null;
-  const { rows: existing } = await query(
-    "SELECT status FROM game_members WHERE game_id = $1 AND user_id = $2",
-    [gameId, userId]
-  );
-  if (existing.length > 0) return getGame(gameId); // already joined/waitlisted
 
-  const status =
-    (await playerCount(gameId)) < game.total_slots ? "player" : "waitlist";
-  await query(
-    "INSERT INTO game_members (game_id, user_id, status, seq) VALUES ($1, $2, $3, $4)",
-    [gameId, userId, status, await nextSeq(gameId)]
-  );
+  // Capacity check + insert run under a row lock on the game so two people
+  // racing for the last open slot can't both end up confirmed (overselling).
+  // `FOR UPDATE` serializes concurrent joins on the same game: the second
+  // transaction blocks until the first commits, then sees the updated count.
+  const status = await withTransaction(async (client) => {
+    const { rows: locked } = await client.query(
+      "SELECT total_slots FROM games WHERE id = $1 FOR UPDATE",
+      [gameId]
+    );
+    if (locked.length === 0) return "gone";
+    const { rows: existing } = await client.query(
+      "SELECT 1 FROM game_members WHERE game_id = $1 AND user_id = $2",
+      [gameId, userId]
+    );
+    if (existing.length > 0) return "existing"; // already joined/waitlisted
+    const { rows: pc } = await client.query(
+      "SELECT COUNT(*) AS c FROM game_members WHERE game_id = $1 AND status = 'player'",
+      [gameId]
+    );
+    const { rows: seqRow } = await client.query(
+      "SELECT COALESCE(MAX(seq), -1) AS m FROM game_members WHERE game_id = $1",
+      [gameId]
+    );
+    const next = Number(pc[0].c) < locked[0].total_slots ? "player" : "waitlist";
+    await client.query(
+      "INSERT INTO game_members (game_id, user_id, status, seq) VALUES ($1, $2, $3, $4)",
+      [gameId, userId, next, Number(seqRow[0].m) + 1]
+    );
+    return next;
+  });
+
+  if (status === "gone") return null;
+  if (status === "existing") return getGame(gameId);
+
   // Tell the host someone joined (unless the host is joining their own game).
   if (userId !== game.host_id) {
     const actor = await findUserById(userId);
@@ -772,11 +827,17 @@ export async function joinGame(gameId, userId) {
 export async function leaveGame(gameId, userId) {
   const game = await getGameRow(gameId);
   if (!game) return null;
-  await query("DELETE FROM game_members WHERE game_id = $1 AND user_id = $2", [
-    gameId,
-    userId,
-  ]);
-  const promoted = await promoteWaitlistToFill(gameId, game.total_slots);
+
+  // Delete + waitlist promotion run under the game's row lock so the freed
+  // slot is filled atomically (no double-promotion under concurrent leaves).
+  const promoted = await withTransaction(async (client) => {
+    await client.query("SELECT 1 FROM games WHERE id = $1 FOR UPDATE", [gameId]);
+    await client.query(
+      "DELETE FROM game_members WHERE game_id = $1 AND user_id = $2",
+      [gameId, userId]
+    );
+    return promoteWaitlistToFill(client, gameId, game.total_slots);
+  });
 
   // Notify the host that someone left (unless the host themselves left).
   if (userId !== game.host_id) {
@@ -814,34 +875,39 @@ export async function updateGame(gameId, userId, input) {
       } — total slots can't be fewer than that.`,
     };
 
-  await query(
-    `UPDATE games
-        SET title = $1, type = $2, skill = $3, date = $4, time = $5, end_time = $6,
-            location = $7, area = $8, total_slots = $9, notes = $10,
-            gender = $11, net_height = $12, positions_needed = $13,
-            rotation_type = $14, cost_per_person = $15, region = $16
-      WHERE id = $17`,
-    [
-      input.title,
-      input.type,
-      input.skill,
-      input.date,
-      input.time,
-      input.endTime || "",
-      input.location,
-      input.area,
-      input.totalSlots,
-      input.notes || "",
-      input.gender || "Open",
-      input.netHeight || "Venue Standard",
-      JSON.stringify(input.positionsNeeded || []),
-      input.rotationType || "Standard",
-      Number(input.costPerPerson) || 0,
-      input.region || "",
-      gameId,
-    ]
-  );
-  const promoted = await promoteWaitlistToFill(gameId, input.totalSlots);
+  // Apply the edit and (if total slots grew) fill open spots from the waitlist
+  // atomically under the game's row lock.
+  const promoted = await withTransaction(async (client) => {
+    await client.query("SELECT 1 FROM games WHERE id = $1 FOR UPDATE", [gameId]);
+    await client.query(
+      `UPDATE games
+          SET title = $1, type = $2, skill = $3, date = $4, time = $5, end_time = $6,
+              location = $7, area = $8, total_slots = $9, notes = $10,
+              gender = $11, net_height = $12, positions_needed = $13,
+              rotation_type = $14, cost_per_person = $15, region = $16
+        WHERE id = $17`,
+      [
+        input.title,
+        input.type,
+        input.skill,
+        input.date,
+        input.time,
+        input.endTime || "",
+        input.location,
+        input.area,
+        input.totalSlots,
+        input.notes || "",
+        input.gender || "Open",
+        input.netHeight || "Venue Standard",
+        JSON.stringify(input.positionsNeeded || []),
+        input.rotationType || "Standard",
+        Number(input.costPerPerson) || 0,
+        input.region || "",
+        gameId,
+      ]
+    );
+    return promoteWaitlistToFill(client, gameId, input.totalSlots);
+  });
   await notifyUsers(
     promoted,
     "promoted",

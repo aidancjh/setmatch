@@ -14,3 +14,7 @@ dist-ssr
 server/*.sqlite
 server/*.sqlite-shm
 server/*.sqlite-wal
+
+# OneDrive / cloud conflict-copy artifacts (e.g. "Profile-aidan.tsx").
+# These are device-name duplicate copies, never real source — keep them out.
+*-aidan.*

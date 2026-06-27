@@ -6,6 +6,7 @@ import { isInGame, spotsLeft } from "../services/gamesService";
 import { isPast } from "../lib/format";
 import GameCard from "../components/GameCard";
 import { GameCardSkeleton } from "../components/Skeleton";
+import Modal from "../components/Modal";
 
 // ---------------------------------------------------------------------------
 // Filter options (mirror the create-game form)
@@ -256,14 +257,15 @@ function FilterModal({
       : `${fmtClock(f.minTime)} – ${fmtClock(f.maxTime)}`;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+    <Modal
+      onClose={onClose}
+      backdropClassName="bg-black/50"
+      panelClassName="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-xl animate-pop-in"
+      labelledBy="filters-modal-title"
     >
-      <div className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-xl animate-pop-in">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-          <p className="text-base font-bold text-slate-900">Filters</p>
+          <p id="filters-modal-title" className="text-base font-bold text-slate-900">Filters</p>
           <button
             onClick={onClose}
             aria-label="Close filters"
@@ -356,8 +358,7 @@ function FilterModal({
             Show {count} game{count === 1 ? "" : "s"}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

@@ -226,6 +226,12 @@ function isValidEmail(email) {
 // Minimum password length (signup + reset). Raised from 6 → 10 for launch.
 const PASSWORD_MIN = 10;
 
+// Sender address for transactional email. Defaults to Resend's shared sandbox
+// domain (works for testing but is spam-prone and rate-limited). Once you've
+// verified your own domain in Resend, set MAIL_FROM, e.g.
+//   MAIL_FROM="Coterie <hello@coterie.com.de>"
+const MAIL_FROM = process.env.MAIL_FROM || "Coterie <onboarding@resend.dev>";
+
 const SKILLS = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 const TYPES = ["Indoor", "Beach", "Grass"];
 const GENDERS = ["Men", "Women", "Mixed", "Open"];
@@ -292,8 +298,8 @@ const h = (fn) => (req, res) =>
 app.post(
   "/api/auth/signup",
   h(async (req, res) => {
-    if (!(await repo.getFlag("signups_enabled")))
-      return res.status(403).json({ error: "New sign-ups are temporarily closed." });
+    // Validate the payload first so malformed requests fail fast (400) without a
+    // database round-trip; only then check whether signups are open.
     const { email, password, name } = req.body || {};
     if (!isValidEmail(email))
       return res.status(400).json({ error: "Please enter a valid email address." });
@@ -305,6 +311,9 @@ app.post(
       return res.status(400).json({ error: "Name is required." });
     if (String(name).trim().length > 50)
       return res.status(400).json({ error: "Name must be 50 characters or fewer." });
+
+    if (!(await repo.getFlag("signups_enabled")))
+      return res.status(403).json({ error: "New sign-ups are temporarily closed." });
 
     if (await repo.findUserByEmail(email))
       return res
@@ -436,7 +445,7 @@ app.post(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Coterie <onboarding@resend.dev>",
+        from: MAIL_FROM,
         to: [user.email],
         subject: "Reset your Coterie password",
         html: `<p>Hi ${user.name},</p>
@@ -581,7 +590,7 @@ app.get(
         method: "POST",
         headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          from: "Coterie <onboarding@resend.dev>",
+          from: MAIL_FROM,
           to: [user.email],
           subject: "Coterie — email test",
           html: "<p>If you see this, email delivery is working!</p>",
@@ -734,7 +743,7 @@ app.post(
         method: "POST",
         headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          from: "Coterie <onboarding@resend.dev>",
+          from: MAIL_FROM,
           to: [user.email],
           subject: `You're in: ${game.title}`,
           html: emailHtml,
@@ -1521,6 +1530,23 @@ async function start() {
     console.log("[seed] SEED_DEMO=false — skipping demo users and sample data");
   }
   await repo.promoteAdminsFromEnv();
+
+  // Periodic cleanup so transient tables (reset tokens, idempotency keys, read
+  // notifications) don't grow without bound. Runs once on startup, then every
+  // 6 hours. unref() so it never holds the process open (tests / CLI imports).
+  const runPrune = () =>
+    repo
+      .pruneExpired()
+      .then((s) =>
+        console.log(
+          `[prune] removed ${s.resetTokens} reset tokens, ${s.idempotencyKeys} idempotency keys, ${s.notifications} old notifications`
+        )
+      )
+      .catch((err) => console.error("[prune] failed:", err));
+  runPrune();
+  const pruneTimer = setInterval(runPrune, 6 * 60 * 60 * 1000);
+  if (typeof pruneTimer.unref === "function") pruneTimer.unref();
+
   if (!process.env.RESEND_API_KEY) console.warn("[email] RESEND_API_KEY not set — join confirmation emails will be skipped");
   if (!process.env.SENTRY_DSN) console.warn("[sentry] SENTRY_DSN not set — errors will only be logged to the console, not reported to Sentry");
   app.listen(PORT, () => {

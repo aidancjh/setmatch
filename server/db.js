@@ -24,6 +24,34 @@ export function query(text, params) {
   return pool.query(text, params);
 }
 
+/**
+ * Run `fn` inside a single transaction. `fn` receives a dedicated client whose
+ * `.query(text, params)` runs on that connection (so `SELECT ... FOR UPDATE`
+ * locks hold for the whole callback). Commits on success, rolls back on throw,
+ * and always releases the client back to the pool.
+ *
+ * Used for capacity-sensitive operations (joining a game, promoting the
+ * waitlist) where a read-then-write must be atomic to avoid overselling slots.
+ */
+export async function withTransaction(fn) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await fn(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore rollback errors — original error is what matters */
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 /** Create tables if they don't exist yet. Safe to run on every startup. */
 export async function initSchema() {
   await pool.query(`
