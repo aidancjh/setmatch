@@ -3,6 +3,7 @@ import { useState } from "react";
 export default function Waitlist() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [company, setCompany] = useState(""); // honeypot — humans leave this blank
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
 
@@ -13,7 +14,7 @@ export default function Waitlist() {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name }),
+        body: JSON.stringify({ email, name, company }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -83,6 +84,19 @@ export default function Waitlist() {
             onSubmit={handleSubmit}
             style={{ width: "100%", maxWidth: 420, display: "flex", flexDirection: "column", gap: 12 }}
           >
+            {/* Honeypot: off-screen, not display:none (some bots skip those),
+                hidden from tab order + screen readers. Real users never fill it;
+                bots that auto-fill every field do, and get silently rejected. */}
+            <input
+              type="text"
+              name="company"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+            />
             <input
               type="text"
               placeholder="Full name"
