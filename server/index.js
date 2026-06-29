@@ -25,7 +25,11 @@ import { seedIfEmpty, syncDemoPasswords, seedPastData } from "./seed.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-app.set("trust proxy", true); // behind Railway's proxy — reflect real https host
+// Trust exactly ONE proxy hop (Railway's edge). Do NOT use `true` here: that
+// trusts the whole X-Forwarded-For chain, letting a client spoof their IP and
+// completely bypass every express-rate-limit limiter below. With `1`, req.ip is
+// the real client IP set by Railway's proxy, which clients can't forge.
+app.set("trust proxy", 1);
 
 // --- Security headers (helmet) --------------------------------------------
 // Content-Security-Policy is relaxed enough for Cloudinary uploads + Sentry.
@@ -1585,16 +1589,26 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
 }
 
 // --- Waitlist (public — no auth required) ------------------------------------
+// Lenient per-IP cap: mobile carriers route many real users through a few
+// shared IPs (CGNAT), so a strict limit would block genuine signups during a
+// viral launch. The real bot defenses are the honeypot below (and a CAPTCHA if
+// added) — this just stops one IP hammering the endpoint thousands of times.
 const waitlistLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: "Too many signups from this IP — try again later." },
+  message: { error: "Too many signups from this network — try again later." },
 });
 
 app.post("/api/waitlist", waitlistLimiter, async (req, res) => {
-  const { email, name } = req.body || {};
+  const { email, name, company } = req.body || {};
+  // Honeypot: the hidden "company" field is invisible to humans. Bots that
+  // auto-fill every input set it — silently accept (don't reveal the trap) and
+  // drop the request without writing anything.
+  if (typeof company === "string" && company.trim() !== "") {
+    return res.json({ ok: true, message: "You're on the list! We'll let you know when Coterie launches in Singapore." });
+  }
   if (!email || typeof email !== "string") return res.status(400).json({ error: "Email is required." });
   const trimmed = email.trim();
   if (trimmed.length > 200) return res.status(400).json({ error: "Email too long." });
