@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { SpikerSilhouette, DiggerSilhouette } from "../components/PlayerSilhouettes";
 
 // Imported from the Claude Design project "Coterie Waitlist". The signature
 // piece is the animated canvas: warm-toned rays streaming outward from a point
@@ -231,9 +232,22 @@ export default function Waitlist() {
         .wl-email:focus { border-color:#FF8A3D !important; box-shadow:0 0 0 4px rgba(255,138,61,0.16) !important; }
         .wl-cta:hover:not(:disabled) { background:#F25E0F; transform:translateY(-1px); box-shadow:0 10px 24px rgba(255,106,26,0.42); }
         .wl-cta:active:not(:disabled) { transform:translateY(0); }
+        /* Design 1 — bold player silhouettes grounded in the bottom corners */
+        .wl-fig { position:absolute; bottom:-2px; z-index:2; color:#FF6A1A; opacity:.95; pointer-events:none; height:auto; }
+        .wl-spiker { left:clamp(-32px, -1.5vw, 0px); width:clamp(220px, 30vw, 430px); }
+        .wl-digger { right:clamp(-32px, -1.5vw, 0px); width:clamp(240px, 32vw, 470px); }
+        @media (max-width: 760px) {
+          /* Shrink + fade so they frame the form instead of crowding it */
+          .wl-fig { opacity:.13; }
+          .wl-spiker { width:160px; left:-30px; }
+          .wl-digger { width:175px; right:-30px; }
+        }
         @media (max-width: 480px) {
           .wl-form { flex-direction: column; }
           .wl-cta { width: 100%; }
+          .wl-formwrap { max-width: 300px !important; }
+          .wl-spiker { width:128px; left:-26px; }
+          .wl-digger { width:140px; right:-26px; }
         }
         @media (prefers-reduced-motion: reduce) {
           .wl-blink { animation: none !important; }
@@ -258,6 +272,11 @@ export default function Waitlist() {
             "radial-gradient(46% 40% at 50% 46%, rgba(253,251,249,0.92) 0%, rgba(253,251,249,0.7) 38%, rgba(253,251,249,0) 70%)",
         }}
       />
+
+      {/* Player silhouettes (traced from reference art) — spiker left, receiver
+          right, both facing inward toward the headline. Decorative only. */}
+      <SpikerSilhouette className="wl-fig wl-spiker" aria-hidden="true" />
+      <DiggerSilhouette className="wl-fig wl-digger" aria-hidden="true" />
 
       {/* Header */}
       <header
@@ -396,7 +415,7 @@ export default function Waitlist() {
         </p>
 
         {/* Form / success */}
-        <div style={{ width: "100%", maxWidth: 480, marginTop: 34 }}>
+        <div className="wl-formwrap" style={{ width: "100%", maxWidth: 480, marginTop: 34 }}>
           {submitted ? (
             <div
               style={{
