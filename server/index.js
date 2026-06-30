@@ -13,7 +13,7 @@ Sentry.init({
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -142,7 +142,7 @@ const contentLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.userId || req.ip,
+  keyGenerator: (req) => req.userId || ipKeyGenerator(req.ip),
   message: { error: "You're posting too fast — please slow down." },
 });
 app.use("/api/auth/login", loginLimiter);
@@ -465,7 +465,7 @@ app.post(
         from: MAIL_FROM,
         to: [user.email],
         subject: "Reset your Coterie password",
-        html: `<p>Hi ${user.name},</p>
+        html: `<p>Hi ${esc(user.name)},</p>
                <p>You requested a password reset.</p>
                <p><a href="${resetLink}" style="background:#E8734A;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;font-family:sans-serif;">Reset password</a></p>
                <p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>
