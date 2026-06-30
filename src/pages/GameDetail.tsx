@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import type { Game } from "../types";
 import {
+  cancelSeries,
   deleteGame,
   getGame,
   isInGame,
   isOnWaitlist,
   joinGame,
   leaveGame,
+  promoteMember,
+  removeMember,
   spotsLeft,
   subscribe,
   toggleInterested,
@@ -17,6 +20,7 @@ import { useAuth } from "../auth/AuthContext";
 import { formatDate, formatTime, formatTimeRange, isPast, relativeDay } from "../lib/format";
 import { SkillBadge, SpotsBadge, TypeBadge } from "../components/Badges";
 import GameComments from "../components/GameComments";
+import Modal from "../components/Modal";
 import { api } from "../lib/api";
 import { celebrate } from "../lib/celebrate";
 import ReportButton from "../components/ReportButton";
@@ -38,6 +42,10 @@ export default function GameDetail() {
   const [leaveModal, setLeaveModal] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [leaveError, setLeaveError] = useState("");
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [seriesModal, setSeriesModal] = useState(false);
+  const [cancelingSeries, setCancelingSeries] = useState(false);
 
   useEffect(() => {
     const refresh = () => getGame(id).then((g) => setGame(g ?? null));
@@ -126,6 +134,20 @@ export default function GameDetail() {
   };
   const handleInterested = guarded(() => toggleInterested(game.id));
 
+  const [rosterError, setRosterError] = useState("");
+  const handleRemoveMember = (memberId: string) => {
+    setRosterError("");
+    removeMember(game.id, memberId).catch((err) =>
+      setRosterError(err instanceof Error ? err.message : "Couldn't update the roster.")
+    );
+  };
+  const handlePromoteMember = (memberId: string) => {
+    setRosterError("");
+    promoteMember(game.id, memberId).catch((err) =>
+      setRosterError(err instanceof Error ? err.message : "Couldn't update the roster.")
+    );
+  };
+
   const handleShare = async () => {
     const text = `${game.title} — ${formatDate(game.date)} at ${formatTime(
       game.time
@@ -143,13 +165,31 @@ export default function GameDetail() {
     }
   };
 
-  const handleDelete = () => {
-    if (confirm("Delete this game? This can't be undone.")) {
-      deleteGame(game.id)
-        .then(() => navigate("/my-games"))
-        .catch((err) =>
-          setError(err instanceof Error ? err.message : "Could not delete game.")
-        );
+  const handleConfirmDelete = async () => {
+    setError("");
+    setDeleting(true);
+    try {
+      await deleteGame(game.id);
+      navigate("/my-games");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete game.");
+      setDeleteModal(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleConfirmCancelSeries = async () => {
+    setError("");
+    setCancelingSeries(true);
+    try {
+      await cancelSeries(game.id);
+      navigate("/my-games");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not cancel the series.");
+      setSeriesModal(false);
+    } finally {
+      setCancelingSeries(false);
     }
   };
 
@@ -157,19 +197,17 @@ export default function GameDetail() {
     <div>
       {/* Join modal — preview ("are you sure?") and post-join confirmation */}
       {joinModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
-          onClick={() => { if (!joining) setJoinModal(null); }}
+        <Modal
+          onClose={() => { if (!joining) setJoinModal(null); }}
+          backdropClassName="bg-black/70"
+          panelClassName="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
+          labelledBy="join-modal-title"
         >
-          <div
-            className="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
             {joinModal === "preview" ? (
               <>
                 {/* Heading */}
                 <div className="px-8 pb-2 pt-7 text-center">
-                  <h2 className="text-2xl font-bold leading-tight text-slate-900">Join this game?</h2>
+                  <h2 id="join-modal-title" className="text-2xl font-bold leading-tight text-slate-900">Join this game?</h2>
                   <p className="mt-1.5 text-sm text-slate-500">
                     Review the details before claiming your spot.
                   </p>
@@ -239,7 +277,7 @@ export default function GameDetail() {
                 </div>
                 {/* Heading */}
                 <div className="px-8 pb-2 text-center">
-                  <h2 className="text-3xl font-bold leading-tight text-slate-900">
+                  <h2 id="join-modal-title" className="text-3xl font-bold leading-tight text-slate-900">
                     {joinModal === "confirmed" ? "You're In!" : "You're on the List!"}
                   </h2>
                   <p className="mt-2 text-sm text-slate-500">
@@ -291,22 +329,19 @@ export default function GameDetail() {
             <p className="py-5 text-center text-[11px] font-semibold uppercase tracking-widest text-slate-300">
               Coterie
             </p>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Leave confirmation modal */}
       {leaveModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
-          onClick={() => { if (!leaving) setLeaveModal(false); }}
+        <Modal
+          onClose={() => { if (!leaving) setLeaveModal(false); }}
+          backdropClassName="bg-black/70"
+          panelClassName="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
+          labelledBy="leave-modal-title"
         >
-          <div
-            className="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
             <div className="px-8 pb-2 pt-7 text-center">
-              <h2 className="text-2xl font-bold leading-tight text-slate-900">
+              <h2 id="leave-modal-title" className="text-2xl font-bold leading-tight text-slate-900">
                 {waiting ? "Leave waitlist?" : "Leave this game?"}
               </h2>
               <p className="mt-1.5 text-sm text-slate-500">
@@ -354,8 +389,95 @@ export default function GameDetail() {
             <p className="py-5 text-center text-[11px] font-semibold uppercase tracking-widest text-slate-300">
               Coterie
             </p>
+        </Modal>
+      )}
+
+      {/* Delete confirmation modal (replaces the native confirm dialog) */}
+      {deleteModal && (
+        <Modal
+          onClose={() => { if (!deleting) setDeleteModal(false); }}
+          backdropClassName="bg-black/70"
+          panelClassName="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
+          labelledBy="delete-modal-title"
+        >
+          <div className="px-8 pb-2 pt-7 text-center">
+            <h2 id="delete-modal-title" className="text-2xl font-bold leading-tight text-slate-900">
+              Delete this game?
+            </h2>
+            <p className="mt-1.5 text-sm text-slate-500">
+              This can't be undone. Everyone in the game will be notified it was cancelled.
+            </p>
           </div>
-        </div>
+          <div className="mx-8 my-4 h-px bg-slate-100" />
+          <div className="space-y-3 px-8">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Game</span>
+              <span className="max-w-[65%] text-right text-sm font-semibold text-slate-800">{game.title}</span>
+            </div>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Date</span>
+              <span className="text-right text-sm font-semibold text-slate-800">{formatDate(game.date)}</span>
+            </div>
+          </div>
+          <div className="space-y-2 px-8 pb-2 pt-5">
+            <button
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              className="w-full rounded-2xl bg-rose-500 py-3.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-rose-600 active:scale-[0.97] disabled:opacity-60"
+            >
+              {deleting ? "Deleting…" : "Yes, delete game"}
+            </button>
+            <button
+              onClick={() => setDeleteModal(false)}
+              disabled={deleting}
+              className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-medium text-slate-600 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-60"
+            >
+              Cancel
+            </button>
+          </div>
+          <p className="py-5 text-center text-[11px] font-semibold uppercase tracking-widest text-slate-300">
+            Coterie
+          </p>
+        </Modal>
+      )}
+
+      {/* Cancel-series confirmation modal */}
+      {seriesModal && (
+        <Modal
+          onClose={() => { if (!cancelingSeries) setSeriesModal(false); }}
+          backdropClassName="bg-black/70"
+          panelClassName="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
+          labelledBy="series-modal-title"
+        >
+          <div className="px-8 pb-2 pt-7 text-center">
+            <h2 id="series-modal-title" className="text-2xl font-bold leading-tight text-slate-900">
+              Cancel the whole series?
+            </h2>
+            <p className="mt-1.5 text-sm text-slate-500">
+              This game and every later weekly occurrence will be cancelled. Members
+              of each will be notified. This can't be undone.
+            </p>
+          </div>
+          <div className="space-y-2 px-8 pb-2 pt-5">
+            <button
+              onClick={handleConfirmCancelSeries}
+              disabled={cancelingSeries}
+              className="w-full rounded-2xl bg-rose-500 py-3.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-rose-600 active:scale-[0.97] disabled:opacity-60"
+            >
+              {cancelingSeries ? "Cancelling…" : "Yes, cancel all future games"}
+            </button>
+            <button
+              onClick={() => setSeriesModal(false)}
+              disabled={cancelingSeries}
+              className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-medium text-slate-600 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-60"
+            >
+              Keep them
+            </button>
+          </div>
+          <p className="py-5 text-center text-[11px] font-semibold uppercase tracking-widest text-slate-300">
+            Coterie
+          </p>
+        </Modal>
       )}
 
       <button
@@ -383,7 +505,20 @@ export default function GameDetail() {
       {/* Info card */}
       <div className="mb-4 space-y-2 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-700 shadow-sm">
         <InfoRow icon="📅" label="When">
-          {formatDate(game.date)} · {formatTimeRange(game.time, game.endTime)}
+          <div className="flex items-start gap-2">
+            <span className="flex-1">
+              {formatDate(game.date)} · {formatTimeRange(game.time, game.endTime)}
+            </span>
+            {!past && (
+              <a
+                href={`/api/games/${game.id}/ics`}
+                className="shrink-0 flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-500 transition hover:bg-slate-100 active:scale-95"
+                aria-label="Add to calendar"
+              >
+                📅 Add
+              </a>
+            )}
+          </div>
         </InfoRow>
         <InfoRow icon="📍" label="Where">
           <div className="flex items-start gap-2">
@@ -449,21 +584,33 @@ export default function GameDetail() {
           Roster ({game.players.length}/{game.totalSlots})
         </h2>
         <div className="flex flex-wrap gap-1.5">
-          {game.players.map((p) => (
-            <Link
-              key={p.id}
-              to={`/user/${p.id}`}
-              className={`rounded-full px-2.5 py-1 text-xs font-medium transition hover:opacity-80 ${
-                p.id === me.id
-                  ? "bg-emerald-100 text-emerald-800"
-                  : "bg-slate-100 text-slate-700"
-              }`}
-            >
-              {p.id === game.hostId && "⭐ "}
-              {p.name}
-              {p.id === me.id && " (you)"}
-            </Link>
-          ))}
+          {game.players.map((p) => {
+            const youAre = p.id === me.id;
+            const canRemove = isHost && p.id !== game.hostId;
+            return (
+              <span
+                key={p.id}
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                  youAre ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"
+                }`}
+              >
+                <Link to={`/user/${p.id}`} className="transition hover:opacity-80">
+                  {p.id === game.hostId && "⭐ "}
+                  {p.name}
+                  {youAre && " (you)"}
+                </Link>
+                {canRemove && (
+                  <button
+                    onClick={() => handleRemoveMember(p.id)}
+                    aria-label={`Remove ${p.name} from the game`}
+                    className="-mr-0.5 ml-0.5 leading-none text-slate-400 transition hover:text-rose-500"
+                  >
+                    ✕
+                  </button>
+                )}
+              </span>
+            );
+          })}
           {Array.from({ length: left }).map((_, i) => (
             <span
               key={`open-${i}`}
@@ -474,6 +621,12 @@ export default function GameDetail() {
           ))}
         </div>
 
+        {rosterError && (
+          <p className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">
+            {rosterError}
+          </p>
+        )}
+
         {game.waitlist.length > 0 && (
           <div className="mt-3 border-t border-slate-100 pt-3">
             <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -483,10 +636,31 @@ export default function GameDetail() {
               {game.waitlist.map((p, i) => (
                 <span
                   key={p.id}
-                  className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700"
+                  className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700"
                 >
-                  {i + 1}. {p.name}
-                  {p.id === me.id && " (you)"}
+                  <Link to={`/user/${p.id}`} className="transition hover:opacity-80">
+                    {i + 1}. {p.name}
+                    {p.id === me.id && " (you)"}
+                  </Link>
+                  {isHost && (
+                    <>
+                      <button
+                        onClick={() => handlePromoteMember(p.id)}
+                        aria-label={`Move ${p.name} into the game`}
+                        title="Move into game"
+                        className="ml-0.5 leading-none text-emerald-600 transition hover:text-emerald-700"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        onClick={() => handleRemoveMember(p.id)}
+                        aria-label={`Remove ${p.name} from the waitlist`}
+                        className="-mr-0.5 leading-none text-amber-500 transition hover:text-rose-500"
+                      >
+                        ✕
+                      </button>
+                    </>
+                  )}
                 </span>
               ))}
             </div>
@@ -578,11 +752,19 @@ export default function GameDetail() {
               Edit game
             </button>
             <button
-              onClick={handleDelete}
+              onClick={() => setDeleteModal(true)}
               className="w-full py-2 text-sm font-medium text-rose-500 hover:text-rose-600"
             >
               Delete game
             </button>
+            {game.seriesId && (
+              <button
+                onClick={() => setSeriesModal(true)}
+                className="w-full py-2 text-sm font-medium text-rose-500 hover:text-rose-600"
+              >
+                Cancel all future in this series
+              </button>
+            )}
           </div>
         )}
 
@@ -615,6 +797,8 @@ export default function GameDetail() {
                     <button
                       key={star}
                       type="button"
+                      aria-label={`Rate ${r.name} ${star} of 5 stars`}
+                      aria-pressed={r.myRating !== null && star <= r.myRating}
                       onClick={() => {
                         api.post(`/games/${id}/rate/${r.id}`, { rating: star })
                           .then(() => {

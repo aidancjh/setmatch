@@ -77,10 +77,10 @@ export default function Privacy() {
           <p>
             Questions about your privacy? Email{" "}
             <a
-              href="mailto:aidan.cjh0208@gmail.com"
+              href="mailto:support@coterie.com.de"
               className="font-medium text-brand underline"
             >
-              aidan.cjh0208@gmail.com
+              support@coterie.com.de
             </a>
             .
           </p>

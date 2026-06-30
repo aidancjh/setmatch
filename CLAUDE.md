@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev          # Start both API (port 3001) and Vite dev server (port 5173) concurrently
+npm run dev          # Start both API (port 4000) and Vite dev server (port 5173) concurrently
 npm run dev:api      # API only — node --watch with .env
 npm run dev:web      # Vite only
 npm run build        # TypeScript check + Vite production build

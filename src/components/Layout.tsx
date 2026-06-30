@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
 import CelebrationHost from "./CelebrationHost";
 import { useAuth } from "../auth/AuthContext";
 import { useAppConfig } from "../hooks/useAppConfig";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
+import { refreshAll } from "../services/gamesService";
 import {
   CalendarIcon,
   ChatIcon,
@@ -134,6 +136,8 @@ export default function Layout() {
   const { user } = useAuth();
   const config = useAppConfig();
   const [showPost, setShowPost] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+  const { pull, refreshing } = usePullToRefresh(mainRef, refreshAll);
 
   const isAdmin = user?.role === "admin";
 
@@ -212,9 +216,32 @@ export default function Layout() {
 
       {/* Page content — the only scrolling region, so the nav below always
           stays pinned to the bottom regardless of how short the page is. */}
-      <main className="flex-1 overflow-y-auto px-4 pb-6 pt-4">
+      <main ref={mainRef} className="relative flex-1 overflow-y-auto px-4 pb-6 pt-4">
+        {/* Pull-to-refresh indicator (touch). Fades/rotates in as you pull. */}
+        {(pull > 0 || refreshing) && (
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center"
+            style={{
+              transform: `translateY(${Math.max(pull - 28, 0)}px)`,
+              opacity: refreshing ? 1 : Math.min(pull / 70, 1),
+            }}
+          >
+            <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow">
+              <div
+                className={`h-4 w-4 rounded-full border-2 border-slate-300 border-t-brand ${
+                  refreshing ? "animate-spin" : ""
+                }`}
+                style={refreshing ? undefined : { transform: `rotate(${pull * 3}deg)` }}
+              />
+            </div>
+          </div>
+        )}
         {/* Keyed by route so the page gently fades/rises in on every navigation */}
-        <div key={pathname} className="animate-page-enter">
+        <div
+          key={pathname}
+          className="animate-page-enter"
+          style={pull ? { transform: `translateY(${pull}px)` } : undefined}
+        >
           <Outlet />
         </div>
       </main>

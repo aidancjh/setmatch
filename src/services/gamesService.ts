@@ -32,6 +32,11 @@ function notify() {
   listeners.forEach((fn) => fn());
 }
 
+/** Force every subscriber (game lists, etc.) to re-fetch — used by pull-to-refresh. */
+export function refreshAll() {
+  notify();
+}
+
 // --- Reads ----------------------------------------------------------------
 
 export async function getGames(): Promise<Game[]> {
@@ -93,10 +98,57 @@ export async function deleteGame(id: string): Promise<void> {
   notify();
 }
 
+/** Cancel this and all later occurrences of a recurring series. */
+export async function cancelSeries(id: string): Promise<{ count: number }> {
+  const r = await api.post<{ ok: boolean; count: number }>(`/games/${id}/cancel-series`);
+  notify();
+  return { count: r.count };
+}
+
+// --- Host roster management ------------------------------------------------
+
+export async function removeMember(
+  gameId: string,
+  memberId: string
+): Promise<Game> {
+  const game = await api.post<Game>(`/games/${gameId}/members/${memberId}/remove`);
+  notify();
+  return game;
+}
+
+export async function promoteMember(
+  gameId: string,
+  memberId: string
+): Promise<Game> {
+  const game = await api.post<Game>(`/games/${gameId}/members/${memberId}/promote`);
+  notify();
+  return game;
+}
+
 // --- User profiles --------------------------------------------------------
 
 export async function getUserProfile(userId: string): Promise<UserProfile> {
   return api.get<UserProfile>(`/users/${userId}/profile`);
+}
+
+// --- Blocking --------------------------------------------------------------
+
+export interface BlockedUser {
+  id: string;
+  name: string;
+  avatarUrl: string;
+}
+
+export async function getBlocked(): Promise<BlockedUser[]> {
+  return api.get<BlockedUser[]>("/blocks");
+}
+
+export async function blockUser(userId: string): Promise<void> {
+  await api.post(`/users/${userId}/block`);
+}
+
+export async function unblockUser(userId: string): Promise<void> {
+  await api.del(`/users/${userId}/block`);
 }
 
 // --- Comments -------------------------------------------------------------
@@ -136,6 +188,13 @@ export async function sendMessage(
   return api.post<Message>(`/games/${gameId}/messages`, { body });
 }
 
+export async function deleteMessage(
+  gameId: string,
+  messageId: string
+): Promise<void> {
+  await api.del<void>(`/games/${gameId}/messages/${messageId}`);
+}
+
 // --- Cost splitting -------------------------------------------------------
 
 export async function setMemberPaid(
@@ -164,6 +223,14 @@ export async function getNotifications(): Promise<{
 
 export async function markNotificationsRead(): Promise<void> {
   await api.post<void>("/notifications/read-all");
+}
+
+export async function markNotificationRead(
+  id: string
+): Promise<{ ok: boolean; unreadCount: number }> {
+  return api.post<{ ok: boolean; unreadCount: number }>(
+    `/notifications/${id}/read`
+  );
 }
 
 // --- Derived helpers (pure) -----------------------------------------------

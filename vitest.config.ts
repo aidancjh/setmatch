@@ -15,7 +15,12 @@ export default defineConfig({
     env: {
       NODE_ENV: "test",
       JWT_SECRET: "test-secret-not-for-production",
-      DATABASE_URL: "postgresql://test:test@127.0.0.1:5432/coterie_test_unused",
+      // Falls back to an unreachable dummy so pure-logic tests never touch a DB.
+      // To run the DB-gated tests (e.g. tests/join-race.test.js) point this at a
+      // throwaway Postgres and set RUN_DB_TESTS=1.
+      DATABASE_URL:
+        process.env.DATABASE_URL ||
+        "postgresql://test:test@127.0.0.1:5432/coterie_test_unused",
       APP_URL: "http://localhost:5173",
     },
   },

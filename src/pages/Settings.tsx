@@ -1,7 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { submitFeedback, deleteAccount } from "../services/gamesService";
+import {
+  submitFeedback,
+  deleteAccount,
+  getBlocked,
+  unblockUser,
+  type BlockedUser,
+} from "../services/gamesService";
 import { setToken } from "../lib/api";
 import { feedbackEnabled, setFeedbackEnabled, playSound } from "../lib/feedback";
 
@@ -61,6 +67,61 @@ function FAQItem({ q, a }: { q: string; a: string }) {
         <p className="pb-3.5 text-sm leading-relaxed text-slate-500">{a}</p>
       )}
     </div>
+  );
+}
+
+function BlockedUsers() {
+  const [list, setList] = useState<BlockedUser[] | null>(null);
+
+  useEffect(() => {
+    getBlocked()
+      .then(setList)
+      .catch(() => setList([]));
+  }, []);
+
+  const unblock = async (id: string) => {
+    setList((prev) => (prev ? prev.filter((u) => u.id !== id) : prev));
+    try {
+      await unblockUser(id);
+    } catch {
+      getBlocked().then(setList).catch(() => {});
+    }
+  };
+
+  if (list === null)
+    return <div className="px-4 py-3.5 text-sm text-slate-400">Loading…</div>;
+  if (list.length === 0)
+    return (
+      <div className="px-4 py-3.5 text-sm text-slate-400">
+        You haven't blocked anyone.
+      </div>
+    );
+  return (
+    <>
+      {list.map((u) => (
+        <div
+          key={u.id}
+          className="flex items-center justify-between border-b border-slate-50 px-4 py-3 last:border-0"
+        >
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand/10 text-xs font-bold text-brand">
+              {u.avatarUrl ? (
+                <img src={u.avatarUrl} alt={u.name} className="h-full w-full object-cover" />
+              ) : (
+                u.name.charAt(0).toUpperCase()
+              )}
+            </div>
+            <span className="truncate text-sm text-slate-700">{u.name}</span>
+          </div>
+          <button
+            onClick={() => unblock(u.id)}
+            className="shrink-0 text-xs font-semibold text-brand hover:underline"
+          >
+            Unblock
+          </button>
+        </div>
+      ))}
+    </>
   );
 }
 
@@ -269,6 +330,11 @@ export default function Settings() {
           on={soundOn}
           onToggle={toggleSound}
         />
+      </Section>
+
+      {/* Blocked users */}
+      <Section title="Blocked users">
+        <BlockedUsers />
       </Section>
 
       {/* Account */}

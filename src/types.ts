@@ -44,6 +44,8 @@ export interface Game {
   waitlist: Player[];
   /** User ids who tapped "interested". */
   interestedIds: string[];
+  /** Links weekly occurrences created together; null for one-off games. */
+  seriesId?: string | null;
   createdAt: string;
 }
 
@@ -161,6 +163,8 @@ export interface UserProfile {
   playerRating?: { count: number; avg: number | null };
   bannerColor?: string;
   bannerImage?: string;
+  /** Whether the viewing user has blocked this profile's user. */
+  blocked?: boolean;
 }
 
 export interface Comment {

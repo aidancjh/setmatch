@@ -2,7 +2,7 @@
 // frontend's TypeScript types (Game, Player, Profile) so the React app needs no
 // changes to how it reads data. All functions are async (Postgres is networked).
 import crypto from "node:crypto";
-import { query, uid } from "./db.js";
+import { query, uid, withTransaction } from "./db.js";
 
 // --- Users ----------------------------------------------------------------
 
@@ -133,24 +133,18 @@ export function publicUser(row) {
 
 // --- Admin / authorization -------------------------------------------------
 
-// Founder/super-admin emails that are ALWAYS granted admin on startup, on top
-// of anything in the ADMIN_EMAILS env var. Hardcoding the email is safe: it
-// grants nothing on its own — admin still requires signing in as that account
-// (Google OAuth), which only the owner controls.
-const FOUNDER_ADMINS = ["jironata21@gmail.com"];
-
 /**
- * Promote founder emails + any in ADMIN_EMAILS (comma-separated) to admin.
+ * Promote any emails in ADMIN_EMAILS (comma-separated) to admin.
  * Runs on every startup; idempotent (only updates rows that aren't admin yet).
+ * Set ADMIN_EMAILS in your environment (.env locally, host variables in prod)
+ * to grant admin — no emails are hardcoded in source.
  */
 export async function promoteAdminsFromEnv() {
   const fromEnv = (process.env.ADMIN_EMAILS || "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-  const list = [
-    ...new Set([...FOUNDER_ADMINS.map((e) => e.toLowerCase()), ...fromEnv]),
-  ];
+  const list = [...new Set(fromEnv)];
   for (const email of list) {
     const r = await query(
       "UPDATE users SET role = 'admin' WHERE email = $1 AND role <> 'admin'",
@@ -163,6 +157,106 @@ export async function promoteAdminsFromEnv() {
 export async function getRole(userId) {
   const u = await findUserById(userId);
   return u ? u.role || "user" : null;
+}
+
+// --- Maintenance / cleanup -------------------------------------------------
+
+/**
+ * Delete rows that have served their purpose so these tables don't grow without
+ * bound. Safe to run repeatedly; called on startup and on an interval from
+ * start() in index.js. Returns a summary for logging.
+ *
+ * created_at / expires_at are stored as ISO-8601 strings, so lexical comparison
+ * against an ISO timestamp is also chronological.
+ */
+export async function pruneExpired() {
+  const now = new Date().toISOString();
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const tokens = await query(
+    "DELETE FROM password_reset_tokens WHERE expires_at < $1",
+    [now]
+  );
+  // Idempotency keys only need to outlive a client's retry window.
+  const keys = await query(
+    "DELETE FROM idempotency_keys WHERE created_at < $1",
+    [dayAgo]
+  );
+  // Old notifications the user has already seen.
+  const notifs = await query(
+    "DELETE FROM notifications WHERE read = TRUE AND created_at < $1",
+    [monthAgo]
+  );
+  return {
+    resetTokens: tokens.rowCount,
+    idempotencyKeys: keys.rowCount,
+    notifications: notifs.rowCount,
+  };
+}
+
+/**
+ * Notify members of games happening tomorrow (once). `reminder_sent` guards
+ * against repeat reminders. Called on an interval from start() in index.js.
+ */
+export async function sendDueReminders() {
+  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  const { rows } = await query(
+    "SELECT id, title FROM games WHERE date = $1 AND reminder_sent = FALSE",
+    [tomorrow]
+  );
+  let notified = 0;
+  for (const g of rows) {
+    const members = await memberUserIds(g.id);
+    await notifyUsers(members, "reminder", `Reminder: "${g.title}" is tomorrow`, g.id);
+    await query("UPDATE games SET reminder_sent = TRUE WHERE id = $1", [g.id]);
+    notified += members.length;
+  }
+  return { games: rows.length, notified };
+}
+
+// --- User blocking ---------------------------------------------------------
+
+export async function blockUser(blockerId, blockedId) {
+  if (blockerId === blockedId)
+    return { ok: false, code: 400, error: "You can't block yourself." };
+  const target = await findUserById(blockedId);
+  if (!target) return { ok: false, code: 404, error: "User not found." };
+  await query(
+    `INSERT INTO blocks (blocker_id, blocked_id, created_at) VALUES ($1, $2, $3)
+     ON CONFLICT (blocker_id, blocked_id) DO NOTHING`,
+    [blockerId, blockedId, new Date().toISOString()]
+  );
+  return { ok: true };
+}
+
+export async function unblockUser(blockerId, blockedId) {
+  await query("DELETE FROM blocks WHERE blocker_id = $1 AND blocked_id = $2", [
+    blockerId,
+    blockedId,
+  ]);
+  return { ok: true };
+}
+
+export async function listBlocked(blockerId) {
+  const { rows } = await query(
+    `SELECT b.blocked_id AS id, u.name, u.avatar_url
+       FROM blocks b JOIN users u ON u.id = b.blocked_id
+      WHERE b.blocker_id = $1
+      ORDER BY b.created_at DESC`,
+    [blockerId]
+  );
+  return rows.map((r) => ({ id: r.id, name: r.name, avatarUrl: r.avatar_url || "" }));
+}
+
+export async function isBlocked(blockerId, blockedId) {
+  const { rows } = await query(
+    "SELECT 1 FROM blocks WHERE blocker_id = $1 AND blocked_id = $2",
+    [blockerId, blockedId]
+  );
+  return rows.length > 0;
 }
 
 export async function adminStats() {
@@ -541,6 +635,15 @@ export async function markAllRead(userId) {
   );
 }
 
+/** Mark a single notification read (scoped to its owner). Returns the new unread count. */
+export async function markNotificationRead(userId, id) {
+  await query(
+    "UPDATE notifications SET read = TRUE WHERE id = $1 AND user_id = $2",
+    [id, userId]
+  );
+  return unreadCount(userId);
+}
+
 // --- Games ----------------------------------------------------------------
 
 function parseJsonArr(val) {
@@ -619,6 +722,7 @@ async function serializeGames(rows) {
     players: playersByGame.get(row.id) || [],
     waitlist: waitlistByGame.get(row.id) || [],
     interestedIds: interestByGame.get(row.id) || [],
+    seriesId: row.series_id || null,
     createdAt: row.created_at,
   }));
 }
@@ -650,8 +754,8 @@ export async function createGame(hostId, input) {
   await query(
     `INSERT INTO games
        (id, title, type, skill, date, time, end_time, location, area, total_slots, pre_filled, host_id, notes,
-        gender, net_height, positions_needed, rotation_type, cost_per_person, region, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
+        gender, net_height, positions_needed, rotation_type, cost_per_person, region, series_id, created_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`,
     [
       id,
       input.title,
@@ -672,6 +776,7 @@ export async function createGame(hostId, input) {
       input.rotationType || "Standard",
       Number(input.costPerPerson) || 0,
       input.region || "",
+      input.seriesId || null,
       now,
     ]
   );
@@ -702,14 +807,6 @@ export async function saveIdempotentKey(key, gameId) {
   );
 }
 
-async function nextSeq(gameId) {
-  const { rows } = await query(
-    "SELECT COALESCE(MAX(seq), -1) AS m FROM game_members WHERE game_id = $1",
-    [gameId]
-  );
-  return Number(rows[0].m) + 1;
-}
-
 async function playerCount(gameId) {
   const { rows } = await query(
     "SELECT COUNT(*) AS c FROM game_members WHERE game_id = $1 AND status = 'player'",
@@ -721,18 +818,28 @@ async function playerCount(gameId) {
 /**
  * Promote waitlisted players (earliest first) until the game is full.
  * Returns the user_ids that were promoted, so callers can notify them.
+ *
+ * Runs every read+write on `exec` (a transaction client) so the caller can
+ * hold a `FOR UPDATE` lock on the game row for the whole promotion — without
+ * that lock two concurrent leaves could promote the same waitlister twice or
+ * over-fill the game.
  */
-async function promoteWaitlistToFill(gameId, totalSlots) {
+async function promoteWaitlistToFill(exec, gameId, totalSlots) {
   const promoted = [];
-  while ((await playerCount(gameId)) < totalSlots) {
-    const { rows } = await query(
+  for (;;) {
+    const { rows: pc } = await exec.query(
+      "SELECT COUNT(*) AS c FROM game_members WHERE game_id = $1 AND status = 'player'",
+      [gameId]
+    );
+    if (Number(pc[0].c) >= totalSlots) break;
+    const { rows } = await exec.query(
       `SELECT user_id FROM game_members
         WHERE game_id = $1 AND status = 'waitlist'
         ORDER BY seq ASC LIMIT 1`,
       [gameId]
     );
     if (rows.length === 0) break;
-    await query(
+    await exec.query(
       "UPDATE game_members SET status = 'player' WHERE game_id = $1 AND user_id = $2",
       [gameId, rows[0].user_id]
     );
@@ -744,18 +851,41 @@ async function promoteWaitlistToFill(gameId, totalSlots) {
 export async function joinGame(gameId, userId) {
   const game = await getGameRow(gameId);
   if (!game) return null;
-  const { rows: existing } = await query(
-    "SELECT status FROM game_members WHERE game_id = $1 AND user_id = $2",
-    [gameId, userId]
-  );
-  if (existing.length > 0) return getGame(gameId); // already joined/waitlisted
 
-  const status =
-    (await playerCount(gameId)) < game.total_slots ? "player" : "waitlist";
-  await query(
-    "INSERT INTO game_members (game_id, user_id, status, seq) VALUES ($1, $2, $3, $4)",
-    [gameId, userId, status, await nextSeq(gameId)]
-  );
+  // Capacity check + insert run under a row lock on the game so two people
+  // racing for the last open slot can't both end up confirmed (overselling).
+  // `FOR UPDATE` serializes concurrent joins on the same game: the second
+  // transaction blocks until the first commits, then sees the updated count.
+  const status = await withTransaction(async (client) => {
+    const { rows: locked } = await client.query(
+      "SELECT total_slots FROM games WHERE id = $1 FOR UPDATE",
+      [gameId]
+    );
+    if (locked.length === 0) return "gone";
+    const { rows: existing } = await client.query(
+      "SELECT 1 FROM game_members WHERE game_id = $1 AND user_id = $2",
+      [gameId, userId]
+    );
+    if (existing.length > 0) return "existing"; // already joined/waitlisted
+    const { rows: pc } = await client.query(
+      "SELECT COUNT(*) AS c FROM game_members WHERE game_id = $1 AND status = 'player'",
+      [gameId]
+    );
+    const { rows: seqRow } = await client.query(
+      "SELECT COALESCE(MAX(seq), -1) AS m FROM game_members WHERE game_id = $1",
+      [gameId]
+    );
+    const next = Number(pc[0].c) < locked[0].total_slots ? "player" : "waitlist";
+    await client.query(
+      "INSERT INTO game_members (game_id, user_id, status, seq) VALUES ($1, $2, $3, $4)",
+      [gameId, userId, next, Number(seqRow[0].m) + 1]
+    );
+    return next;
+  });
+
+  if (status === "gone") return null;
+  if (status === "existing") return getGame(gameId);
+
   // Tell the host someone joined (unless the host is joining their own game).
   if (userId !== game.host_id) {
     const actor = await findUserById(userId);
@@ -772,11 +902,17 @@ export async function joinGame(gameId, userId) {
 export async function leaveGame(gameId, userId) {
   const game = await getGameRow(gameId);
   if (!game) return null;
-  await query("DELETE FROM game_members WHERE game_id = $1 AND user_id = $2", [
-    gameId,
-    userId,
-  ]);
-  const promoted = await promoteWaitlistToFill(gameId, game.total_slots);
+
+  // Delete + waitlist promotion run under the game's row lock so the freed
+  // slot is filled atomically (no double-promotion under concurrent leaves).
+  const promoted = await withTransaction(async (client) => {
+    await client.query("SELECT 1 FROM games WHERE id = $1 FOR UPDATE", [gameId]);
+    await client.query(
+      "DELETE FROM game_members WHERE game_id = $1 AND user_id = $2",
+      [gameId, userId]
+    );
+    return promoteWaitlistToFill(client, gameId, game.total_slots);
+  });
 
   // Notify the host that someone left (unless the host themselves left).
   if (userId !== game.host_id) {
@@ -798,6 +934,75 @@ export async function leaveGame(gameId, userId) {
   return getGame(gameId);
 }
 
+/** Host removes a player or waitlister. Frees the slot (auto-promotes waitlist). */
+export async function removeMember(gameId, hostId, targetUserId) {
+  const game = await getGameRow(gameId);
+  if (!game) return { ok: false, code: 404, error: "Game not found." };
+  if (game.host_id !== hostId)
+    return { ok: false, code: 403, error: "Only the host can manage the roster." };
+  if (targetUserId === hostId)
+    return { ok: false, code: 400, error: "The host can't remove themselves." };
+
+  const promoted = await withTransaction(async (client) => {
+    await client.query("SELECT 1 FROM games WHERE id = $1 FOR UPDATE", [gameId]);
+    const { rowCount } = await client.query(
+      "DELETE FROM game_members WHERE game_id = $1 AND user_id = $2",
+      [gameId, targetUserId]
+    );
+    if (rowCount === 0) return null;
+    return promoteWaitlistToFill(client, gameId, game.total_slots);
+  });
+  if (promoted === null)
+    return { ok: false, code: 404, error: "That player isn't in this game." };
+
+  await createNotification(
+    targetUserId,
+    "cancelled",
+    `You were removed from "${game.title}" by the host`,
+    gameId
+  );
+  await notifyUsers(promoted, "promoted", `A spot opened up in "${game.title}" — you're in!`, gameId);
+  return { ok: true, game: await getGame(gameId) };
+}
+
+/** Host manually promotes a specific waitlister into an open slot. */
+export async function promoteMember(gameId, hostId, targetUserId) {
+  const game = await getGameRow(gameId);
+  if (!game) return { ok: false, code: 404, error: "Game not found." };
+  if (game.host_id !== hostId)
+    return { ok: false, code: 403, error: "Only the host can manage the roster." };
+
+  const result = await withTransaction(async (client) => {
+    await client.query("SELECT 1 FROM games WHERE id = $1 FOR UPDATE", [gameId]);
+    const { rows } = await client.query(
+      "SELECT status FROM game_members WHERE game_id = $1 AND user_id = $2",
+      [gameId, targetUserId]
+    );
+    if (rows.length === 0) return { code: 404, error: "That player isn't on the waitlist." };
+    if (rows[0].status === "player") return { code: 400, error: "That player is already in the game." };
+    const { rows: pc } = await client.query(
+      "SELECT COUNT(*) AS c FROM game_members WHERE game_id = $1 AND status = 'player'",
+      [gameId]
+    );
+    if (Number(pc[0].c) >= game.total_slots)
+      return { code: 400, error: "The game is full — remove a player first." };
+    await client.query(
+      "UPDATE game_members SET status = 'player' WHERE game_id = $1 AND user_id = $2",
+      [gameId, targetUserId]
+    );
+    return { ok: true };
+  });
+  if (!result.ok) return { ok: false, code: result.code, error: result.error };
+
+  await createNotification(
+    targetUserId,
+    "promoted",
+    `The host moved you into "${game.title}" — you're in!`,
+    gameId
+  );
+  return { ok: true, game: await getGame(gameId) };
+}
+
 export async function updateGame(gameId, userId, input) {
   const row = await getGameRow(gameId);
   if (!row) return { ok: false, code: 404, error: "Game not found." };
@@ -814,34 +1019,39 @@ export async function updateGame(gameId, userId, input) {
       } — total slots can't be fewer than that.`,
     };
 
-  await query(
-    `UPDATE games
-        SET title = $1, type = $2, skill = $3, date = $4, time = $5, end_time = $6,
-            location = $7, area = $8, total_slots = $9, notes = $10,
-            gender = $11, net_height = $12, positions_needed = $13,
-            rotation_type = $14, cost_per_person = $15, region = $16
-      WHERE id = $17`,
-    [
-      input.title,
-      input.type,
-      input.skill,
-      input.date,
-      input.time,
-      input.endTime || "",
-      input.location,
-      input.area,
-      input.totalSlots,
-      input.notes || "",
-      input.gender || "Open",
-      input.netHeight || "Venue Standard",
-      JSON.stringify(input.positionsNeeded || []),
-      input.rotationType || "Standard",
-      Number(input.costPerPerson) || 0,
-      input.region || "",
-      gameId,
-    ]
-  );
-  const promoted = await promoteWaitlistToFill(gameId, input.totalSlots);
+  // Apply the edit and (if total slots grew) fill open spots from the waitlist
+  // atomically under the game's row lock.
+  const promoted = await withTransaction(async (client) => {
+    await client.query("SELECT 1 FROM games WHERE id = $1 FOR UPDATE", [gameId]);
+    await client.query(
+      `UPDATE games
+          SET title = $1, type = $2, skill = $3, date = $4, time = $5, end_time = $6,
+              location = $7, area = $8, total_slots = $9, notes = $10,
+              gender = $11, net_height = $12, positions_needed = $13,
+              rotation_type = $14, cost_per_person = $15, region = $16
+        WHERE id = $17`,
+      [
+        input.title,
+        input.type,
+        input.skill,
+        input.date,
+        input.time,
+        input.endTime || "",
+        input.location,
+        input.area,
+        input.totalSlots,
+        input.notes || "",
+        input.gender || "Open",
+        input.netHeight || "Venue Standard",
+        JSON.stringify(input.positionsNeeded || []),
+        input.rotationType || "Standard",
+        Number(input.costPerPerson) || 0,
+        input.region || "",
+        gameId,
+      ]
+    );
+    return promoteWaitlistToFill(client, gameId, input.totalSlots);
+  });
   await notifyUsers(
     promoted,
     "promoted",
@@ -892,16 +1102,44 @@ export async function deleteGame(gameId, userId) {
   return { ok: true };
 }
 
+/**
+ * Cancel this and all later occurrences of a recurring series (host only).
+ * Notifies members of each cancelled game. Returns how many were removed.
+ */
+export async function cancelSeries(seriesId, hostId, fromDate) {
+  const { rows } = await query(
+    "SELECT id, title FROM games WHERE series_id = $1 AND host_id = $2 AND date >= $3",
+    [seriesId, hostId, fromDate]
+  );
+  if (rows.length === 0)
+    return { ok: false, code: 404, error: "No upcoming games in this series." };
+  for (const g of rows) {
+    const others = (await memberUserIds(g.id)).filter((uidv) => uidv !== hostId);
+    await notifyUsers(others, "cancelled", `"${g.title}" was cancelled by the host`, g.id);
+  }
+  await query(
+    "DELETE FROM games WHERE series_id = $1 AND host_id = $2 AND date >= $3",
+    [seriesId, hostId, fromDate]
+  );
+  return { ok: true, count: rows.length };
+}
+
 // --- Comments (per-game discussion) ---------------------------------------
 
-export async function listComments(gameId) {
+export async function listComments(gameId, viewerId = null) {
+  const params = [gameId];
+  let blockClause = "";
+  if (viewerId) {
+    params.push(viewerId);
+    blockClause = ` AND c.user_id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = $${params.length})`;
+  }
   const { rows } = await query(
     `SELECT c.id, c.user_id, c.body, c.created_at, u.name AS user_name
        FROM game_comments c
        JOIN users u ON u.id = c.user_id
-      WHERE c.game_id = $1
+      WHERE c.game_id = $1${blockClause}
       ORDER BY c.created_at ASC`,
-    [gameId]
+    params
   );
   return rows.map((r) => ({
     id: r.id,
@@ -991,6 +1229,22 @@ export async function addMessage(gameId, userId, body) {
     gameId
   );
   return { id, userId, userName: actor ? actor.name : "", body, createdAt: now };
+}
+
+/** Delete a chat message. The author or the game host may remove it. */
+export async function deleteMessage(gameId, messageId, userId) {
+  const { rows } = await query(
+    "SELECT user_id FROM messages WHERE id = $1 AND game_id = $2",
+    [messageId, gameId]
+  );
+  if (rows.length === 0) return { ok: false, code: 404, error: "Message not found." };
+  const game = await getGameRow(gameId);
+  const isAuthor = rows[0].user_id === userId;
+  const isHost = game && game.host_id === userId;
+  if (!isAuthor && !isHost)
+    return { ok: false, code: 403, error: "You can only delete your own messages." };
+  await query("DELETE FROM messages WHERE id = $1", [messageId]);
+  return { ok: true };
 }
 
 /**
@@ -1204,10 +1458,16 @@ const HL_SELECT = `
     FROM highlights h JOIN users u ON u.id = h.user_id
 `;
 
-export async function listHighlights(limit = 20, offset = 0) {
+export async function listHighlights(limit = 20, offset = 0, viewerId = null) {
+  const params = [limit, offset];
+  let blockClause = "";
+  if (viewerId) {
+    params.push(viewerId);
+    blockClause = ` WHERE h.user_id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = $${params.length})`;
+  }
   const { rows } = await query(
-    `${HL_SELECT} ORDER BY h.created_at DESC LIMIT $1 OFFSET $2`,
-    [limit, offset]
+    `${HL_SELECT}${blockClause} ORDER BY h.created_at DESC LIMIT $1 OFFSET $2`,
+    params
   );
   return rows.map(serializeHighlight);
 }
@@ -1263,14 +1523,20 @@ export async function getUserHighlights(userId) {
 
 // --- Highlight comments (anyone can comment) ------------------------------
 
-export async function listHighlightComments(highlightId) {
+export async function listHighlightComments(highlightId, viewerId = null) {
+  const params = [highlightId];
+  let blockClause = "";
+  if (viewerId) {
+    params.push(viewerId);
+    blockClause = ` AND c.user_id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = $${params.length})`;
+  }
   const { rows } = await query(
     `SELECT c.id, c.user_id, c.body, c.created_at, u.name AS user_name
        FROM highlight_comments c
        JOIN users u ON u.id = c.user_id
-      WHERE c.highlight_id = $1
+      WHERE c.highlight_id = $1${blockClause}
       ORDER BY c.created_at ASC`,
-    [highlightId]
+    params
   );
   return rows.map((r) => ({
     id: r.id,

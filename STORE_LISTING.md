@@ -15,7 +15,7 @@ tweak voice to taste. Character limits are noted so nothing gets truncated.
 | Content rating | Everyone / 4+ |
 | Website | https://coterie.com.de |
 | Privacy Policy URL | https://coterie.com.de/privacy |
-| Support email | aidan.cjh0208@gmail.com |
+| Support email | support@coterie.com.de |
 | Price | Free |
 
 ---
