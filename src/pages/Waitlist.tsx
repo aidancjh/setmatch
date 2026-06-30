@@ -21,15 +21,49 @@ const PALETTE = [
 const MOTION_INTENSITY = 6; // design default (1–10)
 const BASE_LINE_COUNT = 84; // design default
 
-// Decorative avatar stack — self-contained gradient circles (the design's
-// placeholder photos came from a third-party host the production CSP blocks).
-const AVATARS = [
-  "linear-gradient(135deg,#FF8A3D,#FF4D2E)",
-  "linear-gradient(135deg,#FFB627,#E8590C)",
-  "linear-gradient(135deg,#FFC078,#FF7A45)",
-  "linear-gradient(135deg,#FF9F1C,#FF4D2E)",
-  "linear-gradient(135deg,#FFA94D,#FF6A1A)",
+// Decorative "player" avatars rendered as self-contained inline SVG portraits.
+// The design's originals were photos from a third-party host the production CSP
+// blocks — these read as real profile pictures while making zero network
+// requests (no external dependency, no privacy leak, no broken images).
+const PLAYERS = [
+  { bg: "#FFE3D0", skin: "#F1C7A2", hair: "#3A2A1E", shirt: "#FF8A3D" },
+  { bg: "#FFE8D2", skin: "#C68642", hair: "#16110D", shirt: "#E8590C" },
+  { bg: "#FFE2C4", skin: "#8D5524", hair: "#241A12", shirt: "#FFB627" },
+  { bg: "#FFEFE0", skin: "#FFD7B0", hair: "#7A4E2A", shirt: "#FF7A45" },
+  { bg: "#FFF0DE", skin: "#E8B07D", hair: "#C98A3C", shirt: "#FF9F1C" },
 ];
+
+function PlayerAvatar({ p, i }: { p: (typeof PLAYERS)[number]; i: number }) {
+  const cid = `wl-av-${i}`;
+  return (
+    <svg
+      viewBox="0 0 40 40"
+      width={36}
+      height={36}
+      aria-hidden="true"
+      style={{
+        display: "block",
+        borderRadius: "50%",
+        marginLeft: i === 0 ? 0 : -10,
+        border: "2.5px solid #FDFBF9",
+        boxShadow: "0 2px 6px rgba(20,17,15,0.14)",
+      }}
+    >
+      <defs>
+        <clipPath id={cid}>
+          <circle cx="20" cy="20" r="20" />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${cid})`}>
+        <rect width="40" height="40" fill={p.bg} />
+        <rect x="17" y="20" width="6" height="11" rx="3" fill={p.skin} />
+        <ellipse cx="20" cy="40" rx="13.5" ry="9.5" fill={p.shirt} />
+        <circle cx="20" cy="15.6" r="9.4" fill={p.hair} />
+        <circle cx="20" cy="18" r="7.7" fill={p.skin} />
+      </g>
+    </svg>
+  );
+}
 
 export default function Waitlist() {
   const [email, setEmail] = useState("");
@@ -274,19 +308,19 @@ export default function Waitlist() {
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: 9,
-            padding: "7px 14px",
+            gap: 10,
+            padding: "9px 18px",
             border: "1px solid #F2D9C5",
             background: "rgba(255,247,240,0.8)",
             borderRadius: 100,
-            marginBottom: 28,
+            marginBottom: 30,
           }}
         >
           <span
             className="wl-blink"
             style={{
-              width: 7,
-              height: 7,
+              width: 8,
+              height: 8,
               borderRadius: "50%",
               background: "#FF6A1A",
               animation: "ct-blink 1.6s ease-in-out infinite",
@@ -294,7 +328,7 @@ export default function Waitlist() {
           />
           <span
             style={{
-              fontSize: 11.5,
+              fontSize: 13,
               fontWeight: 700,
               letterSpacing: "0.14em",
               color: "#C4622A",
@@ -468,19 +502,8 @@ export default function Waitlist() {
         {/* Social proof */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 13, marginTop: 24 }}>
           <div style={{ display: "flex" }} aria-hidden="true">
-            {AVATARS.map((bg, i) => (
-              <span
-                key={i}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: "50%",
-                  marginLeft: i === 0 ? 0 : -10,
-                  border: "2.5px solid #FDFBF9",
-                  background: bg,
-                  boxShadow: "0 2px 6px rgba(20,17,15,0.14)",
-                }}
-              />
+            {PLAYERS.map((p, i) => (
+              <PlayerAvatar key={i} p={p} i={i} />
             ))}
           </div>
           <span style={{ fontSize: 13.5, fontWeight: 600, color: "#6F665E" }}>
