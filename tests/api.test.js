@@ -1,11 +1,22 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import request from "supertest";
-import { app } from "../server/index.js";
-import { signToken } from "../server/auth.js";
 
-// These tests exercise the middleware + validation wiring only. Every assertion
-// below returns BEFORE any database call (auth rejection or input validation),
-// so they never touch a real DB even though the pg Pool exists.
+// requireAuth now does one indexed lookup to confirm the account isn't suspended
+// or revoked. Stub the data layer so the middleware resolves without a real DB;
+// every assertion still returns at validation, never exercising business queries.
+vi.mock("../server/db.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    query: async () => ({ rows: [{ suspended: false, token_version: 0 }] }),
+  };
+});
+
+const { app } = await import("../server/index.js");
+const { signToken } = await import("../server/auth.js");
+
+// These tests exercise the middleware + validation wiring only. Assertions return
+// at auth rejection or input validation — they never reach business-logic queries.
 describe("auth & validation middleware (no DB access)", () => {
   it("rejects signup with an invalid email (400)", async () => {
     const res = await request(app)

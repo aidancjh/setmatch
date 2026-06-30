@@ -1,6 +1,7 @@
 // Auth helpers: password hashing (bcryptjs) + JWT issue/verify.
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { query } from "./db.js";
 
 const DEV_SECRET = "setmatch-dev-secret-change-me";
 const JWT_SECRET = process.env.JWT_SECRET || DEV_SECRET;
@@ -26,21 +27,45 @@ export function verifyPassword(plain, hash) {
   return bcrypt.compareSync(plain, hash);
 }
 
-export function signToken(userId) {
-  return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: TOKEN_TTL });
+export function signToken(userId, tokenVersion = 0) {
+  return jwt.sign({ sub: userId, tv: tokenVersion }, JWT_SECRET, { expiresIn: TOKEN_TTL });
 }
 
-/** Express middleware: requires a valid Bearer token, sets req.userId. */
-export function requireAuth(req, res, next) {
+/**
+ * Express middleware: requires a valid Bearer token, then confirms the account
+ * still exists, isn't suspended, and the token hasn't been revoked (its `tv`
+ * claim must match the user's current token_version). Sets req.userId.
+ *
+ * The status check is one indexed primary-key lookup — cheap, and these routes
+ * hit the DB anyway. It closes the gap where a 14-day JWT kept working after a
+ * suspension or password reset.
+ */
+export async function requireAuth(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) return res.status(401).json({ error: "Not signed in." });
+  let payload;
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.userId = payload.sub;
-    next();
+    payload = jwt.verify(token, JWT_SECRET);
   } catch {
     return res.status(401).json({ error: "Session expired. Please sign in again." });
+  }
+  try {
+    const { rows } = await query(
+      "SELECT suspended, token_version FROM users WHERE id = $1",
+      [payload.sub]
+    );
+    const u = rows[0];
+    if (!u) return res.status(401).json({ error: "Account not found." });
+    if (u.suspended)
+      return res.status(403).json({ error: "This account has been suspended." });
+    if ((payload.tv ?? 0) !== (u.token_version ?? 0))
+      return res.status(401).json({ error: "Session expired. Please sign in again." });
+    req.userId = payload.sub;
+    next();
+  } catch (e) {
+    console.error("[auth] requireAuth status check failed:", e);
+    return res.status(503).json({ error: "Service temporarily unavailable. Please try again." });
   }
 }
 

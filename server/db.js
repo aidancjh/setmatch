@@ -312,6 +312,14 @@ export async function initSchema() {
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended BOOLEAN NOT NULL DEFAULT FALSE"
   );
 
+  // Session lifecycle: token_version is embedded in each JWT (claim `tv`) and
+  // checked on every authenticated request. Bumping it (on password reset, or a
+  // future "log out everywhere") instantly invalidates all existing tokens for
+  // that user — without it, a 14-day JWT can't be revoked.
+  await pool.query(
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0"
+  );
+
   // Admin Phase 2: feedback inbox (mark items handled) + audit log of admin actions.
   await pool.query(
     "ALTER TABLE feedback ADD COLUMN IF NOT EXISTS resolved BOOLEAN NOT NULL DEFAULT FALSE"

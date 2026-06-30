@@ -1614,7 +1614,12 @@ export async function consumePasswordResetToken(token) {
 }
 
 export async function updateUserPassword(userId, passwordHash) {
-  await query("UPDATE users SET password_hash = $1 WHERE id = $2", [passwordHash, userId]);
+  // Bump token_version so every previously-issued JWT for this user is rejected
+  // on its next request — a password change must end all other sessions.
+  await query(
+    "UPDATE users SET password_hash = $1, token_version = token_version + 1 WHERE id = $2",
+    [passwordHash, userId]
+  );
 }
 
 // --- Google OAuth -------------------------------------------------------------

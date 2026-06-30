@@ -342,7 +342,7 @@ app.post(
       passwordHash: hashPassword(password),
       name: String(name).trim(),
     });
-    res.status(201).json({ token: signToken(user.id), user: repo.publicUser(user) });
+    res.status(201).json({ token: signToken(user.id, user.token_version), user: repo.publicUser(user) });
   })
 );
 
@@ -358,7 +358,7 @@ app.post(
       return res.status(401).json({ error: "Incorrect email or password." });
     if (user.suspended)
       return res.status(403).json({ error: "This account has been suspended." });
-    res.json({ token: signToken(user.id), user: repo.publicUser(user) });
+    res.json({ token: signToken(user.id, user.token_version), user: repo.publicUser(user) });
   })
 );
 
@@ -493,7 +493,7 @@ app.post(
     await repo.consumePasswordResetToken(token);
 
     const user = await repo.findUserById(record.user_id);
-    res.json({ token: signToken(user.id), user: repo.publicUser(user) });
+    res.json({ token: signToken(user.id, user.token_version), user: repo.publicUser(user) });
   })
 );
 
@@ -582,7 +582,7 @@ app.get(
     );
     if (user.suspended)
       return res.redirect(`${appUrl}/auth?error=suspended`);
-    res.redirect(`${appUrl}/auth?token=${signToken(user.id)}`);
+    res.redirect(`${appUrl}/auth?token=${signToken(user.id, user.token_version)}`);
   })
 );
 

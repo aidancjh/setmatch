@@ -1,13 +1,24 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import jwt from "jsonwebtoken";
-import {
+
+// requireAuth confirms the account isn't suspended/revoked via one DB lookup.
+// Stub the data layer so the valid-token path resolves without a real database.
+vi.mock("../server/db.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    query: async () => ({ rows: [{ suspended: false, token_version: 0 }] }),
+  };
+});
+
+const {
   hashPassword,
   verifyPassword,
   signToken,
   requireAuth,
   optionalAuth,
   TIMING_HASH,
-} from "../server/auth.js";
+} = await import("../server/auth.js");
 
 describe("password hashing", () => {
   it("verifies a correct password", () => {
@@ -71,12 +82,12 @@ describe("requireAuth middleware", () => {
     expect(res.statusCode).toBe(401);
   });
 
-  it("sets req.userId and calls next() for a valid token", () => {
+  it("sets req.userId and calls next() for a valid token", async () => {
     const token = signToken("user_abc");
     const req = { headers: { authorization: `Bearer ${token}` } };
     const res = mockRes();
     let nexted = false;
-    requireAuth(req, res, () => {
+    await requireAuth(req, res, () => {
       nexted = true;
     });
     expect(nexted).toBe(true);
