@@ -38,7 +38,10 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"], // Vite inline scripts in prod build
+        // The Vite prod build emits a single external module script and no inline
+        // scripts, so 'self' is sufficient — dropping 'unsafe-inline' meaningfully
+        // hardens XSS defense (matters because the JWT lives in localStorage).
+        scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
