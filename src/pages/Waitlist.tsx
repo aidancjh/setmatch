@@ -66,9 +66,11 @@ function PlayerAvatar({ p, i }: { p: (typeof PLAYERS)[number]; i: number }) {
   );
 }
 
-// The one-line value prop shown in the pill under the headline. Joiner-first,
-// clear and direct: discovery ("find a game") + the payoff ("play").
-const TAGLINE = "Find a game near you, grab your spot, and play";
+// The value prop shown in the pill under the headline. Joiner-first, clear and
+// direct: discovery ("find a game") + the payoff ("play"). Split into two
+// non-breaking halves so it stays on one line on desktop but breaks at a clean,
+// balanced midpoint on phones (instead of orphaning "and play").
+const TAGLINE_PARTS = ["Find a game near you,", "grab your spot, and play"];
 
 export default function Waitlist() {
   const [email, setEmail] = useState("");
@@ -385,32 +387,46 @@ export default function Waitlist() {
           Join the Waitlist
         </h1>
 
-        {/* Tagline pill — value prop in the white border, orange ball kept */}
+        {/* Tagline pill — value prop in the white border, orange ball kept.
+            The ball flows inline at the start of the text so the whole block
+            stays centered (no left-offset) and balances evenly across lines. */}
         <div
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 11,
+            display: "inline-block",
             marginTop: 22,
-            padding: "10px 18px 10px 12px",
-            maxWidth: "min(92vw, 460px)",
+            padding: "11px 22px",
+            maxWidth: "min(92vw, 470px)",
             background: "#fff",
             border: "1px solid #ECE0D6",
-            borderRadius: 100,
+            borderRadius: 22,
             boxShadow: "0 4px 14px rgba(20,17,15,0.06)",
+            textAlign: "center",
           }}
         >
           <span
+            className="wl-tag"
             style={{
-              flex: "none",
-              width: 20,
-              height: 20,
-              borderRadius: "50%",
-              background: "conic-gradient(from 210deg, #FF6A1A, #FF9A3D, #FFC078, #FF4D2E, #FF6A1A)",
+              fontSize: "clamp(0.875rem, 3.6vw, 1rem)",
+              fontWeight: 600,
+              color: "#15110F",
+              letterSpacing: "-0.01em",
+              lineHeight: 1.4,
             }}
-          />
-          <span style={{ fontSize: 16.5, fontWeight: 600, color: "#15110F", letterSpacing: "-0.01em" }}>
-            {TAGLINE}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                display: "inline-block",
+                width: 15,
+                height: 15,
+                borderRadius: "50%",
+                background: "conic-gradient(from 210deg, #FF6A1A, #FF9A3D, #FFC078, #FF4D2E, #FF6A1A)",
+                verticalAlign: "-2px",
+                marginRight: 8,
+              }}
+            />
+            <span style={{ whiteSpace: "nowrap" }}>{TAGLINE_PARTS[0]}</span>{" "}
+            <span style={{ whiteSpace: "nowrap" }}>{TAGLINE_PARTS[1]}</span>
           </span>
         </div>
 
