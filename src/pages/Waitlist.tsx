@@ -19,7 +19,7 @@ const PALETTE = [
   "#FF6A1A", "#FF8A3D", "#FFA94D", "#FF4D2E", "#FFB627",
   "#E8590C", "#FF7A45", "#FFC078", "#FF9F1C",
 ];
-const MOTION_INTENSITY = 6; // design default (1–10)
+const MOTION_INTENSITY = 4.5; // slightly slower than design default of 6 (1–10)
 const BASE_LINE_COUNT = 84; // design default
 
 // Decorative "player" avatars rendered as self-contained inline SVG portraits.
@@ -65,6 +65,10 @@ function PlayerAvatar({ p, i }: { p: (typeof PLAYERS)[number]; i: number }) {
     </svg>
   );
 }
+
+// The one-line value prop shown in the pill under the headline. Joiner-first,
+// clear and direct: discovery ("find a game") + the payoff ("play").
+const TAGLINE = "Find a game near you, grab your spot, and play";
 
 export default function Waitlist() {
   const [email, setEmail] = useState("");
@@ -229,6 +233,13 @@ export default function Waitlist() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
         @keyframes ct-blink { 0%,100%{opacity:1;} 50%{opacity:.25;} }
+        /* Email box — soft pulsing orange glow (no hard outline rings) */
+        .wl-box { position:relative; border-radius:18px; background:#fff; padding:7px; }
+        @keyframes wl-glow {
+          0%,100% { box-shadow:0 6px 22px rgba(255,106,26,0.18), 0 0 16px rgba(255,106,26,0.16); }
+          50%     { box-shadow:0 10px 34px rgba(255,106,26,0.32), 0 0 30px rgba(255,106,26,0.28); }
+        }
+        .wl-box-1 { animation: wl-glow 2.8s ease-in-out infinite; }
         .wl-email:focus { border-color:#FF8A3D !important; box-shadow:0 0 0 4px rgba(255,138,61,0.16) !important; }
         .wl-cta:hover:not(:disabled) { background:#F25E0F; transform:translateY(-1px); box-shadow:0 10px 24px rgba(255,106,26,0.42); }
         .wl-cta:active:not(:disabled) { transform:translateY(0); }
@@ -251,6 +262,7 @@ export default function Waitlist() {
         }
         @media (prefers-reduced-motion: reduce) {
           .wl-blink { animation: none !important; }
+          .wl-box-1 { animation: none !important; box-shadow:0 8px 26px rgba(255,106,26,0.22), 0 0 22px rgba(255,106,26,0.18) !important; }
         }
       `}</style>
 
@@ -362,7 +374,7 @@ export default function Waitlist() {
         <h1
           style={{
             margin: 0,
-            fontSize: "clamp(2.7rem,9vw,6rem)",
+            fontSize: "clamp(2.4rem,8vw,5.2rem)",
             lineHeight: 0.98,
             fontWeight: 800,
             letterSpacing: "-0.035em",
@@ -373,14 +385,15 @@ export default function Waitlist() {
           Join the Waitlist
         </h1>
 
-        {/* "Built by coterie" pill */}
+        {/* Tagline pill — value prop in the white border, orange ball kept */}
         <div
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: 10,
+            gap: 11,
             marginTop: 22,
-            padding: "9px 16px 9px 11px",
+            padding: "10px 18px 10px 12px",
+            maxWidth: "min(92vw, 460px)",
             background: "#fff",
             border: "1px solid #ECE0D6",
             borderRadius: 100,
@@ -389,30 +402,17 @@ export default function Waitlist() {
         >
           <span
             style={{
+              flex: "none",
               width: 20,
               height: 20,
               borderRadius: "50%",
               background: "conic-gradient(from 210deg, #FF6A1A, #FF9A3D, #FFC078, #FF4D2E, #FF6A1A)",
             }}
           />
-          <span style={{ fontSize: 14.5, fontWeight: 500, color: "#6F665E" }}>
-            Built by <strong style={{ color: "#FF6A1A", fontWeight: 800 }}>coterie</strong> · Volleyball in Singapore
+          <span style={{ fontSize: 16.5, fontWeight: 600, color: "#15110F", letterSpacing: "-0.01em" }}>
+            {TAGLINE}
           </span>
         </div>
-
-        {/* Subtitle */}
-        <p
-          style={{
-            margin: "22px 0 0",
-            fontSize: "clamp(1.02rem,1.7vw,1.22rem)",
-            lineHeight: 1.5,
-            fontWeight: 500,
-            color: "#6F665E",
-            maxWidth: "34ch",
-          }}
-        >
-          12 players. One game. Zero group-chat chaos.
-        </p>
 
         {/* Form / success */}
         <div className="wl-formwrap" style={{ width: "100%", maxWidth: 480, marginTop: 34 }}>
@@ -449,67 +449,68 @@ export default function Waitlist() {
               <span style={{ fontSize: 15, fontWeight: 600, color: "#15110F" }}>{message}</span>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="wl-form" style={{ display: "flex", gap: 10, width: "100%" }}>
-              {/* Honeypot: off-screen, hidden from tab order + screen readers.
-                  Real users never fill it; auto-fill bots do and get dropped. */}
-              <input
-                type="text"
-                name="company"
-                tabIndex={-1}
-                autoComplete="off"
-                aria-hidden="true"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
-              />
-              <input
-                type="email"
-                required
-                placeholder="you@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                maxLength={200}
-                aria-label="Email address"
-                className="wl-email"
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  padding: "16px 18px",
-                  fontFamily: "inherit",
-                  fontSize: 15,
-                  fontWeight: 500,
-                  color: "#15110F",
-                  background: "#fff",
-                  border: `1px solid ${status === "error" ? "#FF4D2E" : "#E8DDD3"}`,
-                  borderRadius: 13,
-                  outline: "none",
-                  boxShadow: "0 1px 2px rgba(20,17,15,0.04)",
-                }}
-              />
-              <button
-                type="submit"
-                disabled={status === "loading"}
-                className="wl-cta"
-                style={{
-                  flex: "none",
-                  padding: "16px 24px",
-                  fontFamily: "inherit",
-                  fontSize: 15,
-                  fontWeight: 700,
-                  letterSpacing: "-0.01em",
-                  color: "#fff",
-                  background: "#FF6A1A",
-                  border: "none",
-                  borderRadius: 13,
-                  cursor: status === "loading" ? "not-allowed" : "pointer",
-                  opacity: status === "loading" ? 0.85 : 1,
-                  boxShadow: "0 6px 18px rgba(255,106,26,0.35)",
-                  transition: "transform .15s ease, box-shadow .15s ease, background .15s ease",
-                }}
-              >
-                {status === "loading" ? "Joining…" : "Join the Waitlist"}
-              </button>
-            </form>
+            <div className="wl-box wl-box-1">
+              <form onSubmit={handleSubmit} className="wl-form" style={{ display: "flex", gap: 8, width: "100%" }}>
+                {/* Honeypot: off-screen, hidden from tab order + screen readers.
+                    Real users never fill it; auto-fill bots do and get dropped. */}
+                <input
+                  type="text"
+                  name="company"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+                />
+                <input
+                  type="email"
+                  required
+                  placeholder="you@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  maxLength={200}
+                  aria-label="Email address"
+                  className="wl-email"
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    padding: "15px 16px",
+                    fontFamily: "inherit",
+                    fontSize: 15,
+                    fontWeight: 500,
+                    color: "#15110F",
+                    background: "#fff",
+                    border: `1px solid ${status === "error" ? "#FF4D2E" : "transparent"}`,
+                    borderRadius: 12,
+                    outline: "none",
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={status === "loading"}
+                  className="wl-cta"
+                  style={{
+                    flex: "none",
+                    padding: "15px 24px",
+                    fontFamily: "inherit",
+                    fontSize: 15,
+                    fontWeight: 700,
+                    letterSpacing: "-0.01em",
+                    color: "#fff",
+                    background: "#FF6A1A",
+                    border: "none",
+                    borderRadius: 12,
+                    cursor: status === "loading" ? "not-allowed" : "pointer",
+                    opacity: status === "loading" ? 0.85 : 1,
+                    boxShadow: "0 6px 18px rgba(255,106,26,0.35)",
+                    transition: "transform .15s ease, box-shadow .15s ease, background .15s ease",
+                  }}
+                >
+                  {status === "loading" ? "Joining…" : "Join Now"}
+                </button>
+              </form>
+            </div>
           )}
           {status === "error" && (
             <p style={{ margin: "12px 2px 0", fontSize: 13.5, fontWeight: 600, color: "#E8590C", textAlign: "left" }}>
@@ -529,6 +530,20 @@ export default function Waitlist() {
             Join 40+ players already on the list
           </span>
         </div>
+
+        {/* Positioning line — plain text, styled like the old subtitle.
+            coterie is the app name, so this frames what it is, not who made it. */}
+        <p
+          style={{
+            margin: "34px 0 0",
+            fontSize: "clamp(0.95rem,1.5vw,1.1rem)",
+            lineHeight: 1.5,
+            fontWeight: 500,
+            color: "#6F665E",
+          }}
+        >
+          <strong style={{ color: "#FF6A1A", fontWeight: 700 }}>Coterie</strong> · Play volleyball in Singapore
+        </p>
       </main>
     </section>
   );
