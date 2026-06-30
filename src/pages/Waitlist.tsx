@@ -242,6 +242,9 @@ export default function Waitlist() {
           50%     { box-shadow:0 10px 34px rgba(255,106,26,0.32), 0 0 30px rgba(255,106,26,0.28); }
         }
         .wl-box-1 { animation: wl-glow 2.8s ease-in-out infinite; }
+        /* Tagline halves: inline (one line) on desktop, stacked on phones so
+           the pill shrink-wraps to the longest line instead of stretching */
+        .wl-tag-part { white-space: nowrap; }
         .wl-email:focus { border-color:#FF8A3D !important; box-shadow:0 0 0 4px rgba(255,138,61,0.16) !important; }
         .wl-cta:hover:not(:disabled) { background:#F25E0F; transform:translateY(-1px); box-shadow:0 10px 24px rgba(255,106,26,0.42); }
         .wl-cta:active:not(:disabled) { transform:translateY(0); }
@@ -258,6 +261,7 @@ export default function Waitlist() {
         @media (max-width: 480px) {
           .wl-form { flex-direction: column; }
           .wl-cta { width: 100%; }
+          .wl-tag-part { display: block; }
           .wl-formwrap { max-width: 300px !important; }
           .wl-spiker { width:128px; left:-26px; }
           .wl-digger { width:140px; right:-26px; }
@@ -387,47 +391,29 @@ export default function Waitlist() {
           Join the Waitlist
         </h1>
 
-        {/* Tagline pill — value prop in the white border, orange ball kept.
-            The ball flows inline at the start of the text so the whole block
-            stays centered (no left-offset) and balances evenly across lines. */}
+        {/* Tagline pill — value prop in the white border. The box shrink-wraps
+            to the text: one line on desktop, two stacked lines on phones (each
+            half is its own block on mobile so the pill hugs the longest line). */}
         <div
           style={{
             display: "inline-block",
             marginTop: 22,
-            padding: "11px 22px",
+            padding: "11px 20px",
             maxWidth: "min(92vw, 470px)",
             background: "#fff",
             border: "1px solid #ECE0D6",
-            borderRadius: 22,
+            borderRadius: 18,
             boxShadow: "0 4px 14px rgba(20,17,15,0.06)",
             textAlign: "center",
+            fontSize: "clamp(0.875rem, 3.6vw, 1rem)",
+            fontWeight: 600,
+            color: "#15110F",
+            letterSpacing: "-0.01em",
+            lineHeight: 1.4,
           }}
         >
-          <span
-            className="wl-tag"
-            style={{
-              fontSize: "clamp(0.875rem, 3.6vw, 1rem)",
-              fontWeight: 600,
-              color: "#15110F",
-              letterSpacing: "-0.01em",
-              lineHeight: 1.4,
-            }}
-          >
-            <span
-              aria-hidden="true"
-              style={{
-                display: "inline-block",
-                width: 15,
-                height: 15,
-                borderRadius: "50%",
-                background: "conic-gradient(from 210deg, #FF6A1A, #FF9A3D, #FFC078, #FF4D2E, #FF6A1A)",
-                verticalAlign: "-2px",
-                marginRight: 8,
-              }}
-            />
-            <span style={{ whiteSpace: "nowrap" }}>{TAGLINE_PARTS[0]}</span>{" "}
-            <span style={{ whiteSpace: "nowrap" }}>{TAGLINE_PARTS[1]}</span>
-          </span>
+          <span className="wl-tag-part">{TAGLINE_PARTS[0]}</span>{" "}
+          <span className="wl-tag-part">{TAGLINE_PARTS[1]}</span>
         </div>
 
         {/* Form / success */}
