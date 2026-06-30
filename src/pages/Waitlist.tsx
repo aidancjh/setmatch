@@ -1,11 +1,155 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+// Imported from the Claude Design project "Coterie Waitlist". The signature
+// piece is the animated canvas: warm-toned rays streaming outward from a point
+// just above centre. Ported here 1:1 from the design's render loop, wired to the
+// real /api/waitlist submit, and made responsive for phone + desktop.
+
+type Particle = {
+  dir: number;
+  r: number;
+  len: number;
+  width: number;
+  color: string;
+  jitter: number;
+};
+
+const PALETTE = [
+  "#FF6A1A", "#FF8A3D", "#FFA94D", "#FF4D2E", "#FFB627",
+  "#E8590C", "#FF7A45", "#FFC078", "#FF9F1C",
+];
+const MOTION_INTENSITY = 6; // design default (1–10)
+const BASE_LINE_COUNT = 84; // design default
+
+// Decorative avatar stack — self-contained gradient circles (the design's
+// placeholder photos came from a third-party host the production CSP blocks).
+const AVATARS = [
+  "linear-gradient(135deg,#FF8A3D,#FF4D2E)",
+  "linear-gradient(135deg,#FFB627,#E8590C)",
+  "linear-gradient(135deg,#FFC078,#FF7A45)",
+  "linear-gradient(135deg,#FF9F1C,#FF4D2E)",
+  "linear-gradient(135deg,#FFA94D,#FF6A1A)",
+];
 
 export default function Waitlist() {
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState(""); // honeypot — humans leave this blank
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // --- Animated ray field (ported from the design's canvas render loop) ------
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+    let w = 0, h = 0, cx = 0, cy = 0, maxR = 0;
+    let parts: Particle[] = [];
+    let raf = 0;
+
+    const resize = () => {
+      w = canvas.clientWidth;
+      h = canvas.clientHeight;
+      if (!w || !h) return;
+      canvas.width = Math.max(1, Math.floor(w * dpr));
+      canvas.height = Math.max(1, Math.floor(h * dpr));
+      cx = w / 2;
+      cy = h * 0.46;
+      maxR = Math.hypot(Math.max(cx, w - cx), Math.max(cy, h - cy)) * 1.02;
+    };
+
+    const count = () => {
+      const areaScale = Math.min(1.4, Math.max(0.55, (w * h) / (1280 * 800)));
+      return Math.round(BASE_LINE_COUNT * areaScale);
+    };
+
+    const make = (full: boolean): Particle => {
+      const angle = Math.random() * Math.PI * 2;
+      const r0 = 26 + Math.random() * 34;
+      const r = full ? r0 + Math.random() * (maxR - r0) : r0;
+      return {
+        dir: angle,
+        r,
+        len: 16 + Math.random() * 34,
+        width: 1.4 + Math.random() * 1.8,
+        color: PALETTE[(Math.random() * PALETTE.length) | 0],
+        jitter: (Math.random() - 0.5) * 0.6,
+      };
+    };
+
+    const seed = () => {
+      if (!maxR) return;
+      const n = count();
+      parts = [];
+      for (let i = 0; i < n; i++) parts.push(make(true));
+    };
+
+    const draw = (advance: boolean) => {
+      const speed = 0.32 + MOTION_INTENSITY * 0.26;
+      const want = count();
+      while (parts.length < want) parts.push(make(true));
+      while (parts.length > want) parts.pop();
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      ctx.lineCap = "round";
+      for (const p of parts) {
+        if (advance) {
+          p.r += speed * (0.85 + (p.len / 50) * 0.4);
+          if (p.r > maxR) Object.assign(p, make(false));
+        }
+        const a = p.dir + Math.sin(p.r * 0.012) * 0.05 * p.jitter;
+        const ux = Math.cos(a), uy = Math.sin(a);
+        const ex = cx + ux * p.r, ey = cy + uy * p.r;
+        const sx = ex - ux * p.len, sy = ey - uy * p.len;
+        const t = p.r / maxR;
+        let op;
+        if (t < 0.1) op = t / 0.1;
+        else if (t > 0.72) op = Math.max(0, (1 - t) / 0.28);
+        else op = 1;
+        op *= 0.85;
+        ctx.globalAlpha = op;
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = p.width;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    };
+
+    const loop = () => {
+      if (w && h) draw(true);
+      raf = requestAnimationFrame(loop);
+    };
+
+    // A ResizeObserver sizes the backing store the moment the canvas has real
+    // dimensions (independent of when rAF first fires), then paints one static
+    // frame so the field is never blank. The rAF loop animates from there.
+    const onSize = () => {
+      resize();
+      seed();
+      if (w && h) draw(false);
+    };
+    const ro = new ResizeObserver(onSize);
+    ro.observe(canvas);
+    onSize(); // in case the observer's first callback is deferred
+    window.addEventListener("resize", onSize); // belt-and-suspenders for orientation changes
+
+    if (!reduceMotion) raf = requestAnimationFrame(loop);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener("resize", onSize);
+    };
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -14,14 +158,14 @@ export default function Waitlist() {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, company }),
+        body: JSON.stringify({ email, company }),
       });
       const data = await res.json();
       if (!res.ok) {
         setMessage(data.error || "Something went wrong. Please try again.");
         setStatus("error");
       } else {
-        setMessage(data.message);
+        setMessage(data.message || "You're on the list. We'll be in touch before launch.");
         setStatus("success");
       }
     } catch {
@@ -30,169 +174,320 @@ export default function Waitlist() {
     }
   }
 
+  const submitted = status === "success";
+
   return (
-    <div
-      style={{ fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
-      className="min-h-screen bg-white flex flex-col"
+    <section
+      data-screen-label="Waitlist"
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+        width: "100%",
+        overflow: "hidden",
+        background:
+          "radial-gradient(120% 90% at 50% 30%, #FFFFFF 0%, #FDFBF9 55%, #FBF5EF 100%)",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+      }}
     >
       <style>{`
-        .wl-input:focus { border-color: #f4634e !important; box-shadow: 0 0 0 3px rgba(244,99,78,0.12); }
-        .wl-btn:hover:not(:disabled) { background: #e8543f !important; }
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+        @keyframes ct-blink { 0%,100%{opacity:1;} 50%{opacity:.25;} }
+        .wl-email:focus { border-color:#FF8A3D !important; box-shadow:0 0 0 4px rgba(255,138,61,0.16) !important; }
+        .wl-cta:hover:not(:disabled) { background:#F25E0F; transform:translateY(-1px); box-shadow:0 10px 24px rgba(255,106,26,0.42); }
+        .wl-cta:active:not(:disabled) { transform:translateY(0); }
+        @media (max-width: 480px) {
+          .wl-form { flex-direction: column; }
+          .wl-cta { width: 100%; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .wl-blink { animation: none !important; }
+        }
       `}</style>
-      {/* Nav */}
-      <header className="px-6 py-4 flex items-center justify-center max-w-2xl mx-auto w-full">
-        <span style={{ color: "#f4634e", fontWeight: 800, fontSize: 18, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-          Coterie
+
+      {/* Animated ray field */}
+      <canvas
+        ref={canvasRef}
+        aria-hidden="true"
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block", zIndex: 0 }}
+      />
+      {/* Soft vignette so the centre content stays legible over the rays */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 1,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(46% 40% at 50% 46%, rgba(253,251,249,0.92) 0%, rgba(253,251,249,0.7) 38%, rgba(253,251,249,0) 70%)",
+        }}
+      />
+
+      {/* Header */}
+      <header
+        style={{
+          position: "relative",
+          zIndex: 3,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "22px clamp(20px,5vw,52px)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          <div
+            style={{
+              width: 22,
+              height: 22,
+              borderRadius: "50%",
+              background: "conic-gradient(from 210deg, #FF6A1A, #FF9A3D, #FFC078, #FF4D2E, #FF6A1A)",
+              boxShadow: "0 2px 10px rgba(255,106,26,0.35)",
+            }}
+          />
+          <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em", color: "#1A1614" }}>
+            coterie
+          </span>
+        </div>
+        <span style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: "0.04em", color: "#9A8E84" }}>
+          Volleyball · Singapore
         </span>
       </header>
 
-      {/* Hero */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
-        {/* Badge */}
+      {/* Main */}
+      <main
+        style={{
+          position: "relative",
+          zIndex: 3,
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+          padding: "24px clamp(20px,5vw,52px) 64px",
+        }}
+      >
+        {/* "Launches soon" badge */}
         <div
-          style={{ background: "#fde2dc", color: "#c0392b", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 12px", borderRadius: 999, marginBottom: 24 }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 9,
+            padding: "7px 14px",
+            border: "1px solid #F2D9C5",
+            background: "rgba(255,247,240,0.8)",
+            borderRadius: 100,
+            marginBottom: 28,
+          }}
         >
-          Coming to Singapore
+          <span
+            className="wl-blink"
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: "#FF6A1A",
+              animation: "ct-blink 1.6s ease-in-out infinite",
+            }}
+          />
+          <span
+            style={{
+              fontSize: 11.5,
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              color: "#C4622A",
+              textTransform: "uppercase",
+            }}
+          >
+            Launches soon
+          </span>
         </div>
 
         {/* Headline */}
         <h1
-          style={{ fontSize: "clamp(28px, 6vw, 48px)", fontWeight: 800, color: "#111", lineHeight: 1.15, marginBottom: 16, maxWidth: 560 }}
+          style={{
+            margin: 0,
+            fontSize: "clamp(2.7rem,9vw,6rem)",
+            lineHeight: 0.98,
+            fontWeight: 800,
+            letterSpacing: "-0.035em",
+            color: "#15110F",
+            maxWidth: "13ch",
+          }}
         >
-          Fill your volleyball game.{" "}
-          <span style={{ color: "#f4634e" }}>Every time.</span>
+          Join the Waitlist
         </h1>
 
-        {/* Sub-headline */}
-        <p
-          style={{ fontSize: 17, color: "#555", lineHeight: 1.6, maxWidth: 440, marginBottom: 40 }}
+        {/* "Built by coterie" pill */}
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 10,
+            marginTop: 22,
+            padding: "9px 16px 9px 11px",
+            background: "#fff",
+            border: "1px solid #ECE0D6",
+            borderRadius: 100,
+            boxShadow: "0 4px 14px rgba(20,17,15,0.06)",
+          }}
         >
-          Coterie lets you post a game, set your skill level, and find the right players — no more chasing people over Telegram.
+          <span
+            style={{
+              width: 20,
+              height: 20,
+              borderRadius: "50%",
+              background: "conic-gradient(from 210deg, #FF6A1A, #FF9A3D, #FFC078, #FF4D2E, #FF6A1A)",
+            }}
+          />
+          <span style={{ fontSize: 14.5, fontWeight: 500, color: "#6F665E" }}>
+            Built by <strong style={{ color: "#FF6A1A", fontWeight: 800 }}>coterie</strong> · Volleyball in Singapore
+          </span>
+        </div>
+
+        {/* Subtitle */}
+        <p
+          style={{
+            margin: "22px 0 0",
+            fontSize: "clamp(1.02rem,1.7vw,1.22rem)",
+            lineHeight: 1.5,
+            fontWeight: 500,
+            color: "#6F665E",
+            maxWidth: "34ch",
+          }}
+        >
+          12 players. One game. Zero group-chat chaos.
         </p>
 
-        {/* Form */}
-        {status === "success" ? (
-          <div
-            style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, padding: "20px 28px", maxWidth: 420, width: "100%" }}
-          >
-            <div style={{ fontSize: 28, marginBottom: 8 }}>🎉</div>
-            <p style={{ fontWeight: 700, color: "#166534", fontSize: 16, marginBottom: 4 }}>You're on the list!</p>
-            <p style={{ color: "#15803d", fontSize: 14 }}>{message}</p>
-          </div>
-        ) : (
-          <form
-            onSubmit={handleSubmit}
-            style={{ width: "100%", maxWidth: 420, display: "flex", flexDirection: "column", gap: 12 }}
-          >
-            {/* Honeypot: off-screen, not display:none (some bots skip those),
-                hidden from tab order + screen readers. Real users never fill it;
-                bots that auto-fill every field do, and get silently rejected. */}
-            <input
-              type="text"
-              name="company"
-              tabIndex={-1}
-              autoComplete="off"
-              aria-hidden="true"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
-            />
-            <input
-              type="text"
-              placeholder="Full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              maxLength={100}
-              className="wl-input"
-              style={{
-                padding: "13px 16px",
-                borderRadius: 10,
-                border: "1.5px solid #e5e5e5",
-                fontSize: 15,
-                outline: "none",
-                width: "100%",
-                boxSizing: "border-box",
-              }}
-            />
-            <input
-              type="email"
-              placeholder="Your email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              maxLength={200}
-              className="wl-input"
-              style={{
-                padding: "13px 16px",
-                borderRadius: 10,
-                border: `1.5px solid ${status === "error" ? "#f87171" : "#e5e5e5"}`,
-                fontSize: 15,
-                outline: "none",
-                width: "100%",
-                boxSizing: "border-box",
-              }}
-            />
-            {status === "error" && (
-              <p style={{ color: "#dc2626", fontSize: 13, margin: 0, textAlign: "left" }}>{message}</p>
-            )}
-            <button
-              type="submit"
-              disabled={status === "loading"}
-              className="wl-btn"
-              style={{
-                background: status === "loading" ? "#f9a99a" : "#f4634e",
-                color: "#fff",
-                fontWeight: 700,
-                fontSize: 16,
-                padding: "14px 24px",
-                borderRadius: 10,
-                border: "none",
-                cursor: status === "loading" ? "not-allowed" : "pointer",
-                width: "100%",
-                transition: "background 0.15s",
-              }}
-            >
-              {status === "loading" ? "Joining…" : "Join the waitlist"}
-            </button>
-            <p style={{ fontSize: 12, color: "#999", margin: 0 }}>
-              Free. No spam. Unsubscribe anytime.
-            </p>
-          </form>
-        )}
-      </main>
-
-      {/* Feature strip */}
-      <section
-        style={{ background: "#fafafa", borderTop: "1px solid #f0f0f0", padding: "32px 24px" }}
-      >
-        <div
-          style={{ display: "flex", flexWrap: "wrap", gap: 24, justifyContent: "center", maxWidth: 640, margin: "0 auto" }}
-        >
-          {[
-            { icon: "📍", title: "Find games near you", desc: "Browse open games by area and skill level in Singapore." },
-            { icon: "✅", title: "Fill every slot", desc: "Post your game and let players request to join." },
-            { icon: "🏐", title: "Right skill level", desc: "Filter by Beginner, Intermediate, or Advanced so every game flows." },
-          ].map((f) => (
+        {/* Form / success */}
+        <div style={{ width: "100%", maxWidth: 480, marginTop: 34 }}>
+          {submitted ? (
             <div
-              key={f.title}
-              style={{ textAlign: "center", maxWidth: 180, flexShrink: 0 }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 11,
+                padding: "17px 22px",
+                background: "#FFF3EA",
+                border: "1px solid #F2D9C5",
+                borderRadius: 14,
+              }}
             >
-              <div style={{ fontSize: 28, marginBottom: 8 }}>{f.icon}</div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: "#111", marginBottom: 4 }}>{f.title}</div>
-              <div style={{ fontSize: 13, color: "#777", lineHeight: 1.5 }}>{f.desc}</div>
+              <span
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: "50%",
+                  background: "#FF6A1A",
+                  color: "#fff",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 800,
+                  fontSize: 13,
+                  flex: "none",
+                }}
+              >
+                ✓
+              </span>
+              <span style={{ fontSize: 15, fontWeight: 600, color: "#15110F" }}>{message}</span>
             </div>
-          ))}
+          ) : (
+            <form onSubmit={handleSubmit} className="wl-form" style={{ display: "flex", gap: 10, width: "100%" }}>
+              {/* Honeypot: off-screen, hidden from tab order + screen readers.
+                  Real users never fill it; auto-fill bots do and get dropped. */}
+              <input
+                type="text"
+                name="company"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+              />
+              <input
+                type="email"
+                required
+                placeholder="you@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                maxLength={200}
+                aria-label="Email address"
+                className="wl-email"
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  padding: "16px 18px",
+                  fontFamily: "inherit",
+                  fontSize: 15,
+                  fontWeight: 500,
+                  color: "#15110F",
+                  background: "#fff",
+                  border: `1px solid ${status === "error" ? "#FF4D2E" : "#E8DDD3"}`,
+                  borderRadius: 13,
+                  outline: "none",
+                  boxShadow: "0 1px 2px rgba(20,17,15,0.04)",
+                }}
+              />
+              <button
+                type="submit"
+                disabled={status === "loading"}
+                className="wl-cta"
+                style={{
+                  flex: "none",
+                  padding: "16px 24px",
+                  fontFamily: "inherit",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  letterSpacing: "-0.01em",
+                  color: "#fff",
+                  background: "#FF6A1A",
+                  border: "none",
+                  borderRadius: 13,
+                  cursor: status === "loading" ? "not-allowed" : "pointer",
+                  opacity: status === "loading" ? 0.85 : 1,
+                  boxShadow: "0 6px 18px rgba(255,106,26,0.35)",
+                  transition: "transform .15s ease, box-shadow .15s ease, background .15s ease",
+                }}
+              >
+                {status === "loading" ? "Joining…" : "Join the Waitlist"}
+              </button>
+            </form>
+          )}
+          {status === "error" && (
+            <p style={{ margin: "12px 2px 0", fontSize: 13.5, fontWeight: 600, color: "#E8590C", textAlign: "left" }}>
+              {message}
+            </p>
+          )}
         </div>
-      </section>
 
-      {/* Footer */}
-      <footer
-        style={{ padding: "20px 24px", textAlign: "center", fontSize: 12, color: "#aaa" }}
-      >
-        © {new Date().getFullYear()} Coterie ·{" "}
-        <a href="/privacy" style={{ color: "#aaa", textDecoration: "underline" }}>Privacy</a>
-      </footer>
-    </div>
+        {/* Social proof */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 13, marginTop: 24 }}>
+          <div style={{ display: "flex" }} aria-hidden="true">
+            {AVATARS.map((bg, i) => (
+              <span
+                key={i}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  marginLeft: i === 0 ? 0 : -10,
+                  border: "2.5px solid #FDFBF9",
+                  background: bg,
+                  boxShadow: "0 2px 6px rgba(20,17,15,0.14)",
+                }}
+              />
+            ))}
+          </div>
+          <span style={{ fontSize: 13.5, fontWeight: 600, color: "#6F665E" }}>
+            Join 40+ players already on the list
+          </span>
+        </div>
+      </main>
+    </section>
   );
 }
