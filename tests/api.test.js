@@ -67,6 +67,44 @@ describe("auth & validation middleware (no DB access)", () => {
     expect(res.status).toBe(400);
   });
 
+  it("400s PATCH /api/games/:id with an invalid game type (zod)", async () => {
+    const token = signToken("user_test_only");
+    const res = await request(app)
+      .patch("/api/games/game_test")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        title: "Sunday pickup",
+        type: "Underwater",
+        skill: "Intermediate",
+        date: "2026-06-20",
+        time: "18:30",
+        location: "Community Center",
+        totalSlots: 8,
+      });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/type/i);
+  });
+
+  it("400s PATCH /api/auth/me with an invalid skill (zod)", async () => {
+    const token = signToken("user_test_only");
+    const res = await request(app)
+      .patch("/api/auth/me")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ skill: "Pro" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/skill/i);
+  });
+
+  it("400s PATCH /api/auth/me with an invalid banner color (zod)", async () => {
+    const token = signToken("user_test_only");
+    const res = await request(app)
+      .patch("/api/auth/me")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ bannerColor: "not-a-hex" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/banner color/i);
+  });
+
   it("returns a JSON 404 for unknown /api routes", async () => {
     const res = await request(app).get("/api/this/route/does/not/exist");
     expect(res.status).toBe(404);

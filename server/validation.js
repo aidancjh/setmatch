@@ -52,3 +52,118 @@ export const resetPasswordSchema = z.object({
   token: z.string().min(1, "Reset token is required."),
   password,
 });
+
+// --- Games -----------------------------------------------------------------
+
+export const SKILLS = ["Beginner", "Intermediate", "Advanced", "All Levels"];
+export const TYPES = ["Indoor", "Beach", "Grass"];
+export const GENDERS = ["Men", "Women", "Mixed", "Open"];
+export const NET_HEIGHTS = ["Men's (2.43m)", "Women's (2.24m)", "Recreational (2.35m)", "Venue Standard"];
+export const POSITIONS = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist", "Any"];
+export const ROTATION_TYPES = ["Standard", "No Rotation", "King of the Court", "Round Robin"];
+export const REGIONS = ["North", "South", "East", "West"];
+
+// Matches validGameInput's original behavior: an optional field is only checked
+// against the allowed list when truthy (undefined/null/"" pass through), since
+// the frontend sends "" for "no preference" on several of these selects.
+const optionalEnum = (list, message) =>
+  z.any().refine((v) => !v || list.includes(v), message);
+
+export const gameInputSchema = z.object({
+  title: z
+    .string({ message: "Title is required." })
+    .trim()
+    .min(1, "Title is required.")
+    .max(100, "Title must be 100 characters or fewer."),
+  type: z.enum(TYPES, { message: "Invalid game type." }),
+  skill: z.enum(SKILLS, { message: "Invalid skill level." }),
+  gender: optionalEnum(GENDERS, "Invalid gender option.").optional(),
+  netHeight: optionalEnum(NET_HEIGHTS, "Invalid net height option.").optional(),
+  rotationType: optionalEnum(ROTATION_TYPES, "Invalid rotation type.").optional(),
+  date: z
+    .string({ message: "Date is required." })
+    .min(1, "Date is required.")
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (expected YYYY-MM-DD)."),
+  time: z
+    .string({ message: "Time is required." })
+    .min(1, "Time is required.")
+    .regex(/^\d{2}:\d{2}$/, "Invalid time format (expected HH:MM)."),
+  endTime: z
+    .any()
+    .refine((v) => !v || /^\d{2}:\d{2}$/.test(v), "Invalid end time format.")
+    .optional(),
+  location: z
+    .string({ message: "Location is required." })
+    .trim()
+    .min(1, "Location is required.")
+    .max(150, "Location must be 150 characters or fewer."),
+  notes: z
+    .any()
+    .refine((v) => !v || String(v).length <= 2000, "Notes must be 2000 characters or fewer.")
+    .optional(),
+  totalSlots: z
+    .any()
+    .refine((v) => {
+      const n = Number(v);
+      return Number.isInteger(n) && n >= 2 && n <= 50;
+    }, "Total slots must be between 2 and 50."),
+});
+
+// --- Profile -----------------------------------------------------------------
+
+/** Only allow uploads from Cloudinary (where our upload widget sends files). */
+export function isCloudinaryUrl(url) {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && u.hostname === "res.cloudinary.com";
+  } catch {
+    return false;
+  }
+}
+
+const USER_GENDERS = ["Man", "Woman", "Non-binary", "Prefer not to say", ""];
+
+// All fields optional (PATCH semantics): only validate a field when it's
+// actually present in the body, matching the original handler's != null /
+// undefined checks field-by-field.
+export const profileUpdateSchema = z.object({
+  name: z
+    .any()
+    .refine((v) => v == null || String(v).trim().length <= 50, "Name must be 50 characters or fewer.")
+    .optional(),
+  skill: z
+    .any()
+    .refine((v) => !v || SKILLS.includes(v), "Invalid skill level.")
+    .optional(),
+  homeArea: z
+    .any()
+    .refine((v) => v == null || String(v).length <= 100, "Home area must be 100 characters or fewer.")
+    .optional(),
+  bio: z.any().optional(),
+  avatarUrl: z
+    .any()
+    .refine((v) => v == null || v === "" || isCloudinaryUrl(String(v)), "Avatar must be uploaded via Cloudinary.")
+    .optional(),
+  bannerImage: z
+    .any()
+    .refine(
+      (v) => v == null || v === "" || isCloudinaryUrl(String(v)),
+      "Banner image must be uploaded via Cloudinary."
+    )
+    .optional(),
+  birthdate: z.any().optional(),
+  userGender: z
+    .any()
+    .refine((v) => v === undefined || USER_GENDERS.includes(String(v)), "Invalid gender option.")
+    .optional(),
+  showAge: z.any().optional(),
+  showGender: z.any().optional(),
+  favoritePositions: z.any().optional(),
+  bannerColor: z
+    .any()
+    .refine(
+      (v) => v === undefined || !v || /^#[0-9A-Fa-f]{3,8}$/.test(String(v)),
+      "Invalid banner color — use a hex value like #FF6B6B."
+    )
+    .optional(),
+});

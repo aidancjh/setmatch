@@ -22,7 +22,22 @@ import { hashPassword, verifyPassword, signToken, requireAuth, verifyToken, TIMI
 import * as repo from "./repo.js";
 import { initSchema, query } from "./db.js";
 import { seedIfEmpty, syncDemoPasswords, seedPastData } from "./seed.js";
-import { validateBody, signupSchema, forgotPasswordSchema, resetPasswordSchema } from "./validation.js";
+import {
+  validateBody,
+  signupSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  gameInputSchema,
+  profileUpdateSchema,
+  isCloudinaryUrl,
+  SKILLS,
+  TYPES,
+  GENDERS,
+  NET_HEIGHTS,
+  POSITIONS,
+  ROTATION_TYPES,
+  REGIONS,
+} from "./validation.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -214,16 +229,8 @@ app.get("/healthz", async (_req, res) => {
 });
 
 // --- Shared validation helpers --------------------------------------------
-
-/** Only allow uploads from Cloudinary (where our upload widget sends files). */
-function isCloudinaryUrl(url) {
-  try {
-    const u = new URL(url);
-    return u.protocol === "https:" && u.hostname === "res.cloudinary.com";
-  } catch {
-    return false;
-  }
-}
+// isCloudinaryUrl, SKILLS/TYPES/GENDERS/etc. now live in ./validation.js
+// (imported above) so the zod schemas and this module share one source of truth.
 
 /** Basic but real email format check, length-capped (RFC max 254). */
 function isValidEmail(email) {
@@ -240,35 +247,14 @@ const PASSWORD_MIN = 10;
 //   MAIL_FROM="Coterie <hello@coterie.com.de>"
 const MAIL_FROM = process.env.MAIL_FROM || "Coterie <onboarding@resend.dev>";
 
-const SKILLS = ["Beginner", "Intermediate", "Advanced", "All Levels"];
-const TYPES = ["Indoor", "Beach", "Grass"];
-const GENDERS = ["Men", "Women", "Mixed", "Open"];
-const NET_HEIGHTS = ["Men's (2.43m)", "Women's (2.24m)", "Recreational (2.35m)", "Venue Standard"];
-const POSITIONS = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist", "Any"];
-const ROTATION_TYPES = ["Standard", "No Rotation", "King of the Court", "Round Robin"];
-const REGIONS = ["North", "South", "East", "West"];
-
+// Thin wrapper over gameInputSchema (validation.js) kept for the direct-call
+// test suite and any non-HTTP callers; the routes below use validateBody(
+// gameInputSchema) as middleware instead of calling this directly.
 function validGameInput(b) {
   if (!b || typeof b !== "object") return "Invalid request body.";
-  if (!b.title || !String(b.title).trim()) return "Title is required.";
-  if (String(b.title).trim().length > 100) return "Title must be 100 characters or fewer.";
-  if (!TYPES.includes(b.type)) return "Invalid game type.";
-  if (!SKILLS.includes(b.skill)) return "Invalid skill level.";
-  if (b.gender && !GENDERS.includes(b.gender)) return "Invalid gender option.";
-  if (b.netHeight && !NET_HEIGHTS.includes(b.netHeight)) return "Invalid net height option.";
-  if (b.rotationType && !ROTATION_TYPES.includes(b.rotationType)) return "Invalid rotation type.";
-  if (!b.date) return "Date is required.";
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(b.date)) return "Invalid date format (expected YYYY-MM-DD).";
-  if (!b.time) return "Time is required.";
-  if (!/^\d{2}:\d{2}$/.test(b.time)) return "Invalid time format (expected HH:MM).";
-  if (b.endTime && !/^\d{2}:\d{2}$/.test(b.endTime)) return "Invalid end time format.";
-  if (!b.location || !String(b.location).trim()) return "Location is required.";
-  if (String(b.location).trim().length > 150) return "Location must be 150 characters or fewer.";
-  if (b.notes && String(b.notes).length > 2000) return "Notes must be 2000 characters or fewer.";
-  const slots = Number(b.totalSlots);
-  if (!Number.isInteger(slots) || slots < 2 || slots > 50)
-    return "Total slots must be between 2 and 50.";
-  return null;
+  const result = gameInputSchema.safeParse(b);
+  if (result.success) return null;
+  return result.error.issues[0]?.message || "Invalid request body.";
 }
 
 function gameInputFrom(body) {
@@ -390,23 +376,9 @@ app.delete(
 app.patch(
   "/api/auth/me",
   requireAuth,
+  validateBody(profileUpdateSchema),
   h(async (req, res) => {
     const { name, skill, homeArea, bio, avatarUrl, birthdate, userGender, showAge, showGender, favoritePositions, bannerColor, bannerImage } = req.body || {};
-    if (skill && !SKILLS.includes(skill))
-      return res.status(400).json({ error: "Invalid skill level." });
-    const USER_GENDERS = ["Man", "Woman", "Non-binary", "Prefer not to say", ""];
-    if (userGender !== undefined && !USER_GENDERS.includes(String(userGender)))
-      return res.status(400).json({ error: "Invalid gender option." });
-    if (bannerColor !== undefined && bannerColor && !/^#[0-9A-Fa-f]{3,8}$/.test(String(bannerColor)))
-      return res.status(400).json({ error: "Invalid banner color — use a hex value like #FF6B6B." });
-    if (avatarUrl != null && avatarUrl !== "" && !isCloudinaryUrl(String(avatarUrl)))
-      return res.status(400).json({ error: "Avatar must be uploaded via Cloudinary." });
-    if (bannerImage != null && bannerImage !== "" && !isCloudinaryUrl(String(bannerImage)))
-      return res.status(400).json({ error: "Banner image must be uploaded via Cloudinary." });
-    if (name != null && String(name).trim().length > 50)
-      return res.status(400).json({ error: "Name must be 50 characters or fewer." });
-    if (homeArea != null && String(homeArea).length > 100)
-      return res.status(400).json({ error: "Home area must be 100 characters or fewer." });
     const user = await repo.updateUser(req.userId, {
       name: name != null ? String(name).trim() || undefined : undefined,
       skill,
@@ -653,9 +625,8 @@ app.get(
 app.post(
   "/api/games",
   requireAuth,
+  validateBody(gameInputSchema),
   h(async (req, res) => {
-    const err = validGameInput(req.body);
-    if (err) return res.status(400).json({ error: err });
     // Idempotency: a retried request with the same key returns the first result
     // instead of creating duplicate games.
     const idemKey = req.get("Idempotency-Key");
@@ -692,9 +663,8 @@ function addWeeksISO(iso, weeks) {
 app.patch(
   "/api/games/:id",
   requireAuth,
+  validateBody(gameInputSchema),
   h(async (req, res) => {
-    const err = validGameInput(req.body);
-    if (err) return res.status(400).json({ error: err });
     const result = await repo.updateGame(
       req.params.id,
       req.userId,
