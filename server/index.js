@@ -13,7 +13,14 @@ Sentry.init({
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import {
+  loginLimiter,
+  signupLimiter,
+  authLimiter,
+  apiLimiter,
+  contentLimiter,
+  waitlistLimiter,
+} from "./middleware/rateLimiters.js";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -116,54 +123,7 @@ app.use(
 app.use(express.json({ limit: "100kb" })); // prevent giant JSON payloads
 
 // --- Rate limiters --------------------------------------------------------
-// Login: only FAILED attempts count (skipSuccessfulRequests), so legitimate
-// users — including several people behind one shared IP/NAT — are never blocked
-// by simply signing in. Only repeated wrong-password attempts (the brute-force
-// signature) trip it.
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10,
-  skipSuccessfulRequests: true,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many failed login attempts — please wait 15 minutes and try again." },
-});
-// Signup: caps mass account creation per IP, but lenient enough for several
-// people on the same network (e.g. testers on shared Wi-Fi).
-const signupLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 15,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many sign-ups from this network — please try again later." },
-});
-// Password reset / forgot: sensitive and rarely used legitimately, so kept
-// strict to prevent reset-email spam and token guessing.
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many attempts — please wait 15 minutes and try again." },
-});
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 120,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many requests — slow down." },
-});
-// Tighter per-user limiter for user-generated content (comments, chat) to
-// curb spam. Keyed by the authenticated user id (these routes sit behind
-// requireAuth), so it limits a person rather than a shared NAT/IP.
-const contentLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => req.userId || ipKeyGenerator(req.ip),
-  message: { error: "You're posting too fast — please slow down." },
-});
+// All rate limiter definitions have been extracted to middleware/rateLimiters.js
 app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth/signup", signupLimiter);
 app.use("/api/auth/forgot-password", authLimiter);
@@ -1553,14 +1513,6 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
 // shared IPs (CGNAT), so a strict limit would block genuine signups during a
 // viral launch. The real bot defenses are the honeypot below (and a CAPTCHA if
 // added) — this just stops one IP hammering the endpoint thousands of times.
-const waitlistLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many signups from this network — try again later." },
-});
-
 app.post("/api/waitlist", waitlistLimiter, async (req, res) => {
   const { email, name, company } = req.body || {};
   // Honeypot: the hidden "company" field is invisible to humans. Bots that
