@@ -34,6 +34,20 @@ describe("auth & validation middleware (no DB access)", () => {
     expect(res.body.error).toMatch(/10 characters/i);
   });
 
+  it("400s forgot-password with an invalid email (zod)", async () => {
+    const res = await request(app).post("/api/auth/forgot-password").send({ email: "nope" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/valid email/i);
+  });
+
+  it("400s reset-password with a too-short password (zod)", async () => {
+    const res = await request(app)
+      .post("/api/auth/reset-password")
+      .send({ token: "abc", password: "short" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/10 characters/i);
+  });
+
   it("401s GET /api/auth/me without a token", async () => {
     const res = await request(app).get("/api/auth/me");
     expect(res.status).toBe(401);

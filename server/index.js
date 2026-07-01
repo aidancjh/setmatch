@@ -22,6 +22,7 @@ import { hashPassword, verifyPassword, signToken, requireAuth, verifyToken, TIMI
 import * as repo from "./repo.js";
 import { initSchema, query } from "./db.js";
 import { seedIfEmpty, syncDemoPasswords, seedPastData } from "./seed.js";
+import { validateBody, signupSchema, forgotPasswordSchema, resetPasswordSchema } from "./validation.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -317,21 +318,11 @@ function optionalAuth(req, _res, next) {
 
 app.post(
   "/api/auth/signup",
+  validateBody(signupSchema),
   h(async (req, res) => {
-    // Validate the payload first so malformed requests fail fast (400) without a
-    // database round-trip; only then check whether signups are open.
+    // Input shape/limits are enforced by signupSchema (validateBody) above; the
+    // handler only does checks that need the database.
     const { email, password, name } = req.body || {};
-    if (!isValidEmail(email))
-      return res.status(400).json({ error: "Please enter a valid email address." });
-    if (!password || String(password).length < PASSWORD_MIN)
-      return res.status(400).json({ error: `Password must be at least ${PASSWORD_MIN} characters.` });
-    if (String(password).length > 128)
-      return res.status(400).json({ error: "Password must be 128 characters or fewer." });
-    if (!name || !String(name).trim())
-      return res.status(400).json({ error: "Name is required." });
-    if (String(name).trim().length > 50)
-      return res.status(400).json({ error: "Name must be 50 characters or fewer." });
-
     if (!(await repo.getFlag("signups_enabled")))
       return res.status(403).json({ error: "New sign-ups are temporarily closed." });
 
@@ -440,10 +431,9 @@ app.patch(
 
 app.post(
   "/api/auth/forgot-password",
+  validateBody(forgotPasswordSchema),
   h(async (req, res) => {
     const { email } = req.body || {};
-    if (!isValidEmail(email))
-      return res.status(400).json({ error: "Please enter a valid email address." });
     const user = await repo.findUserByEmail(email);
     // Always return OK — never reveal whether an email exists.
     if (!user) return res.json({ ok: true });
@@ -482,12 +472,9 @@ app.post(
 
 app.post(
   "/api/auth/reset-password",
+  validateBody(resetPasswordSchema),
   h(async (req, res) => {
     const { token, password } = req.body || {};
-    if (!token) return res.status(400).json({ error: "Reset token is required." });
-    if (!password || String(password).length < PASSWORD_MIN)
-      return res.status(400).json({ error: `Password must be at least ${PASSWORD_MIN} characters.` });
-
     const record = await repo.verifyPasswordResetToken(token);
     if (!record)
       return res.status(400).json({ error: "This reset link has expired or already been used." });
