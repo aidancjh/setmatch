@@ -15,6 +15,8 @@ vi.mock("../server/repo.js", () => ({
   adminStats: vi.fn().mockResolvedValue({ users: 10, games: 3 }),
   getWaitlistCount: vi.fn().mockResolvedValue(7),
   logAdminAction: vi.fn().mockResolvedValue(undefined),
+  findUserById: vi.fn(),
+  publicUser: vi.fn(),
 }));
 
 vi.mock("../server/posthog.js", () => ({
@@ -29,6 +31,15 @@ describe("adminRoutes", () => {
     app = express();
     app.use(express.json());
     app.use("/api/admin", adminRoutes);
+  });
+
+  it("GET /api/admin/whoami returns the current admin's public profile", async () => {
+    const repo = await import("../server/repo.js");
+    repo.findUserById = vi.fn().mockResolvedValue({ id: "admin_1", name: "Ada", email: "ada@example.com", role: "admin" });
+    repo.publicUser = vi.fn((u) => ({ id: u.id, name: u.name, email: u.email, role: u.role }));
+    const res = await request(app).get("/api/admin/whoami");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ id: "admin_1", name: "Ada", email: "ada@example.com", role: "admin" });
   });
 
   it("GET /api/admin/stats returns repo.adminStats()", async () => {

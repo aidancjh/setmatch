@@ -10,6 +10,14 @@ import * as repo from "./repo.js";
 const router = Router();
 router.use(requireAdminAuth);
 
+router.get(
+  "/whoami",
+  h(async (req, res) => {
+    const user = await repo.findUserById(req.userId);
+    res.json(repo.publicUser(user));
+  })
+);
+
 router.get("/stats", h(async (_req, res) => res.json(await repo.adminStats())));
 
 router.get("/users", h(async (_req, res) => res.json(await repo.adminListUsers())));
