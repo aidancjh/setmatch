@@ -15,6 +15,7 @@ export default defineConfig({
     env: {
       NODE_ENV: "test",
       JWT_SECRET: "test-secret-not-for-production",
+      ADMIN_JWT_SECRET: "test-admin-secret-not-for-production",
       // Falls back to an unreachable dummy so pure-logic tests never touch a DB.
       // To run the DB-gated tests (e.g. tests/join-race.test.js) point this at a
       // throwaway Postgres and set RUN_DB_TESTS=1.
