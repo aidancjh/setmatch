@@ -66,11 +66,9 @@ function PlayerAvatar({ p, i }: { p: (typeof PLAYERS)[number]; i: number }) {
   );
 }
 
-// The value prop shown in the pill under the headline. Joiner-first, clear and
-// direct: discovery ("find a game") + the payoff ("play"). Split into two
-// non-breaking halves so it stays on one line on desktop but breaks at a clean,
-// balanced midpoint on phones (instead of orphaning "and play").
-const TAGLINE_PARTS = ["Find a game near you,", "grab your spot, and play"];
+// The value prop shown under the headline. Joiner-first, clear and direct:
+// discovery ("find a game") + the payoff ("play"), with the mid-clause picked
+// out in brand orange so the line has a focal point without a box around it.
 
 export default function Waitlist() {
   const [email, setEmail] = useState("");
@@ -234,7 +232,6 @@ export default function Waitlist() {
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-        @keyframes ct-blink { 0%,100%{opacity:1;} 50%{opacity:.25;} }
         /* Email box — soft pulsing orange glow (no hard outline rings) */
         .wl-box { position:relative; border-radius:18px; background:#fff; padding:7px; }
         @keyframes wl-glow {
@@ -242,9 +239,6 @@ export default function Waitlist() {
           50%     { box-shadow:0 10px 34px rgba(255,106,26,0.32), 0 0 30px rgba(255,106,26,0.28); }
         }
         .wl-box-1 { animation: wl-glow 2.8s ease-in-out infinite; }
-        /* Tagline halves: inline (one line) on desktop, stacked on phones so
-           the pill shrink-wraps to the longest line instead of stretching */
-        .wl-tag-part { white-space: nowrap; }
         .wl-email:focus { border-color:#FF8A3D !important; box-shadow:0 0 0 4px rgba(255,138,61,0.16) !important; }
         .wl-cta:hover:not(:disabled) { background:#F25E0F; transform:translateY(-1px); box-shadow:0 10px 24px rgba(255,106,26,0.42); }
         .wl-cta:active:not(:disabled) { transform:translateY(0); }
@@ -261,13 +255,11 @@ export default function Waitlist() {
         @media (max-width: 480px) {
           .wl-form { flex-direction: column; }
           .wl-cta { width: 100%; }
-          .wl-tag-part { display: block; }
           .wl-formwrap { max-width: 300px !important; }
           .wl-spiker { width:128px; left:-26px; }
           .wl-digger { width:140px; right:-26px; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .wl-blink { animation: none !important; }
           .wl-box-1 { animation: none !important; box-shadow:0 8px 26px rgba(255,106,26,0.22), 0 0 22px rgba(255,106,26,0.18) !important; }
         }
       `}</style>
@@ -354,16 +346,6 @@ export default function Waitlist() {
           }}
         >
           <span
-            className="wl-blink"
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              background: "#FF6A1A",
-              animation: "ct-blink 1.6s ease-in-out infinite",
-            }}
-          />
-          <span
             style={{
               fontSize: 13,
               fontWeight: 700,
@@ -391,30 +373,22 @@ export default function Waitlist() {
           Join the Waitlist
         </h1>
 
-        {/* Tagline pill — value prop in the white border. The box shrink-wraps
-            to the text: one line on desktop, two stacked lines on phones (each
-            half is its own block on mobile so the pill hugs the longest line). */}
-        <div
+        {/* Tagline — borderless kicker line under the headline. No box; the
+            mid-clause is picked out in brand orange as the line's focal point. */}
+        <p
           style={{
-            display: "inline-block",
-            marginTop: 22,
-            padding: "11px 20px",
-            maxWidth: "min(92vw, 470px)",
-            background: "#fff",
-            border: "1px solid #ECE0D6",
-            borderRadius: 18,
-            boxShadow: "0 4px 14px rgba(20,17,15,0.06)",
+            margin: "22px 0 0",
+            maxWidth: "min(92vw, 380px)",
             textAlign: "center",
             fontSize: "clamp(0.875rem, 3.6vw, 1rem)",
             fontWeight: 600,
-            color: "#15110F",
+            color: "#6F665E",
             letterSpacing: "-0.01em",
             lineHeight: 1.4,
           }}
         >
-          <span className="wl-tag-part">{TAGLINE_PARTS[0]}</span>{" "}
-          <span className="wl-tag-part">{TAGLINE_PARTS[1]}</span>
-        </div>
+          Find a game near you, <span style={{ color: "#FF6A1A" }}>grab your spot</span>, and play
+        </p>
 
         {/* Form / success */}
         <div className="wl-formwrap" style={{ width: "100%", maxWidth: 480, marginTop: 34 }}>

@@ -46,6 +46,7 @@ export default function GameDetail() {
   const [deleting, setDeleting] = useState(false);
   const [seriesModal, setSeriesModal] = useState(false);
   const [cancelingSeries, setCancelingSeries] = useState(false);
+  const [rosterError, setRosterError] = useState("");
 
   useEffect(() => {
     const refresh = () => getGame(id).then((g) => setGame(g ?? null));
@@ -134,7 +135,6 @@ export default function GameDetail() {
   };
   const handleInterested = guarded(() => toggleInterested(game.id));
 
-  const [rosterError, setRosterError] = useState("");
   const handleRemoveMember = (memberId: string) => {
     setRosterError("");
     removeMember(game.id, memberId).catch((err) =>

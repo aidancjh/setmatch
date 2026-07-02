@@ -59,6 +59,14 @@ export default function Admin() {
     adminApi.flags().then(setFlags).catch(() => {});
   }, [isAdmin]);
 
+  const filteredUsers = useMemo(() => {
+    const q = userQuery.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter(
+      (u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+    );
+  }, [users, userQuery]);
+
   if (!isAdmin) {
     return (
       <div className="py-16 text-center">
@@ -199,14 +207,6 @@ export default function Admin() {
       setError(e instanceof Error ? e.message : "Could not update setting.");
     }
   };
-
-  const filteredUsers = useMemo(() => {
-    const q = userQuery.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(
-      (u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
-    );
-  }, [users, userQuery]);
 
   const openFeedback = feedback.filter((f) => !f.resolved).length;
   const openReports = reports.filter((r) => r.status === "open").length;
