@@ -46,6 +46,8 @@ import {
   REGIONS,
 } from "./validation.js";
 import { MAIL_FROM, esc, prettyTime, calDate, sendPasswordResetEmail, sendJoinConfirmationEmail } from "./email.js";
+import { h } from "./lib/asyncHandler.js";
+import { helmetOptions } from "./security.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -57,39 +59,7 @@ app.set("trust proxy", 1);
 
 // --- Security headers (helmet) --------------------------------------------
 // Content-Security-Policy is relaxed enough for Cloudinary uploads + Sentry.
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        // The Vite prod build emits a single external module script and no inline
-        // scripts, so 'self' is sufficient — dropping 'unsafe-inline' meaningfully
-        // hardens XSS defense (matters because the JWT lives in localStorage).
-        scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
-        mediaSrc: ["'self'", "blob:", "https://res.cloudinary.com"],
-        connectSrc: [
-          "'self'",
-          "https://api.cloudinary.com",
-          "https://api.resend.com",
-          "https://*.ingest.sentry.io",
-          "https://*.ingest.us.sentry.io",
-        ],
-        frameSrc: ["'none'"],
-        objectSrc: ["'none'"],
-        upgradeInsecureRequests: [],
-      },
-    },
-    hsts: {
-      maxAge: 31536000, // 1 year
-      includeSubDomains: true,
-      preload: true,
-    },
-    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-  })
-);
+app.use(helmet(helmetOptions));
 
 // --- CORS (lock to the app's own origin in production) --------------------
 const appOrigin = process.env.APP_URL || null;
@@ -234,13 +204,6 @@ function gameInputFrom(body) {
     notes: String(body.notes || "").trim().slice(0, 2000),
   };
 }
-
-/** Wrap an async route so thrown errors become a 500 instead of crashing. */
-const h = (fn) => (req, res) =>
-  fn(req, res).catch((err) => {
-    console.error("[api] error:", err);
-    res.status(500).json({ error: "Something went wrong on the server." });
-  });
 
 /**
  * Like requireAuth but never rejects: sets req.userId when a valid token is
