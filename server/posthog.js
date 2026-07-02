@@ -8,6 +8,7 @@
 // (PostHog can undercount due to ad blockers / consent declines).
 const POSTHOG_HOST = process.env.POSTHOG_HOST || "https://us.posthog.com";
 
+// Column order must match the destructuring order in queryWaitlistFunnel: [visits, started, submittedPosthog]
 const FUNNEL_QUERY = `
   SELECT
     countIf(event = '$pageview' AND properties.$pathname = '/waitlist') AS visits,
@@ -41,6 +42,9 @@ export async function queryWaitlistFunnel() {
   const data = await res.json();
   const row = data.results && data.results[0];
   if (!row) throw new Error("PostHog query failed: no results returned.");
+  if (!Array.isArray(row) || row.length !== 3) {
+    throw new Error("PostHog query failed: unexpected result shape.");
+  }
 
   const [visits, started, submittedPosthog] = row;
   return { visits, started, submittedPosthog };

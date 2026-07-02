@@ -41,4 +41,28 @@ describe("posthog.queryWaitlistFunnel", () => {
     const { queryWaitlistFunnel } = await import("../server/posthog.js");
     await expect(queryWaitlistFunnel()).rejects.toThrow(/PostHog query failed/);
   });
+
+  it("throws when results array is empty", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ results: [] }),
+      })
+    );
+    const { queryWaitlistFunnel } = await import("../server/posthog.js");
+    await expect(queryWaitlistFunnel()).rejects.toThrow(/PostHog query failed: no results returned/);
+  });
+
+  it("throws when result row has unexpected shape (wrong number of columns)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ results: [[120, 45]] }),
+      })
+    );
+    const { queryWaitlistFunnel } = await import("../server/posthog.js");
+    await expect(queryWaitlistFunnel()).rejects.toThrow(/PostHog query failed: unexpected result shape/);
+  });
 });
