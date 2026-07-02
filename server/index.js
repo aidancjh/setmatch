@@ -449,10 +449,11 @@ app.get(
 app.get(
   "/api/debug/email-test",
   requireAuth,
-  requireAdmin,
   h(async (req, res) => {
     const user = await repo.findUserById(req.userId);
     if (!user) return res.status(404).json({ error: "User not found" });
+    if ((user.role || "user") !== "admin")
+      return res.status(403).json({ error: "Admin access required." });
 
     const resendKey = process.env.RESEND_API_KEY;
     if (!resendKey) {
@@ -840,192 +841,6 @@ app.post(
   })
 );
 
-// --- Admin (role-enforced on the server, not just the UI) -----------------
-
-async function requireAdmin(req, res, next) {
-  try {
-    const role = await repo.getRole(req.userId);
-    if (role !== "admin")
-      return res.status(403).json({ error: "Admin access required." });
-    next();
-  } catch (err) {
-    console.error("[api] admin check error:", err);
-    res.status(500).json({ error: "Something went wrong on the server." });
-  }
-}
-
-app.get(
-  "/api/admin/stats",
-  requireAuth,
-  requireAdmin,
-  h(async (_req, res) => res.json(await repo.adminStats()))
-);
-
-app.get(
-  "/api/admin/users",
-  requireAuth,
-  requireAdmin,
-  h(async (_req, res) => res.json(await repo.adminListUsers()))
-);
-
-app.patch(
-  "/api/admin/users/:id/role",
-  requireAuth,
-  requireAdmin,
-  h(async (req, res) => {
-    const user = await repo.setUserRole(req.params.id, req.body && req.body.role);
-    if (!user) return res.status(400).json({ error: "Invalid role." });
-    await repo.logAdminAction(req.userId, "set_role", `Set ${user.name}'s role to ${user.role}`);
-    res.json(repo.publicUser(user));
-  })
-);
-
-app.get(
-  "/api/admin/games",
-  requireAuth,
-  requireAdmin,
-  h(async (_req, res) => res.json(await repo.adminListGames()))
-);
-
-app.delete(
-  "/api/admin/games/:id",
-  requireAuth,
-  requireAdmin,
-  h(async (req, res) => {
-    const title = await repo.adminDeleteGame(req.params.id);
-    await repo.logAdminAction(req.userId, "delete_game", `Deleted game "${title}"`);
-    res.status(204).end();
-  })
-);
-
-// Suspend / unsuspend a user. Admin accounts are protected (prevents an admin
-// — including you — from being locked out).
-app.patch(
-  "/api/admin/users/:id/suspend",
-  requireAuth,
-  requireAdmin,
-  h(async (req, res) => {
-    const target = await repo.findUserById(req.params.id);
-    if (!target) return res.status(404).json({ error: "User not found." });
-    if ((target.role || "user") === "admin")
-      return res.status(400).json({ error: "Admin accounts can't be suspended." });
-    const user = await repo.setUserSuspended(req.params.id, req.body && req.body.suspended === true);
-    await repo.logAdminAction(
-      req.userId,
-      "suspend_user",
-      `${user.suspended ? "Suspended" : "Unsuspended"} ${user.name} (${user.email})`
-    );
-    res.json(repo.publicUser(user));
-  })
-);
-
-// Permanently delete a user and all their data. Admin accounts are protected.
-app.delete(
-  "/api/admin/users/:id",
-  requireAuth,
-  requireAdmin,
-  h(async (req, res) => {
-    const target = await repo.findUserById(req.params.id);
-    if (!target) return res.status(404).json({ error: "User not found." });
-    if ((target.role || "user") === "admin")
-      return res.status(400).json({ error: "Admin accounts can't be deleted here." });
-    await repo.adminDeleteUser(req.params.id);
-    await repo.logAdminAction(req.userId, "delete_user", `Removed ${target.name} (${target.email})`);
-    res.status(204).end();
-  })
-);
-
-app.get(
-  "/api/admin/highlights",
-  requireAuth,
-  requireAdmin,
-  h(async (_req, res) => res.json(await repo.adminListHighlights()))
-);
-
-app.delete(
-  "/api/admin/highlights/:id",
-  requireAuth,
-  requireAdmin,
-  h(async (req, res) => {
-    const owner = await repo.adminDeleteHighlight(req.params.id);
-    await repo.logAdminAction(req.userId, "delete_highlight", `Deleted highlight by ${owner}`);
-    res.status(204).end();
-  })
-);
-
-app.get(
-  "/api/admin/comments",
-  requireAuth,
-  requireAdmin,
-  h(async (_req, res) => res.json(await repo.adminListComments()))
-);
-
-app.delete(
-  "/api/admin/comments/:kind/:id",
-  requireAuth,
-  requireAdmin,
-  h(async (req, res) => {
-    const kind = req.params.kind === "highlight" ? "highlight" : "game";
-    await repo.adminDeleteComment(kind, req.params.id);
-    await repo.logAdminAction(req.userId, "delete_comment", `Deleted a ${kind} comment`);
-    res.status(204).end();
-  })
-);
-
-app.post(
-  "/api/admin/seed-past-data",
-  requireAuth,
-  requireAdmin,
-  h(async (req, res) => {
-    await seedPastData();
-    await repo.logAdminAction(req.userId, "seed_past_data", "Ran: seed past data");
-    res.json({ ok: true });
-  })
-);
-
-// --- Admin: feedback inbox + audit log (Phase 2) --------------------------
-
-app.get(
-  "/api/admin/feedback",
-  requireAuth,
-  requireAdmin,
-  h(async (_req, res) => res.json(await repo.adminListFeedback()))
-);
-
-app.patch(
-  "/api/admin/feedback/:id/resolve",
-  requireAuth,
-  requireAdmin,
-  h(async (req, res) => {
-    const resolved = !!(req.body && req.body.resolved);
-    await repo.setFeedbackResolved(req.params.id, resolved);
-    await repo.logAdminAction(
-      req.userId,
-      "feedback_resolve",
-      `Marked feedback ${resolved ? "resolved" : "open"}`
-    );
-    res.json({ ok: true, resolved });
-  })
-);
-
-app.delete(
-  "/api/admin/feedback/:id",
-  requireAuth,
-  requireAdmin,
-  h(async (req, res) => {
-    await repo.adminDeleteFeedback(req.params.id);
-    await repo.logAdminAction(req.userId, "feedback_delete", "Deleted a feedback item");
-    res.status(204).end();
-  })
-);
-
-app.get(
-  "/api/admin/audit",
-  requireAuth,
-  requireAdmin,
-  h(async (_req, res) => res.json(await repo.adminListAudit()))
-);
-
 // --- Reports (users flag content; admins review) ---------------------------
 
 app.post(
@@ -1037,67 +852,6 @@ app.post(
     const result = await repo.createReport(req.userId, targetType, targetId, reason);
     if (!result.ok) return res.status(result.code || 400).json({ error: result.error });
     res.status(201).json({ ok: true });
-  })
-);
-
-app.get(
-  "/api/admin/reports",
-  requireAuth,
-  requireAdmin,
-  h(async (_req, res) => res.json(await repo.adminListReports()))
-);
-
-app.patch(
-  "/api/admin/reports/:id",
-  requireAuth,
-  requireAdmin,
-  h(async (req, res) => {
-    const status = req.body && req.body.status;
-    if (!(await repo.adminSetReportStatus(req.params.id, status)))
-      return res.status(400).json({ error: "Invalid status." });
-    await repo.logAdminAction(req.userId, "report_status", `Marked a report ${status}`);
-    res.json({ ok: true, status });
-  })
-);
-
-// --- Broadcast (send an announcement to all users) -------------------------
-
-app.post(
-  "/api/admin/broadcast",
-  requireAuth,
-  requireAdmin,
-  h(async (req, res) => {
-    const message = (req.body && req.body.message ? String(req.body.message) : "").trim();
-    if (!message) return res.status(400).json({ error: "Message is required." });
-    if (message.length > 280)
-      return res.status(400).json({ error: "Keep announcements under 280 characters." });
-    const count = await repo.broadcastAnnouncement(message);
-    await repo.logAdminAction(req.userId, "broadcast", `Sent announcement to ${count} users: "${message.slice(0, 80)}"`);
-    res.json({ ok: true, count });
-  })
-);
-
-// --- Feature flags ---------------------------------------------------------
-
-app.get(
-  "/api/admin/flags",
-  requireAuth,
-  requireAdmin,
-  h(async (_req, res) => res.json(await repo.getFlags()))
-);
-
-app.patch(
-  "/api/admin/flags/:key",
-  requireAuth,
-  requireAdmin,
-  h(async (req, res) => {
-    const key = req.params.key;
-    if (!["maintenance_mode", "signups_enabled"].includes(key))
-      return res.status(400).json({ error: "Unknown flag." });
-    const enabled = !!(req.body && req.body.enabled);
-    await repo.setFlag(key, enabled);
-    await repo.logAdminAction(req.userId, "set_flag", `Set ${key} to ${enabled ? "ON" : "OFF"}`);
-    res.json({ ok: true, key, enabled });
   })
 );
 
@@ -1405,14 +1159,6 @@ app.post("/api/waitlist", waitlistLimiter, async (req, res) => {
   const result = await repo.addWaitlistEntry(trimmed, safeName);
   if (result.alreadyExists) return res.json({ ok: true, message: "You're already on the list — we'll be in touch!" });
   res.json({ ok: true, message: "You're on the list! We'll let you know when Coterie launches in Singapore." });
-});
-
-app.get("/api/waitlist", requireAuth, async (req, res) => {
-  const user = await repo.findUserById(req.userId);
-  if (!user || user.role !== "admin") return res.status(403).json({ error: "Forbidden." });
-  const entries = await repo.getWaitlistEntries();
-  const count = await repo.getWaitlistCount();
-  res.json({ count, entries });
 });
 
 // Unknown API routes → JSON 404 (never HTML).
