@@ -17,17 +17,21 @@ if (process.env.NODE_ENV === "production" && ADMIN_JWT_SECRET === DEV_SECRET) {
 
 const ADMIN_TOKEN_TTL = "8h";
 
-export function signAdminToken(userId) {
-  return jwt.sign({ sub: userId, aud: "admin" }, ADMIN_JWT_SECRET, {
+export function signAdminToken(userId, tokenVersion = 0) {
+  return jwt.sign({ sub: userId, aud: "admin", tv: tokenVersion }, ADMIN_JWT_SECRET, {
     expiresIn: ADMIN_TOKEN_TTL,
   });
 }
 
 /**
  * Express middleware: requires a valid admin-audience Bearer token, then
- * re-checks the account's current role and suspended status on every request
- * (a role downgrade or suspension takes effect immediately, not after the
- * 8h token expires). Sets req.userId.
+ * re-checks the account's current role, suspended status, and token_version
+ * on every request — a role downgrade, suspension, or explicit revocation
+ * (bumping token_version) takes effect immediately, not after the 8h token
+ * expires. Reuses the same users.token_version column server/auth.js's
+ * consumer JWT already uses; admin accounts are passwordless (Google-OAuth
+ * only) so nothing else ever bumps it — it's purely a manual revoke lever
+ * here. Sets req.userId.
  */
 export async function requireAdminAuth(req, res, next) {
   const header = req.headers.authorization || "";
@@ -48,6 +52,9 @@ export async function requireAdminAuth(req, res, next) {
     const user = await findUserById(payload.sub);
     if (!user) return res.status(401).json({ error: "Account not found." });
     if (user.suspended) return res.status(403).json({ error: "This account has been suspended." });
+    if ((payload.tv ?? 0) !== (user.token_version ?? 0)) {
+      return res.status(401).json({ error: "Session expired. Please sign in again." });
+    }
     if ((user.role || "user") !== "admin") {
       return res.status(403).json({ error: "Admin access required." });
     }

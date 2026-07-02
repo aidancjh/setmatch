@@ -13,14 +13,22 @@ describe("adminAuth", () => {
     process.env.ADMIN_JWT_SECRET = ADMIN_SECRET;
   });
 
-  it("signAdminToken produces a token with aud=admin and an 8h expiry", async () => {
+  it("signAdminToken produces a token with aud=admin, tv, and an 8h expiry", async () => {
     const { signAdminToken } = await import("../server/adminAuth.js");
-    const token = signAdminToken("user_1");
+    const token = signAdminToken("user_1", 2);
     const payload = jwt.verify(token, ADMIN_SECRET);
     expect(payload.sub).toBe("user_1");
     expect(payload.aud).toBe("admin");
+    expect(payload.tv).toBe(2);
     const ttlSeconds = payload.exp - payload.iat;
     expect(ttlSeconds).toBe(8 * 60 * 60);
+  });
+
+  it("signAdminToken defaults tv to 0 when not passed", async () => {
+    const { signAdminToken } = await import("../server/adminAuth.js");
+    const token = signAdminToken("user_1");
+    const payload = jwt.verify(token, ADMIN_SECRET);
+    expect(payload.tv).toBe(0);
   });
 
   it("requireAdminAuth rejects a request with no token (401)", async () => {
@@ -46,9 +54,9 @@ describe("adminAuth", () => {
 
   it("requireAdminAuth rejects a valid admin-secret token whose account role isn't admin (403)", async () => {
     const repo = await import("../server/repo.js");
-    repo.findUserById.mockResolvedValue({ id: "user_2", role: "user", suspended: false });
+    repo.findUserById.mockResolvedValue({ id: "user_2", role: "user", suspended: false, token_version: 0 });
     const { signAdminToken, requireAdminAuth } = await import("../server/adminAuth.js");
-    const token = signAdminToken("user_2");
+    const token = signAdminToken("user_2", 0);
     const req = { headers: { authorization: `Bearer ${token}` } };
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
@@ -57,11 +65,24 @@ describe("adminAuth", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
+  it("requireAdminAuth rejects a token whose tv no longer matches the account's token_version (revoked, 401)", async () => {
+    const repo = await import("../server/repo.js");
+    repo.findUserById.mockResolvedValue({ id: "user_4", role: "admin", suspended: false, token_version: 1 });
+    const { signAdminToken, requireAdminAuth } = await import("../server/adminAuth.js");
+    const token = signAdminToken("user_4", 0); // stale — DB now at token_version 1
+    const req = { headers: { authorization: `Bearer ${token}` } };
+    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const next = vi.fn();
+    await requireAdminAuth(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
   it("requireAdminAuth sets req.userId and calls next() for a valid admin", async () => {
     const repo = await import("../server/repo.js");
-    repo.findUserById.mockResolvedValue({ id: "user_3", role: "admin", suspended: false });
+    repo.findUserById.mockResolvedValue({ id: "user_3", role: "admin", suspended: false, token_version: 0 });
     const { signAdminToken, requireAdminAuth } = await import("../server/adminAuth.js");
-    const token = signAdminToken("user_3");
+    const token = signAdminToken("user_3", 0);
     const req = { headers: { authorization: `Bearer ${token}` } };
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
