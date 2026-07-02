@@ -7,8 +7,8 @@ import type {
   AdminReport,
   Game,
   Highlight,
-} from "../types";
-import { api } from "../lib/api";
+} from "../../types";
+import { adminApiClient as api } from "../lib/adminApi";
 
 export const adminApi = {
   stats: () => api.get<AdminStats>("/admin/stats"),

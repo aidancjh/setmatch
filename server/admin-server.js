@@ -118,11 +118,11 @@ app.use("/api/admin", adminRoutes);
 
 // --- Serve the built admin frontend in production --------------------------
 const distDir = path.join(__dirname, "..", "dist-admin");
-if (fs.existsSync(path.join(distDir, "index.html"))) {
+if (fs.existsSync(path.join(distDir, "admin.html"))) {
   app.use(express.static(distDir));
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api/")) return next();
-    res.sendFile(path.join(distDir, "index.html"));
+    res.sendFile(path.join(distDir, "admin.html"));
   });
 }
 

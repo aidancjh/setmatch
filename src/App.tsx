@@ -15,7 +15,6 @@ const EditGame    = lazy(() => import("./pages/EditGame"));
 const MyGames     = lazy(() => import("./pages/MyGames"));
 const Profile     = lazy(() => import("./pages/Profile"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
-const Admin       = lazy(() => import("./pages/Admin"));
 const Highlights  = lazy(() => import("./pages/Highlights"));
 const Settings    = lazy(() => import("./pages/Settings"));
 const Onboarding  = lazy(() => import("./pages/Onboarding"));
@@ -71,7 +70,6 @@ export default function App() {
         <Route path="/create" element={<Suspense fallback={<PageFallback />}><CreateGame /></Suspense>} />
         <Route path="/my-games" element={<Suspense fallback={<PageFallback />}><MyGames /></Suspense>} />
         <Route path="/profile" element={<Suspense fallback={<PageFallback />}><Profile /></Suspense>} />
-        <Route path="/admin" element={<Suspense fallback={<PageFallback />}><Admin /></Suspense>} />
         <Route path="/settings" element={<Suspense fallback={<PageFallback />}><Settings /></Suspense>} />
         <Route path="*" element={<Suspense fallback={<PageFallback />}><BrowseGames /></Suspense>} />
       </Route>
