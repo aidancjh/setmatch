@@ -13,6 +13,7 @@ import type {
 import { adminApi } from "./services/adminService";
 import { useAdminAuth as useAuth } from "./auth/AdminAuthContext";
 import { formatDate } from "../lib/format";
+import Funnel from "./pages/Funnel";
 
 type Tab =
   | "overview"
@@ -22,7 +23,8 @@ type Tab =
   | "feedback"
   | "activity"
   | "system"
-  | "games";
+  | "games"
+  | "funnel";
 
 function shortDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -200,6 +202,7 @@ export default function AdminApp() {
     { key: "activity", label: "Activity" },
     { key: "system", label: "System" },
     { key: "games", label: `Games${games.length ? ` (${games.length})` : ""}` },
+    { key: "funnel", label: "Funnel" },
   ];
 
   return (
@@ -623,6 +626,8 @@ export default function AdminApp() {
           ))}
         </div>
       )}
+
+      {tab === "funnel" && <Funnel />}
     </div>
   );
 }
