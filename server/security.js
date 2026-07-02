@@ -4,7 +4,7 @@ export const helmetOptions = {
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://us-assets.i.posthog.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
@@ -15,6 +15,8 @@ export const helmetOptions = {
         "https://api.resend.com",
         "https://*.ingest.sentry.io",
         "https://*.ingest.us.sentry.io",
+        "https://us.i.posthog.com",
+        "https://us-assets.i.posthog.com",
       ],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"],

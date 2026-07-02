@@ -1672,13 +1672,6 @@ export async function getWaitlistCount() {
   return rows[0].count;
 }
 
-export async function getWaitlistEntries() {
-  const { rows } = await query(
-    "SELECT id, email, name, created_at FROM waitlist ORDER BY created_at DESC"
-  );
-  return rows;
-}
-
 // --------------------------------------------------------------------------
 
 export async function deleteComment(gameId, commentId, userId) {
