@@ -70,3 +70,15 @@ export const waitlistLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many signups from this network — try again later." },
 });
+
+// The admin service is low-volume/trusted (a handful of admins, not the
+// public), so this is tighter than the consumer app's apiLimiter — mainly a
+// backstop against a runaway script or a compromised admin token, not normal
+// traffic shaping.
+export const adminApiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests — slow down." },
+});

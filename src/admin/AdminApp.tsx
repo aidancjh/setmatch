@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import type {
   AdminStats,
   AdminUser,
@@ -10,9 +10,10 @@ import type {
   Game,
   Highlight,
 } from "../types";
-import { adminApi } from "../services/adminService";
-import { useAuth } from "../auth/AuthContext";
+import { adminApi } from "./services/adminService";
+import { useAdminAuth as useAuth } from "./auth/AdminAuthContext";
 import { formatDate } from "../lib/format";
+import Funnel from "./pages/Funnel";
 
 type Tab =
   | "overview"
@@ -22,15 +23,15 @@ type Tab =
   | "feedback"
   | "activity"
   | "system"
-  | "games";
+  | "games"
+  | "funnel";
 
 function shortDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-export default function Admin() {
+export default function AdminApp() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("overview");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -44,10 +45,7 @@ export default function Admin() {
   const [userQuery, setUserQuery] = useState("");
   const [error, setError] = useState("");
 
-  const isAdmin = user?.role === "admin";
-
   useEffect(() => {
-    if (!isAdmin) return;
     adminApi.stats().then(setStats).catch(() => {});
     adminApi.users().then(setUsers).catch(() => {});
     adminApi.games().then(setGames).catch(() => {});
@@ -57,7 +55,7 @@ export default function Admin() {
     adminApi.audit().then(setAudit).catch(() => {});
     adminApi.reports().then(setReports).catch(() => {});
     adminApi.flags().then(setFlags).catch(() => {});
-  }, [isAdmin]);
+  }, []);
 
   const filteredUsers = useMemo(() => {
     const q = userQuery.trim().toLowerCase();
@@ -66,22 +64,6 @@ export default function Admin() {
       (u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
     );
   }, [users, userQuery]);
-
-  if (!isAdmin) {
-    return (
-      <div className="py-16 text-center">
-        <p className="text-sm text-slate-500">
-          This area is for administrators only.
-        </p>
-        <button
-          onClick={() => navigate("/")}
-          className="mt-3 text-sm font-semibold text-brand underline"
-        >
-          Back to games
-        </button>
-      </div>
-    );
-  }
 
   const changeRole = async (u: AdminUser, role: AdminUser["role"]) => {
     setError("");
@@ -220,6 +202,7 @@ export default function Admin() {
     { key: "activity", label: "Activity" },
     { key: "system", label: "System" },
     { key: "games", label: `Games${games.length ? ` (${games.length})` : ""}` },
+    { key: "funnel", label: "Funnel" },
   ];
 
   return (
@@ -643,6 +626,8 @@ export default function Admin() {
           ))}
         </div>
       )}
+
+      {tab === "funnel" && <Funnel />}
     </div>
   );
 }

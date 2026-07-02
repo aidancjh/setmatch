@@ -1,5 +1,6 @@
 node_modules
 dist
+dist-admin
 dist-ssr
 *.local
 .DS_Store
@@ -9,6 +10,7 @@ dist-ssr
 .env
 .env.*
 !.env.example
+!.env.admin.example
 
 # Legacy SQLite files (superseded by Postgres)
 server/*.sqlite

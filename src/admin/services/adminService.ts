@@ -7,8 +7,17 @@ import type {
   AdminReport,
   Game,
   Highlight,
-} from "../types";
-import { api } from "../lib/api";
+} from "../../types";
+import { adminApiClient as api } from "../lib/adminApi";
+
+interface WaitlistFunnel {
+  visits: number;
+  started: number;
+  submittedDb: number;
+  submittedPosthog: number;
+  startedRate: number;
+  submittedRate: number;
+}
 
 export const adminApi = {
   stats: () => api.get<AdminStats>("/admin/stats"),
@@ -38,4 +47,5 @@ export const adminApi = {
     api.patch<{ ok: boolean }>(`/admin/flags/${key}`, { enabled }),
   broadcast: (message: string) =>
     api.post<{ ok: boolean; count: number }>("/admin/broadcast", { message }),
+  funnel: () => api.get<WaitlistFunnel>("/admin/analytics/funnel"),
 };

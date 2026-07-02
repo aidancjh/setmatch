@@ -28,6 +28,7 @@ Local dev requires a `DATABASE_URL` in `.env`. The Railway-hosted Postgres is pr
 | `repo.js` | All SQL queries — single data-access layer |
 | `auth.js` | `hashPassword`, `verifyPassword`, `signToken`, `requireAuth` middleware (JWT in `Authorization: Bearer`) |
 | `seed.js` | `seedIfEmpty()` (once, empty DB), `syncDemoPasswords()` (every startup), `seedPastData()` (idempotent; runs on every startup **and** via the admin endpoint) |
+| `admin-server.js` | Standalone admin API — separate Railway deploy, separate JWT (`ADMIN_JWT_SECRET`), own Google OAuth callback (lookup-only, never creates users), own rate limiter and DB pool cap. Mounts `adminRoutes.js`. |
 
 Schema tables: `users`, `games`, `game_members`, `game_interest`, `game_comments`, `messages`, `game_reviews`, `player_ratings`, `notifications`, `feedback`, `highlights`, `highlight_likes`, `highlight_comments`, `password_reset_tokens`, `idempotency_keys`, `waitlist`.
 
@@ -36,6 +37,22 @@ Schema tables: `users`, `games`, `game_members`, `game_interest`, `game_comments
 - `player_ratings` — player rates individual teammates. `UNIQUE(game_id, rater_id, rated_id)`. Anonymous, averaged as `playerRating` on profiles.
 
 `pendingReviews(userId)` returns games the user played (not hosted), ended >2 h ago, <7 days ago, not yet reviewed. The `ReviewPrompt` component polls this 3 s after mount and shows a modal.
+
+### Admin app (`server/admin-server.js` + `src/admin/`)
+
+The admin dashboard is a **separate deployment** from the consumer app — different Railway
+service, different subdomain, different JWT secret/audience (`ADMIN_JWT_SECRET`, not
+`JWT_SECRET`). It shares the same Postgres database via `server/db.js`, but with its own
+capped connection pool (`DB_POOL_MAX`) so admin traffic can never starve the consumer app.
+
+- `server/admin-server.js` — Express entry, mounts `server/adminRoutes.js` behind
+  `server/adminAuth.js`'s `requireAdminAuth`. Serves `dist-admin/` in production.
+- `src/admin/` — separate React app (`src/admin-main.tsx` entry, built via
+  `vite.admin.config.ts` into `dist-admin/`). Sign-in is Google-OAuth-only, lookup-only
+  (never creates a user — an admin account must already exist with `role = 'admin'`).
+- Local dev: `npm run dev:admin` (API, port 4100) + `npm run dev:admin:web` (Vite, port
+  5174) — copy `.env.admin.example` to `.env.admin` first.
+- `npm run build` produces both `dist/` (consumer) and `dist-admin/` (admin) from one command.
 
 ### Frontend (`src/`)
 

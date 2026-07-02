@@ -14,9 +14,15 @@ if (!connectionString) {
   process.exit(1);
 }
 
+// Default matches pg's own built-in default (10). Set DB_POOL_MAX on the admin
+// service so a burst of admin queries can never exhaust connections the
+// consumer app's own (separately-pooled) service needs.
+const poolMax = process.env.DB_POOL_MAX ? Number(process.env.DB_POOL_MAX) : 10;
+
 export const pool = new Pool({
   connectionString,
   ssl: process.env.DATABASE_SSL === "true" ? { rejectUnauthorized: false } : false,
+  max: poolMax,
 });
 
 /** Run a parameterized query and return the pg result. */

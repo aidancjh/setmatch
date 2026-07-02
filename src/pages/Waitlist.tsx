@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { SpikerSilhouette, DiggerSilhouette } from "../components/PlayerSilhouettes";
+import { initPostHog, captureEvent } from "../lib/posthog";
 
 // Imported from the Claude Design project "Coterie Waitlist". The signature
 // piece is the animated canvas: warm-toned rays streaming outward from a point
@@ -76,6 +77,11 @@ export default function Waitlist() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // --- Initialize PostHog on mount
+  useEffect(() => {
+    initPostHog();
+  }, []);
 
   // --- Animated ray field (ported from the design's canvas render loop) ------
   useEffect(() => {
@@ -206,6 +212,7 @@ export default function Waitlist() {
       } else {
         setMessage(data.message || "You're on the list. We'll be in touch before launch.");
         setStatus("success");
+        captureEvent("waitlist_signup");
       }
     } catch {
       setMessage("Something went wrong. Please check your connection and try again.");
@@ -444,7 +451,10 @@ export default function Waitlist() {
                   required
                   placeholder="you@email.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    if (email === "" && e.target.value !== "") captureEvent("waitlist_email_started");
+                    setEmail(e.target.value);
+                  }}
                   maxLength={200}
                   aria-label="Email address"
                   className="wl-email"

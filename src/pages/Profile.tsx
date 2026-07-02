@@ -563,15 +563,6 @@ export default function Profile() {
             {saved ? "Saved ✓" : "Save profile"}
           </button>
         </div>
-
-        {user?.role === "admin" && (
-          <div className="mt-4">
-            <button onClick={() => navigate("/admin")}
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-              🛠 Admin dashboard
-            </button>
-          </div>
-        )}
       </div>
     );
   }
@@ -750,16 +741,6 @@ export default function Profile() {
           <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">Position</p>
         </div>
       </div>
-
-      {/* Admin shortcut */}
-      {user?.role === "admin" && (
-        <div className="mb-4">
-          <button onClick={() => navigate("/admin")}
-            className="w-full rounded-xl border border-brand/30 bg-brand/5 py-2.5 text-sm font-semibold text-brand transition hover:bg-brand/10 active:scale-[0.98]">
-            🛠 Admin dashboard
-          </button>
-        </div>
-      )}
 
       {/* Highlights feed */}
       <HighlightGrid
