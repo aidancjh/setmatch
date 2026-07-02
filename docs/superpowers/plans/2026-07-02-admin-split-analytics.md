@@ -358,8 +358,8 @@ git commit -m "feat: add adminApiLimiter for the standalone admin service"
 
 **Interfaces:**
 - Consumes: `query` from `server/db.js` (indirectly, via `server/repo.js`'s `findUserById` — but this module calls `repo.findUserById` directly, not `query`).
-- Produces: `signAdminToken(userId)` → JWT string, claims `{ sub: userId, aud: "admin" }`, 8h expiry.
-- Produces: `requireAdminAuth` — Express middleware. Sets `req.userId` on success; 401 on missing/invalid/wrong-audience token, 401 if the account no longer exists or is suspended, 403 if `role !== "admin"`.
+- Produces: `signAdminToken(userId, tokenVersion = 0)` → JWT string, claims `{ sub: userId, aud: "admin", tv: tokenVersion }`, 8h expiry. Reuses the existing `users.token_version` column (already used by the consumer JWT's revocation check in `server/auth.js`) — no new migration. Admin accounts are Google-OAuth-only (passwordless), so nothing else ever bumps this column for them; it exists purely as a manual "revoke this admin's sessions" lever.
+- Produces: `requireAdminAuth` — Express middleware. Sets `req.userId` on success; 401 on missing/invalid/wrong-audience token, 401 if the account no longer exists, 403 if suspended, 401 if `tv` doesn't match the account's current `token_version` (revoked), 403 if `role !== "admin"`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -380,14 +380,22 @@ describe("adminAuth", () => {
     process.env.ADMIN_JWT_SECRET = ADMIN_SECRET;
   });
 
-  it("signAdminToken produces a token with aud=admin and an 8h expiry", async () => {
+  it("signAdminToken produces a token with aud=admin, tv, and an 8h expiry", async () => {
     const { signAdminToken } = await import("../server/adminAuth.js");
-    const token = signAdminToken("user_1");
+    const token = signAdminToken("user_1", 2);
     const payload = jwt.verify(token, ADMIN_SECRET);
     expect(payload.sub).toBe("user_1");
     expect(payload.aud).toBe("admin");
+    expect(payload.tv).toBe(2);
     const ttlSeconds = payload.exp - payload.iat;
     expect(ttlSeconds).toBe(8 * 60 * 60);
+  });
+
+  it("signAdminToken defaults tv to 0 when not passed", async () => {
+    const { signAdminToken } = await import("../server/adminAuth.js");
+    const token = signAdminToken("user_1");
+    const payload = jwt.verify(token, ADMIN_SECRET);
+    expect(payload.tv).toBe(0);
   });
 
   it("requireAdminAuth rejects a request with no token (401)", async () => {
@@ -413,9 +421,9 @@ describe("adminAuth", () => {
 
   it("requireAdminAuth rejects a valid admin-secret token whose account role isn't admin (403)", async () => {
     const repo = await import("../server/repo.js");
-    repo.findUserById.mockResolvedValue({ id: "user_2", role: "user", suspended: false });
+    repo.findUserById.mockResolvedValue({ id: "user_2", role: "user", suspended: false, token_version: 0 });
     const { signAdminToken, requireAdminAuth } = await import("../server/adminAuth.js");
-    const token = signAdminToken("user_2");
+    const token = signAdminToken("user_2", 0);
     const req = { headers: { authorization: `Bearer ${token}` } };
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
@@ -424,11 +432,24 @@ describe("adminAuth", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
+  it("requireAdminAuth rejects a token whose tv no longer matches the account's token_version (revoked, 401)", async () => {
+    const repo = await import("../server/repo.js");
+    repo.findUserById.mockResolvedValue({ id: "user_4", role: "admin", suspended: false, token_version: 1 });
+    const { signAdminToken, requireAdminAuth } = await import("../server/adminAuth.js");
+    const token = signAdminToken("user_4", 0); // stale — DB now at token_version 1
+    const req = { headers: { authorization: `Bearer ${token}` } };
+    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const next = vi.fn();
+    await requireAdminAuth(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
   it("requireAdminAuth sets req.userId and calls next() for a valid admin", async () => {
     const repo = await import("../server/repo.js");
-    repo.findUserById.mockResolvedValue({ id: "user_3", role: "admin", suspended: false });
+    repo.findUserById.mockResolvedValue({ id: "user_3", role: "admin", suspended: false, token_version: 0 });
     const { signAdminToken, requireAdminAuth } = await import("../server/adminAuth.js");
-    const token = signAdminToken("user_3");
+    const token = signAdminToken("user_3", 0);
     const req = { headers: { authorization: `Bearer ${token}` } };
     const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
@@ -466,17 +487,21 @@ if (process.env.NODE_ENV === "production" && ADMIN_JWT_SECRET === DEV_SECRET) {
 
 const ADMIN_TOKEN_TTL = "8h";
 
-export function signAdminToken(userId) {
-  return jwt.sign({ sub: userId, aud: "admin" }, ADMIN_JWT_SECRET, {
+export function signAdminToken(userId, tokenVersion = 0) {
+  return jwt.sign({ sub: userId, aud: "admin", tv: tokenVersion }, ADMIN_JWT_SECRET, {
     expiresIn: ADMIN_TOKEN_TTL,
   });
 }
 
 /**
  * Express middleware: requires a valid admin-audience Bearer token, then
- * re-checks the account's current role and suspended status on every request
- * (a role downgrade or suspension takes effect immediately, not after the
- * 8h token expires). Sets req.userId.
+ * re-checks the account's current role, suspended status, and token_version
+ * on every request — a role downgrade, suspension, or explicit revocation
+ * (bumping token_version) takes effect immediately, not after the 8h token
+ * expires. Reuses the same users.token_version column server/auth.js's
+ * consumer JWT already uses; admin accounts are passwordless (Google-OAuth
+ * only) so nothing else ever bumps it — it's purely a manual revoke lever
+ * here. Sets req.userId.
  */
 export async function requireAdminAuth(req, res, next) {
   const header = req.headers.authorization || "";
@@ -497,6 +522,9 @@ export async function requireAdminAuth(req, res, next) {
     const user = await findUserById(payload.sub);
     if (!user) return res.status(401).json({ error: "Account not found." });
     if (user.suspended) return res.status(403).json({ error: "This account has been suspended." });
+    if ((payload.tv ?? 0) !== (user.token_version ?? 0)) {
+      return res.status(401).json({ error: "Session expired. Please sign in again." });
+    }
     if ((user.role || "user") !== "admin") {
       return res.status(403).json({ error: "Admin access required." });
     }
@@ -1120,7 +1148,7 @@ app.get("/api/auth/google/callback", async (req, res) => {
     }
     if (user.suspended) return res.redirect(`${appUrl}/?error=suspended`);
 
-    res.redirect(`${appUrl}/?token=${signAdminToken(user.id)}`);
+    res.redirect(`${appUrl}/?token=${signAdminToken(user.id, user.token_version)}`);
   } catch (err) {
     console.error("[admin-api] google callback failed:", err);
     res.redirect(`${appUrl}/?error=google_failed`);
