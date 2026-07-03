@@ -78,9 +78,37 @@ export default function Waitlist() {
   const [message, setMessage] = useState("");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Attribution: read ?utm_source= once at first render and hold onto it, so
+  // it's captured before the cleanup effect below wipes it from the address
+  // bar. Sent with the signup; the backend validates it against its allowlist.
+  const sourceRef = useRef<string | null>(null);
+  if (sourceRef.current === null) {
+    sourceRef.current =
+      typeof window === "undefined"
+        ? ""
+        : new URLSearchParams(window.location.search).get("utm_source") || "";
+  }
+
   // --- Initialize PostHog on mount
   useEffect(() => {
     initPostHog();
+  }, []);
+
+  // Clean the URL: after PostHog has captured the pageview (incl. utm_source),
+  // strip every utm_* param so the address bar reads a tidy /waitlist (no
+  // reload, invisible to the user). Non-utm params are left untouched.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    let changed = false;
+    for (const key of [...url.searchParams.keys()]) {
+      if (key.toLowerCase().startsWith("utm_")) {
+        url.searchParams.delete(key);
+        changed = true;
+      }
+    }
+    if (changed) {
+      window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+    }
   }, []);
 
   // --- Animated ray field (ported from the design's canvas render loop) ------
@@ -203,7 +231,7 @@ export default function Waitlist() {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, company }),
+        body: JSON.stringify({ email, company, source: sourceRef.current }),
       });
       const data = await res.json();
       if (!res.ok) {

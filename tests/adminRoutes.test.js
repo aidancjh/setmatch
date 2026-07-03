@@ -14,6 +14,10 @@ vi.mock("../server/adminAuth.js", () => ({
 vi.mock("../server/repo.js", () => ({
   adminStats: vi.fn().mockResolvedValue({ users: 10, games: 3 }),
   getWaitlistCount: vi.fn().mockResolvedValue(7),
+  getWaitlistCountsBySource: vi.fn().mockResolvedValue([
+    { source: "instagram", count: 5 },
+    { source: "direct", count: 2 },
+  ]),
   logAdminAction: vi.fn().mockResolvedValue(undefined),
   findUserById: vi.fn(),
   publicUser: vi.fn(),
@@ -58,6 +62,10 @@ describe("adminRoutes", () => {
       submittedPosthog: 25,
       startedRate: 40, // 40/100 * 100
       submittedRate: 7, // 7/100 * 100
+      bySource: [
+        { source: "instagram", count: 5, percent: 71.4 }, // 5/7
+        { source: "direct", count: 2, percent: 28.6 }, // 2/7
+      ],
     });
   });
 

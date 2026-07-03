@@ -1143,8 +1143,22 @@ if (fs.existsSync(path.join(distDir, "index.html"))) {
 // shared IPs (CGNAT), so a strict limit would block genuine signups during a
 // viral launch. The real bot defenses are the honeypot below (and a CAPTCHA if
 // added) — this just stops one IP hammering the endpoint thousands of times.
+// Channels we advertise on. An incoming utm_source is normalised to one of
+// these; anything unrecognised becomes 'other' and a missing tag is 'direct'.
+// 'test' is our private label for self-testing — excluded from the % breakdown.
+const WAITLIST_SOURCES = new Set([
+  "instagram", "tiktok", "youtube", "reddit", "telegram", "whatsapp", "test",
+]);
+
+function normaliseWaitlistSource(raw) {
+  if (typeof raw !== "string") return "direct";
+  const s = raw.trim().toLowerCase();
+  if (s === "") return "direct";
+  return WAITLIST_SOURCES.has(s) ? s : "other";
+}
+
 app.post("/api/waitlist", waitlistLimiter, async (req, res) => {
-  const { email, name, company } = req.body || {};
+  const { email, name, company, source } = req.body || {};
   // Honeypot: the hidden "company" field is invisible to humans. Bots that
   // auto-fill every input set it — silently accept (don't reveal the trap) and
   // drop the request without writing anything.
@@ -1156,7 +1170,8 @@ app.post("/api/waitlist", waitlistLimiter, async (req, res) => {
   if (trimmed.length > 200) return res.status(400).json({ error: "Email too long." });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return res.status(400).json({ error: "Invalid email address." });
   const safeName = typeof name === "string" ? name.slice(0, 100) : "";
-  const result = await repo.addWaitlistEntry(trimmed, safeName);
+  const safeSource = normaliseWaitlistSource(source);
+  const result = await repo.addWaitlistEntry(trimmed, safeName, safeSource);
   if (result.alreadyExists) return res.json({ ok: true, message: "You're already on the list — we'll be in touch!" });
   res.json({ ok: true, message: "You're on the list! We'll let you know when Coterie launches in Singapore." });
 });

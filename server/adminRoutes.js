@@ -181,13 +181,28 @@ router.patch(
 router.get(
   "/analytics/funnel",
   h(async (_req, res) => {
-    const [{ visits, started, submittedPosthog }, submittedDb] = await Promise.all([
+    const [{ visits, started, submittedPosthog }, submittedDb, rawBySource] = await Promise.all([
       queryWaitlistFunnel(),
       repo.getWaitlistCount(),
+      repo.getWaitlistCountsBySource(),
     ]);
     const startedRate = visits > 0 ? Math.round((started / visits) * 100) : 0;
     const submittedRate = visits > 0 ? Math.round((submittedDb / visits) * 100) : 0;
-    res.json({ visits, started, submittedDb, submittedPosthog, startedRate, submittedRate });
+    // Per-channel attribution from our own DB (utm_source captured at signup).
+    // Percentages are of *real* signups only — the 'test' bucket (our own
+    // testing) is excluded from the denominator.
+    const realTotal = rawBySource
+      .filter((r) => r.source !== "test")
+      .reduce((sum, r) => sum + r.count, 0);
+    const bySource = rawBySource.map((r) => ({
+      source: r.source,
+      count: r.count,
+      percent:
+        r.source === "test" || realTotal === 0
+          ? null
+          : Math.round((r.count / realTotal) * 1000) / 10, // one decimal place
+    }));
+    res.json({ visits, started, submittedDb, submittedPosthog, startedRate, submittedRate, bySource });
   })
 );
 

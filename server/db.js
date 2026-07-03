@@ -391,6 +391,12 @@ export async function initSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+  // Attribution: which channel a signup came from (utm_source captured at
+  // submit time). 'direct' = no tag; 'other' = an unrecognised tag. Added via
+  // ALTER so it also lands on the already-populated production table.
+  await pool.query(
+    "ALTER TABLE waitlist ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'direct'"
+  );
 
   // Feature: recurring games are linked by a shared series_id so a host can
   // cancel/edit all future occurrences at once. NULL for one-off games.

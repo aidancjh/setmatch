@@ -1653,12 +1653,12 @@ export async function findOrCreateGoogleUser(googleId, email, name) {
 
 // --- Waitlist -----------------------------------------------------------------
 
-export async function addWaitlistEntry(email, name = "") {
+export async function addWaitlistEntry(email, name = "", source = "direct") {
   const id = uid("wl");
   try {
     await query(
-      "INSERT INTO waitlist (id, email, name) VALUES ($1, $2, $3)",
-      [id, email.toLowerCase().trim(), name.trim()]
+      "INSERT INTO waitlist (id, email, name, source) VALUES ($1, $2, $3, $4)",
+      [id, email.toLowerCase().trim(), name.trim(), source]
     );
     return { ok: true, alreadyExists: false };
   } catch (err) {
@@ -1670,6 +1670,14 @@ export async function addWaitlistEntry(email, name = "") {
 export async function getWaitlistCount() {
   const { rows } = await query("SELECT COUNT(*)::int AS count FROM waitlist");
   return rows[0].count;
+}
+
+/** Signup counts grouped by attribution source, most signups first. */
+export async function getWaitlistCountsBySource() {
+  const { rows } = await query(
+    "SELECT source, COUNT(*)::int AS count FROM waitlist GROUP BY source ORDER BY count DESC"
+  );
+  return rows;
 }
 
 // --------------------------------------------------------------------------

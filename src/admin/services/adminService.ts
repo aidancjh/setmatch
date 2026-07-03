@@ -10,6 +10,12 @@ import type {
 } from "../../types";
 import { adminApiClient as api } from "../lib/adminApi";
 
+interface WaitlistSourceStat {
+  source: string;
+  count: number;
+  percent: number | null; // null for the 'test' bucket (excluded from %)
+}
+
 interface WaitlistFunnel {
   visits: number;
   started: number;
@@ -17,6 +23,7 @@ interface WaitlistFunnel {
   submittedPosthog: number;
   startedRate: number;
   submittedRate: number;
+  bySource: WaitlistSourceStat[];
 }
 
 export const adminApi = {

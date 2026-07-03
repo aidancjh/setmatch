@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { adminApi } from "../services/adminService";
 
+interface WaitlistSourceStat {
+  source: string;
+  count: number;
+  percent: number | null; // null for the 'test' bucket (excluded from %)
+}
+
 interface WaitlistFunnel {
   visits: number;
   started: number;
@@ -8,7 +14,21 @@ interface WaitlistFunnel {
   submittedPosthog: number;
   startedRate: number;
   submittedRate: number;
+  bySource: WaitlistSourceStat[];
 }
+
+// Friendly labels for the channels we tag with utm_source.
+const SOURCE_LABELS: Record<string, string> = {
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  youtube: "YouTube",
+  reddit: "Reddit",
+  telegram: "Telegram",
+  whatsapp: "WhatsApp",
+  direct: "Direct / untagged",
+  other: "Other",
+  test: "Test (excluded)",
+};
 
 export default function Funnel() {
   const [data, setData] = useState<WaitlistFunnel | null>(null);
@@ -46,6 +66,38 @@ export default function Funnel() {
         PostHog also recorded {data.submittedPosthog} client-side submit events (informational —
         the count above is the source of truth from our own database).
       </p>
+
+      {/* Per-channel attribution from our own DB (utm_source captured at signup).
+          Percentages exclude the 'test' bucket. */}
+      <div className="space-y-2 pt-2">
+        <h3 className="text-sm font-semibold text-slate-900">Signups by source</h3>
+        {data.bySource.length === 0 ? (
+          <p className="text-xs text-slate-400">No signups yet.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-slate-500">
+                <th className="py-1 font-medium">Source</th>
+                <th className="py-1 text-right font-medium">Signups</th>
+                <th className="py-1 text-right font-medium">Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.bySource.map((s) => (
+                <tr key={s.source} className="border-t border-slate-100">
+                  <td className="py-1.5 text-slate-700">
+                    {SOURCE_LABELS[s.source] ?? s.source}
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums text-slate-900">{s.count}</td>
+                  <td className="py-1.5 text-right tabular-nums text-slate-500">
+                    {s.percent === null ? "—" : `${s.percent}%`}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }
