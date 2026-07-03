@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { consumerUrl } from "./lib/links";
 import type {
   AdminStats,
   AdminUser,
@@ -31,7 +31,7 @@ function shortDate(iso: string) {
 }
 
 export default function AdminApp() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [tab, setTab] = useState<Tab>("overview");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -207,12 +207,22 @@ export default function AdminApp() {
 
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-bold tracking-tight text-slate-900">
-        Admin
-      </h1>
-      <p className="mb-4 text-sm text-slate-500">
-        Signed in as {user?.name} · admin
-      </p>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="mb-1 text-2xl font-bold tracking-tight text-slate-900">
+            Admin
+          </h1>
+          <p className="text-sm text-slate-500">
+            Signed in as <span className="font-medium text-slate-700">{user?.email}</span> · admin
+          </p>
+        </div>
+        <button
+          onClick={logout}
+          className="shrink-0 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 active:scale-95"
+        >
+          Sign out
+        </button>
+      </div>
 
       <div className="mb-4 flex gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1">
         {tabs.map((t) => (
@@ -268,8 +278,10 @@ export default function AdminApp() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <Link
-                      to={`/user/${u.id}`}
+                    <a
+                      href={consumerUrl(`/user/${u.id}`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="flex items-center gap-1.5 truncate font-semibold text-slate-900 hover:underline"
                     >
                       {u.name}
@@ -278,7 +290,7 @@ export default function AdminApp() {
                           suspended
                         </span>
                       )}
-                    </Link>
+                    </a>
                     <p className="truncate text-xs text-slate-400">{u.email}</p>
                   </div>
                   <select
@@ -398,9 +410,14 @@ export default function AdminApp() {
                       {c.kind === "highlight" ? "highlight" : "game"}
                     </span>{" "}
                     {c.kind === "game" ? (
-                      <Link to={`/game/${c.refId}`} className="hover:underline">
+                      <a
+                        href={consumerUrl(`/game/${c.refId}`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                      >
                         {c.refTitle}
-                      </Link>
+                      </a>
                     ) : (
                       c.refTitle
                     )}{" "}
@@ -455,20 +472,24 @@ export default function AdminApp() {
                 <p className="mt-0.5 text-xs text-slate-400">Reported by {r.reporterName}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {r.targetType === "game" && (
-                    <Link
-                      to={`/game/${r.targetId}`}
+                    <a
+                      href={consumerUrl(`/game/${r.targetId}`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200"
                     >
                       View game
-                    </Link>
+                    </a>
                   )}
                   {r.targetType === "highlight" && (
-                    <Link
-                      to="/highlights"
+                    <a
+                      href={consumerUrl("/highlights")}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200"
                     >
                       View highlights
-                    </Link>
+                    </a>
                   )}
                   <button
                     onClick={() => deleteReported(r)}
@@ -610,12 +631,17 @@ export default function AdminApp() {
               key={g.id}
               className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-white p-3 shadow-sm"
             >
-              <Link to={`/game/${g.id}`} className="min-w-0">
+              <a
+                href={consumerUrl(`/game/${g.id}`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="min-w-0"
+              >
                 <p className="truncate font-semibold text-slate-900">{g.title}</p>
                 <p className="truncate text-xs text-slate-400">
                   {formatDate(g.date)} · {g.players.length}/{g.totalSlots} · {g.hostName}
                 </p>
-              </Link>
+              </a>
               <button
                 onClick={() => removeGame(g)}
                 className="shrink-0 text-xs font-medium text-rose-500 hover:text-rose-600"
