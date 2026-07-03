@@ -11,9 +11,13 @@
 const POSTHOG_HOST = process.env.POSTHOG_HOST || "https://us.posthog.com";
 
 // Column order must match the destructuring order in queryWaitlistFunnel: [visits, started, submittedPosthog]
+// Visits exclude ?utm_source=test — the same private bucket the DB-backed
+// signup queries already exclude — so testing from your own device doesn't
+// skew the real numbers. Visit https://coterie.com.de/waitlist?utm_source=test
+// from your own browser to keep your pageviews out of this count.
 const FUNNEL_QUERY = `
   SELECT
-    countIf(event = '$pageview' AND properties.$pathname = '/waitlist') AS visits,
+    countIf(event = '$pageview' AND properties.$pathname = '/waitlist' AND coalesce(properties.utm_source, '') != 'test') AS visits,
     countIf(event = 'waitlist_email_started') AS started,
     countIf(event = 'waitlist_signup') AS submitted
   FROM events
@@ -37,11 +41,13 @@ const VISITS_BY_SOURCE_QUERY = `
 // Daily pageview counts on /waitlist, all-time. Grouped by UTC calendar day to
 // match repo.getWaitlistSignupsByDay(); the admin route zero-fills both series
 // onto one shared date axis. Returns only days that had at least one pageview.
+// Excludes the 'test' utm_source bucket, same as FUNNEL_QUERY's visits count.
 const VISITS_BY_DAY_QUERY = `
   SELECT toDate(timestamp) AS day, count() AS visits
   FROM events
   WHERE event = '$pageview'
     AND properties.$pathname = '/waitlist'
+    AND coalesce(properties.utm_source, '') != 'test'
   GROUP BY day
   ORDER BY day
 `;

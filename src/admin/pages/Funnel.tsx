@@ -78,8 +78,8 @@ function TimeSeriesLineChart({
 }) {
   if (rows.length === 0) return <p className="text-xs text-slate-400">{emptyText}</p>;
 
-  const w = 720;
-  const h = 170;
+  const w = 340;
+  const h = 300;
   const plotLeft = 30;
   const plotRight = w - 8;
   const plotTop = 12;
@@ -251,23 +251,35 @@ export default function Funnel() {
         </p>
       )}
 
-      {/* 1. Pageviews over time — PostHog pageviews, grouped by day. */}
-      <Card title="Pageviews over time">
-        <TimeSeriesLineChart
-          rows={data.visitsByDay}
-          emptyText="No visits recorded yet."
-          color="#3B82F6"
-          ariaLabel={`Page views per day, ${data.visitsByDay.length} days`}
-        />
-      </Card>
+      {/* 1 & 3. Pageviews / signups over time, side by side so each chart gets
+          a squarer aspect ratio instead of stretching full-width. */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card title="Pageviews over time">
+          <TimeSeriesLineChart
+            rows={data.visitsByDay}
+            emptyText="No visits recorded yet."
+            color="#3B82F6"
+            ariaLabel={`Page views per day, ${data.visitsByDay.length} days`}
+          />
+        </Card>
+
+        <Card title="Signups over time">
+          <TimeSeriesLineChart
+            rows={data.signupsByDay}
+            emptyText="No signups yet."
+            color="#FB923C"
+            ariaLabel={`Signups per day, ${data.signupsByDay.length} days`}
+          />
+        </Card>
+      </div>
 
       {/* 2. Conversion rate — visits, signups, and the % between them. */}
       <Card title="Conversion rate">
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
           {conversionStats.map((s) => (
-            <div key={s.label} className="min-w-[6.5rem] rounded-lg bg-slate-50 px-4 py-3">
-              <p className="text-xs text-slate-500">{s.label}</p>
-              <p className="text-2xl font-semibold text-slate-900">{s.value}</p>
+            <div key={s.label} className="rounded-lg bg-slate-50 px-3 py-1.5">
+              <p className="text-[10px] text-slate-500">{s.label}</p>
+              <p className="text-base font-semibold text-slate-900">{s.value}</p>
             </div>
           ))}
         </div>
@@ -275,16 +287,6 @@ export default function Funnel() {
           PostHog also recorded {data.submittedPosthog} client-side submit events (informational —
           the signup count above is the source of truth from our own database).
         </p>
-      </Card>
-
-      {/* 3. Signups over time — our own DB, no PostHog dependency. */}
-      <Card title="Signups over time">
-        <TimeSeriesLineChart
-          rows={data.signupsByDay}
-          emptyText="No signups yet."
-          color="#FB923C"
-          ariaLabel={`Signups per day, ${data.signupsByDay.length} days`}
-        />
       </Card>
 
       {/* 4. Signups by source — our own DB (exact, immune to ad blockers). */}
