@@ -40,13 +40,13 @@ function PlayerAvatar({ p, i }: { p: (typeof PLAYERS)[number]; i: number }) {
   return (
     <svg
       viewBox="0 0 40 40"
-      width={36}
-      height={36}
       aria-hidden="true"
       style={{
         display: "block",
+        width: "clamp(32px,2.6vw,48px)",
+        height: "clamp(32px,2.6vw,48px)",
         borderRadius: "50%",
-        marginLeft: i === 0 ? 0 : -10,
+        marginLeft: i === 0 ? 0 : "clamp(-10px,-0.8vw,-13px)",
         border: "2.5px solid #FDFBF9",
         boxShadow: "0 2px 6px rgba(20,17,15,0.14)",
       }}
@@ -283,8 +283,8 @@ export default function Waitlist() {
         .wl-cta:active:not(:disabled) { transform:translateY(0); }
         /* Design 1 — bold player silhouettes grounded in the bottom corners */
         .wl-fig { position:absolute; bottom:-2px; z-index:2; color:#FF6A1A; opacity:.95; pointer-events:none; height:auto; }
-        .wl-spiker { left:clamp(-32px, -1.5vw, 0px); width:clamp(220px, 30vw, 430px); }
-        .wl-digger { right:clamp(-32px, -1.5vw, 0px); width:clamp(240px, 32vw, 470px); }
+        .wl-spiker { left:clamp(-32px, -1.5vw, 0px); width:clamp(220px, 26vw, 560px); }
+        .wl-digger { right:clamp(-32px, -1.5vw, 0px); width:clamp(240px, 28vw, 600px); }
         @media (max-width: 760px) {
           /* Shrink + fade so they frame the form instead of crowding it */
           .wl-fig { opacity:.13; }
@@ -335,24 +335,24 @@ export default function Waitlist() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "22px clamp(20px,5vw,52px)",
+          padding: "clamp(18px,2.2vw,34px) clamp(20px,5vw,72px)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "clamp(8px,0.9vw,14px)" }}>
           <div
             style={{
-              width: 22,
-              height: 22,
+              width: "clamp(22px,2.4vw,40px)",
+              height: "clamp(22px,2.4vw,40px)",
               borderRadius: "50%",
               background: "conic-gradient(from 210deg, #FF6A1A, #FF9A3D, #FFC078, #FF4D2E, #FF6A1A)",
               boxShadow: "0 2px 10px rgba(255,106,26,0.35)",
             }}
           />
-          <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em", color: "#1A1614" }}>
+          <span style={{ fontSize: "clamp(17px,1.8vw,30px)", fontWeight: 700, letterSpacing: "-0.02em", color: "#1A1614" }}>
             coterie
           </span>
         </div>
-        <span style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: "0.04em", color: "#9A8E84" }}>
+        <span style={{ fontSize: "clamp(12.5px,1.1vw,18px)", fontWeight: 600, letterSpacing: "0.04em", color: "#9A8E84" }}>
           Volleyball · Singapore
         </span>
       </header>
@@ -368,7 +368,7 @@ export default function Waitlist() {
           alignItems: "center",
           justifyContent: "center",
           textAlign: "center",
-          padding: "24px clamp(20px,5vw,52px) 64px",
+          padding: "clamp(24px,3vw,40px) clamp(20px,5vw,72px) clamp(56px,7vw,96px)",
         }}
       >
         {/* "Launches soon" badge */}
@@ -377,16 +377,16 @@ export default function Waitlist() {
             display: "inline-flex",
             alignItems: "center",
             gap: 10,
-            padding: "9px 18px",
+            padding: "clamp(9px,0.9vw,15px) clamp(18px,1.7vw,30px)",
             border: "1px solid #F2D9C5",
             background: "rgba(255,247,240,0.8)",
             borderRadius: 100,
-            marginBottom: 30,
+            marginBottom: "clamp(26px,2.6vw,46px)",
           }}
         >
           <span
             style={{
-              fontSize: 13,
+              fontSize: "clamp(13px,1vw,18px)",
               fontWeight: 700,
               letterSpacing: "0.14em",
               color: "#C4622A",
@@ -401,7 +401,7 @@ export default function Waitlist() {
         <h1
           style={{
             margin: 0,
-            fontSize: "clamp(2.4rem,8vw,5.2rem)",
+            fontSize: "clamp(2.6rem,6vw,7.5rem)",
             lineHeight: 0.98,
             fontWeight: 800,
             letterSpacing: "-0.035em",
@@ -416,10 +416,10 @@ export default function Waitlist() {
             mid-clause is picked out in brand orange as the line's focal point. */}
         <p
           style={{
-            margin: "22px 0 0",
-            maxWidth: "min(92vw, 380px)",
+            margin: "clamp(20px,2.1vw,34px) 0 0",
+            maxWidth: "min(90vw, 560px)",
             textAlign: "center",
-            fontSize: "clamp(0.875rem, 3.6vw, 1rem)",
+            fontSize: "clamp(1rem, 1.5vw, 1.45rem)",
             fontWeight: 600,
             color: "#6F665E",
             letterSpacing: "-0.01em",
@@ -430,7 +430,7 @@ export default function Waitlist() {
         </p>
 
         {/* Form / success */}
-        <div className="wl-formwrap" style={{ width: "100%", maxWidth: 480, marginTop: 34 }}>
+        <div className="wl-formwrap" style={{ width: "100%", maxWidth: "clamp(380px, 34vw, 640px)", marginTop: "clamp(28px,3vw,48px)" }}>
           {submitted ? (
             <div
               style={{
@@ -438,7 +438,7 @@ export default function Waitlist() {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 11,
-                padding: "17px 22px",
+                padding: "clamp(16px,1.4vw,24px) clamp(20px,2vw,30px)",
                 background: "#FFF3EA",
                 border: "1px solid #F2D9C5",
                 borderRadius: 14,
@@ -446,8 +446,8 @@ export default function Waitlist() {
             >
               <span
                 style={{
-                  width: 24,
-                  height: 24,
+                  width: "clamp(24px,1.8vw,32px)",
+                  height: "clamp(24px,1.8vw,32px)",
                   borderRadius: "50%",
                   background: "#FF6A1A",
                   color: "#fff",
@@ -455,13 +455,13 @@ export default function Waitlist() {
                   alignItems: "center",
                   justifyContent: "center",
                   fontWeight: 800,
-                  fontSize: 13,
+                  fontSize: "clamp(13px,1vw,16px)",
                   flex: "none",
                 }}
               >
                 ✓
               </span>
-              <span style={{ fontSize: 15, fontWeight: 600, color: "#15110F" }}>{message}</span>
+              <span style={{ fontSize: "clamp(15px,1.1vw,19px)", fontWeight: 600, color: "#15110F" }}>{message}</span>
             </div>
           ) : (
             <div className="wl-box wl-box-1">
@@ -493,9 +493,9 @@ export default function Waitlist() {
                   style={{
                     flex: 1,
                     minWidth: 0,
-                    padding: "15px 16px",
+                    padding: "clamp(14px,1.2vw,20px) clamp(16px,1.4vw,22px)",
                     fontFamily: "inherit",
-                    fontSize: 15,
+                    fontSize: "clamp(15px,1.1vw,19px)",
                     fontWeight: 500,
                     color: "#15110F",
                     background: "#fff",
@@ -510,9 +510,9 @@ export default function Waitlist() {
                   className="wl-cta"
                   style={{
                     flex: "none",
-                    padding: "15px 24px",
+                    padding: "clamp(14px,1.2vw,20px) clamp(22px,2vw,34px)",
                     fontFamily: "inherit",
-                    fontSize: 15,
+                    fontSize: "clamp(15px,1.1vw,19px)",
                     fontWeight: 700,
                     letterSpacing: "-0.01em",
                     color: "#fff",
@@ -531,20 +531,20 @@ export default function Waitlist() {
             </div>
           )}
           {status === "error" && (
-            <p style={{ margin: "12px 2px 0", fontSize: 13.5, fontWeight: 600, color: "#E8590C", textAlign: "left" }}>
+            <p style={{ margin: "12px 2px 0", fontSize: "clamp(13.5px,0.95vw,16px)", fontWeight: 600, color: "#E8590C", textAlign: "left" }}>
               {message}
             </p>
           )}
         </div>
 
         {/* Social proof */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 13, marginTop: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 13, marginTop: "clamp(22px,2.2vw,38px)" }}>
           <div style={{ display: "flex" }} aria-hidden="true">
             {PLAYERS.map((p, i) => (
               <PlayerAvatar key={i} p={p} i={i} />
             ))}
           </div>
-          <span style={{ fontSize: 13.5, fontWeight: 600, color: "#6F665E" }}>
+          <span style={{ fontSize: "clamp(13.5px,1vw,17px)", fontWeight: 600, color: "#6F665E" }}>
             Join 40+ players already on the list
           </span>
         </div>
@@ -553,8 +553,8 @@ export default function Waitlist() {
             coterie is the app name, so this frames what it is, not who made it. */}
         <p
           style={{
-            margin: "34px 0 0",
-            fontSize: "clamp(0.95rem,1.5vw,1.1rem)",
+            margin: "clamp(30px,3vw,50px) 0 0",
+            fontSize: "clamp(1rem,1.3vw,1.4rem)",
             lineHeight: 1.5,
             fontWeight: 500,
             color: "#6F665E",
