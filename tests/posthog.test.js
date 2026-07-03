@@ -115,3 +115,58 @@ describe("posthog.queryWaitlistVisitsBySource", () => {
     await expect(queryWaitlistVisitsBySource()).rejects.toThrow(/PostHog query failed/);
   });
 });
+
+describe("posthog.queryWaitlistVisitsByDay", () => {
+  beforeEach(() => {
+    process.env.POSTHOG_PROJECT_ID = "494538";
+    process.env.POSTHOG_PERSONAL_API_KEY = "phx_test_key";
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-03T12:00:00Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    delete process.env.POSTHOG_PROJECT_ID;
+    delete process.env.POSTHOG_PERSONAL_API_KEY;
+  });
+
+  it("returns a zero-filled 30-day series (today inclusive) with matched days populated", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ results: [["2026-07-01", 5], ["2026-07-03", 2]] }),
+      })
+    );
+    const { queryWaitlistVisitsByDay } = await import("../server/posthog.js");
+    const result = await queryWaitlistVisitsByDay();
+
+    expect(result).toHaveLength(30);
+    expect(result[0]).toEqual({ date: "2026-06-04", count: 0 });
+    expect(result[result.length - 1]).toEqual({ date: "2026-07-03", count: 2 });
+    expect(result.find((r) => r.date === "2026-07-01")).toEqual({ date: "2026-07-01", count: 5 });
+    expect(result.find((r) => r.date === "2026-06-15")).toEqual({ date: "2026-06-15", count: 0 });
+  });
+
+  it("normalises a full ISO timestamp in the date column to YYYY-MM-DD", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ results: [["2026-07-01T00:00:00Z", 7]] }),
+      })
+    );
+    const { queryWaitlistVisitsByDay } = await import("../server/posthog.js");
+    const result = await queryWaitlistVisitsByDay();
+    expect(result.find((r) => r.date === "2026-07-01")).toEqual({ date: "2026-07-01", count: 7 });
+  });
+
+  it("throws when PostHog responds non-2xx", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) })
+    );
+    const { queryWaitlistVisitsByDay } = await import("../server/posthog.js");
+    await expect(queryWaitlistVisitsByDay()).rejects.toThrow(/PostHog query failed/);
+  });
+});

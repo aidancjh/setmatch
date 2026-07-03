@@ -33,6 +33,10 @@ vi.mock("../server/posthog.js", () => ({
     { source: "instagram", visits: 60 },
     { source: "direct", visits: 40 },
   ]),
+  queryWaitlistVisitsByDay: vi.fn().mockResolvedValue([
+    { date: "2026-07-02", count: 12 },
+    { date: "2026-07-03", count: 8 },
+  ]),
 }));
 
 describe("adminRoutes", () => {
@@ -82,6 +86,10 @@ describe("adminRoutes", () => {
         { date: "2026-07-02", count: 3 },
         { date: "2026-07-03", count: 4 },
       ],
+      visitsByDay: [
+        { date: "2026-07-02", count: 12 },
+        { date: "2026-07-03", count: 8 },
+      ],
       posthogError: null,
     });
   });
@@ -120,6 +128,7 @@ describe("adminRoutes", () => {
         { date: "2026-07-02", count: 3 },
         { date: "2026-07-03", count: 4 },
       ],
+      visitsByDay: [],
       posthogError: "PostHog query failed (401)",
     });
   });

@@ -31,6 +31,7 @@ interface WaitlistFunnel {
   bySource: WaitlistSourceStat[];
   visitsBySource: WaitlistSourceStat[];
   signupsByDay: WaitlistDayStat[];
+  visitsByDay: WaitlistDayStat[];
   posthogError: string | null;
 }
 

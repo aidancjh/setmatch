@@ -34,6 +34,38 @@ const VISITS_BY_SOURCE_QUERY = `
   ORDER BY visits DESC
 `;
 
+// Daily pageview counts on /waitlist. Grouped by UTC calendar day to match
+// zeroFillLast30Days() below and repo.getWaitlistSignupsByDay()'s use of
+// Postgres CURRENT_DATE (both run on Railway containers, which are UTC).
+const VISITS_BY_DAY_QUERY = `
+  SELECT toDate(timestamp) AS day, count() AS visits
+  FROM events
+  WHERE event = '$pageview'
+    AND properties.$pathname = '/waitlist'
+    AND timestamp > now() - INTERVAL 30 DAY
+  GROUP BY day
+  ORDER BY day
+`;
+
+// Last 30 UTC calendar days (today inclusive), oldest first, as "YYYY-MM-DD".
+function last30DayStrings() {
+  const days = [];
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - i));
+    days.push(d.toISOString().slice(0, 10));
+  }
+  return days;
+}
+
+// Normalises whatever date representation HogQL returns (string or object) to
+// a plain "YYYY-MM-DD" string.
+function toDateString(value) {
+  if (typeof value === "string") return value.slice(0, 10);
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).slice(0, 10);
+}
+
 // Thin wrapper around the PostHog HogQL query endpoint. Throws if PostHog isn't
 // configured or the request fails; callers decide how to surface that.
 async function runHogQL(query) {
@@ -82,4 +114,19 @@ export async function queryWaitlistVisitsBySource() {
       source: typeof source === "string" && source !== "" ? source : "direct",
       visits: Number(visits) || 0,
     }));
+}
+
+/**
+ * Daily pageview counts on /waitlist for the last 30 days (today inclusive),
+ * zero-filled so quiet days don't create gaps: [{ date, count }], oldest first.
+ */
+export async function queryWaitlistVisitsByDay() {
+  const data = await runHogQL(VISITS_BY_DAY_QUERY);
+  const rows = Array.isArray(data.results) ? data.results : [];
+  const counts = new Map();
+  for (const r of rows) {
+    if (!Array.isArray(r) || r.length !== 2) continue;
+    counts.set(toDateString(r[0]), Number(r[1]) || 0);
+  }
+  return last30DayStrings().map((date) => ({ date, count: counts.get(date) || 0 }));
 }

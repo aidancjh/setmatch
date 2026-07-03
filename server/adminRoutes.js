@@ -4,7 +4,7 @@
 import { Router } from "express";
 import { h } from "./lib/asyncHandler.js";
 import { requireAdminAuth } from "./adminAuth.js";
-import { queryWaitlistFunnel, queryWaitlistVisitsBySource } from "./posthog.js";
+import { queryWaitlistFunnel, queryWaitlistVisitsBySource, queryWaitlistVisitsByDay } from "./posthog.js";
 import * as repo from "./repo.js";
 
 const router = Router();
@@ -211,14 +211,17 @@ router.get(
     let started = 0;
     let submittedPosthog = 0;
     let rawVisitsBySource = [];
+    let visitsByDay = [];
     let posthogError = null;
     try {
-      const [funnel, visitsBySource] = await Promise.all([
+      const [funnel, visitsBySource, visitsByDayResult] = await Promise.all([
         queryWaitlistFunnel(),
         queryWaitlistVisitsBySource(),
+        queryWaitlistVisitsByDay(),
       ]);
       ({ visits, started, submittedPosthog } = funnel);
       rawVisitsBySource = visitsBySource;
+      visitsByDay = visitsByDayResult;
     } catch (err) {
       console.error("[funnel] PostHog query failed:", err);
       posthogError = err instanceof Error ? err.message : "PostHog is unavailable.";
@@ -240,6 +243,7 @@ router.get(
       bySource,
       visitsBySource,
       signupsByDay,
+      visitsByDay,
       posthogError,
     });
   })

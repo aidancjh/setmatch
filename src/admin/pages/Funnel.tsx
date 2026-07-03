@@ -22,6 +22,7 @@ interface WaitlistFunnel {
   bySource: WaitlistSourceStat[];
   visitsBySource: WaitlistSourceStat[];
   signupsByDay: WaitlistDayStat[];
+  visitsByDay: WaitlistDayStat[];
   posthogError: string | null;
 }
 
@@ -38,63 +39,49 @@ const SOURCE_LABELS: Record<string, string> = {
   test: "Test (excluded)",
 };
 
-// Horizontal bar chart for a per-source breakdown. Bar width is relative to the
-// biggest row; each row shows its raw count and (for non-'test' rows) its share.
-function SourceBarChart({
+// A section wrapper: consistent heading + spacing + a divider above every
+// section but the first, so the five blocks read as one neat, scannable list.
+function Section({
   title,
-  rows,
-  emptyText,
+  first,
+  children,
 }: {
   title: string;
-  rows: WaitlistSourceStat[];
-  emptyText: string;
+  first?: boolean;
+  children: React.ReactNode;
 }) {
-  const max = rows.reduce((m, r) => Math.max(m, r.count), 0);
   return (
-    <div className="space-y-2 pt-2">
+    <div className={first ? "space-y-2" : "space-y-2 border-t border-slate-100 pt-4"}>
       <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-      {rows.length === 0 ? (
-        <p className="text-xs text-slate-400">{emptyText}</p>
-      ) : (
-        <ul className="space-y-1.5">
-          {rows.map((r) => (
-            <li key={r.source} className="flex items-center gap-3">
-              <span className="w-28 shrink-0 truncate text-xs text-slate-600">
-                {SOURCE_LABELS[r.source] ?? r.source}
-              </span>
-              <div className="relative h-5 flex-1 rounded bg-slate-100">
-                <div
-                  className="h-5 rounded bg-orange-400"
-                  style={{ width: max > 0 ? `${Math.max(2, (r.count / max) * 100)}%` : "0%" }}
-                />
-              </div>
-              <span className="w-24 shrink-0 text-right text-xs tabular-nums text-slate-500">
-                {r.count}
-                {r.percent !== null && <span className="text-slate-400"> · {r.percent}%</span>}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      {children}
     </div>
   );
 }
 
-// Dependency-free SVG line chart for daily signup counts. No chart library in
-// this repo, so this is hand-rolled: a polyline for the line, a matching
-// filled polygon underneath for the area, and date labels on a sparse subset
-// of days (every ~5th, plus the last) so they don't overlap.
-function SignupsOverTimeChart({ rows }: { rows: WaitlistDayStat[] }) {
-  if (rows.length === 0) return <p className="text-xs text-slate-400">No signups yet.</p>;
+// Dependency-free SVG line+area chart (no chart library in this repo). Y axis
+// is the count (0 at the baseline, max at the top, both labelled); X axis is
+// the day, labelled on a sparse subset so dates don't overlap.
+function TimeSeriesLineChart({
+  rows,
+  emptyText,
+  color,
+  ariaLabel,
+}: {
+  rows: WaitlistDayStat[];
+  emptyText: string;
+  color: string;
+  ariaLabel: string;
+}) {
+  if (rows.length === 0) return <p className="text-xs text-slate-400">{emptyText}</p>;
 
   const w = 700;
-  const h = 140;
-  const padX = 6;
-  const padTop = 10;
+  const h = 150;
+  const padX = 26; // room for the y-axis "0" / max labels
+  const padTop = 14;
   const padBottom = 22;
   const max = Math.max(1, ...rows.map((r) => r.count));
-  const stepX = rows.length > 1 ? (w - padX * 2) / (rows.length - 1) : 0;
   const plotBottom = h - padBottom;
+  const stepX = rows.length > 1 ? (w - padX * 2) / (rows.length - 1) : 0;
 
   const points = rows.map((r, i) => {
     const x = padX + i * stepX;
@@ -103,19 +90,15 @@ function SignupsOverTimeChart({ rows }: { rows: WaitlistDayStat[] }) {
   });
   const linePoints = points.map((p) => `${p.x},${p.y}`).join(" ");
   const areaPoints = `${padX},${plotBottom} ${linePoints} ${points[points.length - 1].x},${plotBottom}`;
-
   const labelEvery = Math.max(1, Math.ceil(rows.length / 6));
 
   return (
-    <svg
-      viewBox={`0 0 ${w} ${h}`}
-      className="w-full"
-      role="img"
-      aria-label={`Signups per day over the last ${rows.length} days, ranging from 0 to ${max}`}
-    >
-      <line x1={padX} y1={plotBottom} x2={w - padX} y2={plotBottom} stroke="#E2E8F0" strokeWidth="1" />
-      <polygon points={areaPoints} fill="#FB923C" fillOpacity="0.12" />
-      <polyline points={linePoints} fill="none" stroke="#FB923C" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label={ariaLabel}>
+      <line x1={padX} y1={plotBottom} x2={w - 4} y2={plotBottom} stroke="#E2E8F0" strokeWidth="1" />
+      <polygon points={areaPoints} fill={color} fillOpacity="0.12" />
+      <polyline points={linePoints} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      <text x={padX - 4} y={plotBottom + 3} fontSize="9" textAnchor="end" fill="#94a3b8">0</text>
+      <text x={padX - 4} y={padTop + 4} fontSize="9" textAnchor="end" fill="#94a3b8">{max}</text>
       {rows.map((r, i) => {
         if (i % labelEvery !== 0 && i !== rows.length - 1) return null;
         const x = padX + i * stepX;
@@ -126,6 +109,35 @@ function SignupsOverTimeChart({ rows }: { rows: WaitlistDayStat[] }) {
         );
       })}
     </svg>
+  );
+}
+
+// Horizontal bar chart for a per-source breakdown: y axis is the source (one
+// row per channel), x axis is the count. Bar width is relative to the biggest
+// row; each row shows its raw count and (for non-'test' rows) its share.
+function SourceBarChart({ rows, emptyText }: { rows: WaitlistSourceStat[]; emptyText: string }) {
+  const max = rows.reduce((m, r) => Math.max(m, r.count), 0);
+  if (rows.length === 0) return <p className="text-xs text-slate-400">{emptyText}</p>;
+  return (
+    <ul className="space-y-1.5">
+      {rows.map((r) => (
+        <li key={r.source} className="flex items-center gap-3">
+          <span className="w-28 shrink-0 truncate text-xs text-slate-600">
+            {SOURCE_LABELS[r.source] ?? r.source}
+          </span>
+          <div className="relative h-5 flex-1 rounded bg-slate-100">
+            <div
+              className="h-5 rounded bg-orange-400"
+              style={{ width: max > 0 ? `${Math.max(2, (r.count / max) * 100)}%` : "0%" }}
+            />
+          </div>
+          <span className="w-24 shrink-0 text-right text-xs tabular-nums text-slate-500">
+            {r.count}
+            {r.percent !== null && <span className="text-slate-400"> · {r.percent}%</span>}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -143,54 +155,68 @@ export default function Funnel() {
   if (error) return <p className="p-4 text-sm text-rose-600">{error}</p>;
   if (!data) return <p className="p-4 text-sm text-slate-400">Loading…</p>;
 
-  const stages = [
-    { label: "Visited /waitlist", value: data.visits, rate: null },
-    { label: "Started typing an email", value: data.started, rate: data.startedRate },
-    { label: "Submitted", value: data.submittedDb, rate: data.submittedRate },
+  const conversionStats = [
+    { label: "Visits", value: data.visits },
+    { label: "Signups", value: data.submittedDb },
+    { label: "Conversion", value: `${data.submittedRate}%` },
   ];
 
   return (
-    <div className="space-y-3 p-4">
+    <div className="space-y-4 p-4">
       <h2 className="text-sm font-semibold text-slate-900">Waitlist funnel (last 30 days)</h2>
       {data.posthogError && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-          PostHog data unavailable ({data.posthogError}) — showing your database's signup count
-          only. Visits, "started an email", and visits-by-source won't be accurate until this is
-          fixed.
+          PostHog data unavailable ({data.posthogError}) — showing your database's signup numbers
+          only. Pageviews, conversion rate's visit count, pageviews over time, and pageviews by
+          source won't be accurate until this is fixed.
         </p>
       )}
-      <div className="grid grid-cols-3 gap-3">
-        {stages.map((s) => (
-          <div key={s.label} className="rounded-xl bg-slate-50 p-3">
-            <p className="text-xs text-slate-500">{s.label}</p>
-            <p className="text-2xl font-semibold text-slate-900">{s.value}</p>
-            {s.rate !== null && <p className="text-xs text-slate-400">{s.rate}% of visits</p>}
-          </div>
-        ))}
-      </div>
-      <p className="text-xs text-slate-400">
-        PostHog also recorded {data.submittedPosthog} client-side submit events (informational —
-        the count above is the source of truth from our own database).
-      </p>
 
-      {/* Daily signup counts from our own DB — no PostHog dependency. */}
-      <div className="space-y-2 pt-2">
-        <h3 className="text-sm font-semibold text-slate-900">Signups over time (last 30 days)</h3>
-        <SignupsOverTimeChart rows={data.signupsByDay} />
-      </div>
+      {/* 1. Pageviews over time — PostHog pageviews, grouped by day. */}
+      <Section title="Pageviews over time" first>
+        <TimeSeriesLineChart
+          rows={data.visitsByDay}
+          emptyText="No visits recorded yet."
+          color="#3B82F6"
+          ariaLabel={`Page views per day over the last ${data.visitsByDay.length} days`}
+        />
+      </Section>
 
-      {/* Per-channel breakdown. Visits come from PostHog (pageviews); signups
-          from our own DB. Percentages exclude the private 'test' bucket. */}
-      <SourceBarChart
-        title="Page visits by source"
-        rows={data.visitsBySource}
-        emptyText="No visits recorded yet."
-      />
-      <SourceBarChart
-        title="Signups by source"
-        rows={data.bySource}
-        emptyText="No signups yet."
-      />
+      {/* 2. Conversion rate — visits, signups, and the % between them. */}
+      <Section title="Conversion rate">
+        <div className="grid grid-cols-3 gap-3">
+          {conversionStats.map((s) => (
+            <div key={s.label} className="rounded-xl bg-slate-50 p-3">
+              <p className="text-xs text-slate-500">{s.label}</p>
+              <p className="text-2xl font-semibold text-slate-900">{s.value}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-slate-400">
+          PostHog also recorded {data.submittedPosthog} client-side submit events (informational —
+          the signup count above is the source of truth from our own database).
+        </p>
+      </Section>
+
+      {/* 3. Signups over time — our own DB, no PostHog dependency. */}
+      <Section title="Signups over time">
+        <TimeSeriesLineChart
+          rows={data.signupsByDay}
+          emptyText="No signups yet."
+          color="#FB923C"
+          ariaLabel={`Signups per day over the last ${data.signupsByDay.length} days`}
+        />
+      </Section>
+
+      {/* 4. Signups by source — our own DB (exact, immune to ad blockers). */}
+      <Section title="Signups by source">
+        <SourceBarChart rows={data.bySource} emptyText="No signups yet." />
+      </Section>
+
+      {/* 5. Pageviews by source — PostHog, grouped by utm_source. */}
+      <Section title="Pageviews by source">
+        <SourceBarChart rows={data.visitsBySource} emptyText="No visits recorded yet." />
+      </Section>
     </div>
   );
 }
