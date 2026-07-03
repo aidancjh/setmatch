@@ -18,10 +18,7 @@ vi.mock("../server/repo.js", () => ({
     { source: "instagram", count: 5 },
     { source: "direct", count: 2 },
   ]),
-  getWaitlistSignupsByDay: vi.fn().mockResolvedValue([
-    { date: "2026-07-02", count: 3 },
-    { date: "2026-07-03", count: 4 },
-  ]),
+  getWaitlistSignupsByDay: vi.fn().mockResolvedValue([]),
   logAdminAction: vi.fn().mockResolvedValue(undefined),
   findUserById: vi.fn(),
   publicUser: vi.fn(),
@@ -33,10 +30,7 @@ vi.mock("../server/posthog.js", () => ({
     { source: "instagram", visits: 60 },
     { source: "direct", visits: 40 },
   ]),
-  queryWaitlistVisitsByDay: vi.fn().mockResolvedValue([
-    { date: "2026-07-02", count: 12 },
-    { date: "2026-07-03", count: 8 },
-  ]),
+  queryWaitlistVisitsByDay: vi.fn().mockResolvedValue([]),
 }));
 
 describe("adminRoutes", () => {
@@ -65,6 +59,14 @@ describe("adminRoutes", () => {
   });
 
   it("GET /api/admin/analytics/funnel combines PostHog counts with the DB waitlist count and computes rates", async () => {
+    // Day series are zero-filled onto an axis ending at today, so inject
+    // today-relative data to keep the assertion deterministic (single day).
+    const today = new Date().toISOString().slice(0, 10);
+    const repo = await import("../server/repo.js");
+    repo.getWaitlistSignupsByDay.mockResolvedValueOnce([{ date: today, count: 4 }]);
+    const posthog = await import("../server/posthog.js");
+    posthog.queryWaitlistVisitsByDay.mockResolvedValueOnce([{ date: today, count: 8 }]);
+
     const res = await request(app).get("/api/admin/analytics/funnel");
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
@@ -82,16 +84,31 @@ describe("adminRoutes", () => {
         { source: "instagram", count: 60, percent: 60 }, // 60/100
         { source: "direct", count: 40, percent: 40 }, // 40/100
       ],
-      signupsByDay: [
-        { date: "2026-07-02", count: 3 },
-        { date: "2026-07-03", count: 4 },
-      ],
-      visitsByDay: [
-        { date: "2026-07-02", count: 12 },
-        { date: "2026-07-03", count: 8 },
-      ],
+      signupsByDay: [{ date: today, count: 4 }],
+      visitsByDay: [{ date: today, count: 8 }],
       posthogError: null,
     });
+  });
+
+  it("GET /api/admin/analytics/funnel zero-fills both day series onto one shared axis (earliest data → today)", async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const repo = await import("../server/repo.js");
+    repo.getWaitlistSignupsByDay.mockResolvedValueOnce([{ date: yesterday, count: 2 }]); // no row for today
+    const posthog = await import("../server/posthog.js");
+    posthog.queryWaitlistVisitsByDay.mockResolvedValueOnce([{ date: today, count: 5 }]); // no row for yesterday
+
+    const res = await request(app).get("/api/admin/analytics/funnel");
+    expect(res.status).toBe(200);
+    // Axis spans yesterday→today; each series zero-filled on the missing day.
+    expect(res.body.signupsByDay).toEqual([
+      { date: yesterday, count: 2 },
+      { date: today, count: 0 },
+    ]);
+    expect(res.body.visitsByDay).toEqual([
+      { date: yesterday, count: 0 },
+      { date: today, count: 5 },
+    ]);
   });
 
   it("GET /api/admin/analytics/funnel returns zero rates when there are no visits (no divide-by-zero)", async () => {
@@ -107,11 +124,13 @@ describe("adminRoutes", () => {
   });
 
   it("GET /api/admin/analytics/funnel degrades gracefully (200, zeros/empty + posthogError) when PostHog fails but the DB numbers still succeed", async () => {
+    const today = new Date().toISOString().slice(0, 10);
     const posthog = await import("../server/posthog.js");
     posthog.queryWaitlistFunnel.mockRejectedValueOnce(new Error("PostHog query failed (401)"));
     const repo = await import("../server/repo.js");
     repo.getWaitlistCount.mockResolvedValueOnce(9);
     repo.getWaitlistCountsBySource.mockResolvedValueOnce([{ source: "direct", count: 9 }]);
+    repo.getWaitlistSignupsByDay.mockResolvedValueOnce([{ date: today, count: 9 }]);
 
     const res = await request(app).get("/api/admin/analytics/funnel");
     expect(res.status).toBe(200);
@@ -124,11 +143,9 @@ describe("adminRoutes", () => {
       submittedRate: 0,
       bySource: [{ source: "direct", count: 9, percent: 100 }],
       visitsBySource: [],
-      signupsByDay: [
-        { date: "2026-07-02", count: 3 },
-        { date: "2026-07-03", count: 4 },
-      ],
-      visitsByDay: [],
+      // PostHog failed, so pageviews-by-day is zero-filled on the signup axis.
+      signupsByDay: [{ date: today, count: 9 }],
+      visitsByDay: [{ date: today, count: 0 }],
       posthogError: "PostHog query failed (401)",
     });
   });

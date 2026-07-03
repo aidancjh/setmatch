@@ -1681,23 +1681,19 @@ export async function getWaitlistCountsBySource() {
 }
 
 /**
- * Daily signup counts for the last 30 days (today inclusive), oldest first.
- * Zero-filled via generate_series so the chart has no gaps on quiet days.
- * Excludes the private 'test' source, same as the by-source percentages.
+ * Daily signup counts, all-time, oldest first: [{ date, count }] (UTC days).
+ * Only days with at least one signup are returned; the admin route zero-fills
+ * this onto a shared date axis. Excludes the private 'test' source, same as
+ * the by-source percentages.
  */
 export async function getWaitlistSignupsByDay() {
   const { rows } = await query(`
-    SELECT to_char(gs, 'YYYY-MM-DD') AS date, COALESCE(w.count, 0)::int AS count
-    FROM generate_series(
-      (CURRENT_DATE - INTERVAL '29 days')::date, CURRENT_DATE::date, INTERVAL '1 day'
-    ) AS gs
-    LEFT JOIN (
-      SELECT date_trunc('day', created_at)::date AS day, COUNT(*)::int AS count
-      FROM waitlist
-      WHERE source != 'test'
-      GROUP BY day
-    ) w ON w.day = gs
-    ORDER BY gs
+    SELECT to_char(date_trunc('day', created_at AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS date,
+           COUNT(*)::int AS count
+    FROM waitlist
+    WHERE source != 'test'
+    GROUP BY 1
+    ORDER BY 1
   `);
   return rows;
 }

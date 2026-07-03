@@ -174,6 +174,44 @@ router.patch(
   })
 );
 
+// Today as a UTC "YYYY-MM-DD" string (matches the UTC day-bucketing in the
+// signup + pageview day queries).
+function todayUTCString() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Inclusive list of "YYYY-MM-DD" from start to end (UTC). Capped at ~13 months
+// so a malformed/ancient start date can never spin into a runaway loop.
+function eachDayInclusive(start, end) {
+  const last = new Date(`${end}T00:00:00Z`);
+  let d = new Date(`${start}T00:00:00Z`);
+  if (Number.isNaN(d.getTime()) || Number.isNaN(last.getTime())) return [end];
+  const floor = new Date(last);
+  floor.setUTCDate(floor.getUTCDate() - 400);
+  if (d < floor) d = floor;
+  const out = [];
+  while (d <= last) {
+    out.push(d.toISOString().slice(0, 10));
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return out;
+}
+
+// Zero-fill two raw daily series onto ONE shared axis: from the earliest day
+// present in either series (all time) through today. Keeps the pageviews and
+// signups charts perfectly aligned on the x-axis.
+function alignDailySeries(rawSignups, rawVisits) {
+  const today = todayUTCString();
+  const days = [...rawSignups, ...rawVisits].map((r) => r.date).filter(Boolean).sort();
+  const dates = eachDayInclusive(days.length ? days[0] : today, today);
+  const signupMap = new Map(rawSignups.map((r) => [r.date, r.count]));
+  const visitMap = new Map(rawVisits.map((r) => [r.date, r.count]));
+  return {
+    signupsByDay: dates.map((date) => ({ date, count: signupMap.get(date) || 0 })),
+    visitsByDay: dates.map((date) => ({ date, count: visitMap.get(date) || 0 })),
+  };
+}
+
 // Attach a "% of real signups/visits" to each {source, count} row. The private
 // 'test' bucket (our own testing) is excluded from the denominator and gets a
 // null percent so self-testing never skews the numbers.
@@ -201,7 +239,7 @@ function withRealShare(rows) {
 router.get(
   "/analytics/funnel",
   h(async (_req, res) => {
-    const [submittedDb, rawBySource, signupsByDay] = await Promise.all([
+    const [submittedDb, rawBySource, rawSignupsByDay] = await Promise.all([
       repo.getWaitlistCount(),
       repo.getWaitlistCountsBySource(),
       repo.getWaitlistSignupsByDay(),
@@ -211,7 +249,7 @@ router.get(
     let started = 0;
     let submittedPosthog = 0;
     let rawVisitsBySource = [];
-    let visitsByDay = [];
+    let rawVisitsByDay = [];
     let posthogError = null;
     try {
       const [funnel, visitsBySource, visitsByDayResult] = await Promise.all([
@@ -221,7 +259,7 @@ router.get(
       ]);
       ({ visits, started, submittedPosthog } = funnel);
       rawVisitsBySource = visitsBySource;
-      visitsByDay = visitsByDayResult;
+      rawVisitsByDay = visitsByDayResult;
     } catch (err) {
       console.error("[funnel] PostHog query failed:", err);
       posthogError = err instanceof Error ? err.message : "PostHog is unavailable.";
@@ -233,6 +271,8 @@ router.get(
     const visitsBySource = withRealShare(
       rawVisitsBySource.map((r) => ({ source: r.source, count: r.visits }))
     );
+    // Both time-series charts share one axis: earliest data day → today.
+    const { signupsByDay, visitsByDay } = alignDailySeries(rawSignupsByDay, rawVisitsByDay);
     res.json({
       visits,
       started,

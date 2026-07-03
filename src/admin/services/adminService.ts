@@ -63,5 +63,7 @@ export const adminApi = {
     api.patch<{ ok: boolean }>(`/admin/flags/${key}`, { enabled }),
   broadcast: (message: string) =>
     api.post<{ ok: boolean; count: number }>("/admin/broadcast", { message }),
-  funnel: () => api.get<WaitlistFunnel>("/admin/analytics/funnel"),
+  // Cache-busted (?t=) so the Funnel tab's Refresh button always pulls live
+  // numbers, never a stale cached response.
+  funnel: () => api.get<WaitlistFunnel>(`/admin/analytics/funnel?t=${Date.now()}`),
 };

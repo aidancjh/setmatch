@@ -120,17 +120,14 @@ describe("posthog.queryWaitlistVisitsByDay", () => {
   beforeEach(() => {
     process.env.POSTHOG_PROJECT_ID = "494538";
     process.env.POSTHOG_PERSONAL_API_KEY = "phx_test_key";
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-07-03T12:00:00Z"));
   });
   afterEach(() => {
-    vi.useRealTimers();
     vi.restoreAllMocks();
     delete process.env.POSTHOG_PROJECT_ID;
     delete process.env.POSTHOG_PERSONAL_API_KEY;
   });
 
-  it("returns a zero-filled 30-day series (today inclusive) with matched days populated", async () => {
+  it("maps raw daily rows to { date, count } (all-time, no zero-fill here)", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -139,26 +136,22 @@ describe("posthog.queryWaitlistVisitsByDay", () => {
       })
     );
     const { queryWaitlistVisitsByDay } = await import("../server/posthog.js");
-    const result = await queryWaitlistVisitsByDay();
-
-    expect(result).toHaveLength(30);
-    expect(result[0]).toEqual({ date: "2026-06-04", count: 0 });
-    expect(result[result.length - 1]).toEqual({ date: "2026-07-03", count: 2 });
-    expect(result.find((r) => r.date === "2026-07-01")).toEqual({ date: "2026-07-01", count: 5 });
-    expect(result.find((r) => r.date === "2026-06-15")).toEqual({ date: "2026-06-15", count: 0 });
+    expect(await queryWaitlistVisitsByDay()).toEqual([
+      { date: "2026-07-01", count: 5 },
+      { date: "2026-07-03", count: 2 },
+    ]);
   });
 
-  it("normalises a full ISO timestamp in the date column to YYYY-MM-DD", async () => {
+  it("normalises a full ISO timestamp in the date column to YYYY-MM-DD and skips malformed rows", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ results: [["2026-07-01T00:00:00Z", 7]] }),
+        json: async () => ({ results: [["2026-07-01T00:00:00Z", 7], ["broken"], null] }),
       })
     );
     const { queryWaitlistVisitsByDay } = await import("../server/posthog.js");
-    const result = await queryWaitlistVisitsByDay();
-    expect(result.find((r) => r.date === "2026-07-01")).toEqual({ date: "2026-07-01", count: 7 });
+    expect(await queryWaitlistVisitsByDay()).toEqual([{ date: "2026-07-01", count: 7 }]);
   });
 
   it("throws when PostHog responds non-2xx", async () => {

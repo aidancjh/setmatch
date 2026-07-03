@@ -1,5 +1,7 @@
 // Server-side PostHog query — uses the private Personal API Key, never the
-// public client-side project token. Counts, over the last 30 days:
+// public client-side project token. All queries are all-time (no date filter):
+// the funnel was only added recently, so "all time" is the honest window and
+// avoids a chart padded with empty pre-launch days.
 //   visits    — $pageview events on /waitlist
 //   started   — custom "waitlist_email_started" events (first keystroke)
 //   submittedPosthog — custom "waitlist_signup" events (client-fired on success)
@@ -15,7 +17,6 @@ const FUNNEL_QUERY = `
     countIf(event = 'waitlist_email_started') AS started,
     countIf(event = 'waitlist_signup') AS submitted
   FROM events
-  WHERE timestamp > now() - INTERVAL 30 DAY
 `;
 
 // Page visits on /waitlist grouped by the utm_source that was on the URL when
@@ -29,34 +30,21 @@ const VISITS_BY_SOURCE_QUERY = `
   FROM events
   WHERE event = '$pageview'
     AND properties.$pathname = '/waitlist'
-    AND timestamp > now() - INTERVAL 30 DAY
   GROUP BY source
   ORDER BY visits DESC
 `;
 
-// Daily pageview counts on /waitlist. Grouped by UTC calendar day to match
-// zeroFillLast30Days() below and repo.getWaitlistSignupsByDay()'s use of
-// Postgres CURRENT_DATE (both run on Railway containers, which are UTC).
+// Daily pageview counts on /waitlist, all-time. Grouped by UTC calendar day to
+// match repo.getWaitlistSignupsByDay(); the admin route zero-fills both series
+// onto one shared date axis. Returns only days that had at least one pageview.
 const VISITS_BY_DAY_QUERY = `
   SELECT toDate(timestamp) AS day, count() AS visits
   FROM events
   WHERE event = '$pageview'
     AND properties.$pathname = '/waitlist'
-    AND timestamp > now() - INTERVAL 30 DAY
   GROUP BY day
   ORDER BY day
 `;
-
-// Last 30 UTC calendar days (today inclusive), oldest first, as "YYYY-MM-DD".
-function last30DayStrings() {
-  const days = [];
-  const today = new Date();
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - i));
-    days.push(d.toISOString().slice(0, 10));
-  }
-  return days;
-}
 
 // Normalises whatever date representation HogQL returns (string or object) to
 // a plain "YYYY-MM-DD" string.
@@ -117,16 +105,14 @@ export async function queryWaitlistVisitsBySource() {
 }
 
 /**
- * Daily pageview counts on /waitlist for the last 30 days (today inclusive),
- * zero-filled so quiet days don't create gaps: [{ date, count }], oldest first.
+ * Daily pageview counts on /waitlist, all-time, oldest first: [{ date, count }].
+ * Only days with at least one pageview are returned; the admin route zero-fills
+ * this onto the shared date axis it builds from the signup series.
  */
 export async function queryWaitlistVisitsByDay() {
   const data = await runHogQL(VISITS_BY_DAY_QUERY);
   const rows = Array.isArray(data.results) ? data.results : [];
-  const counts = new Map();
-  for (const r of rows) {
-    if (!Array.isArray(r) || r.length !== 2) continue;
-    counts.set(toDateString(r[0]), Number(r[1]) || 0);
-  }
-  return last30DayStrings().map((date) => ({ date, count: counts.get(date) || 0 }));
+  return rows
+    .filter((r) => Array.isArray(r) && r.length === 2)
+    .map(([day, visits]) => ({ date: toDateString(day), count: Number(visits) || 0 }));
 }

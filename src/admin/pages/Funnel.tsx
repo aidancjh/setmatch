@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { adminApi } from "../services/adminService";
 
 interface WaitlistSourceStat {
@@ -39,28 +39,32 @@ const SOURCE_LABELS: Record<string, string> = {
   test: "Test (excluded)",
 };
 
-// A section wrapper: consistent heading + spacing + a divider above every
-// section but the first, so the five blocks read as one neat, scannable list.
-function Section({
-  title,
-  first,
-  children,
-}: {
-  title: string;
-  first?: boolean;
-  children: React.ReactNode;
-}) {
+// "Nice" integer axis ticks from 0 up to at least max (~4 steps of 1/2/5×10ⁿ).
+// Guarantees whole-number increments so count axes never show fractions.
+function niceTicks(max: number): number[] {
+  const m = Math.max(1, max);
+  const rawStep = m / 4;
+  const pow = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const step = Math.max(1, Math.round([1, 2, 5, 10].map((x) => x * pow).find((s) => s >= rawStep) ?? 10 * pow));
+  const ticks: number[] = [];
+  for (let v = 0; v <= m; v += step) ticks.push(v);
+  if (ticks[ticks.length - 1] < m) ticks.push(ticks[ticks.length - 1] + step);
+  return ticks;
+}
+
+// A titled box. Every section is one of these so the tab reads as a stack of
+// cards rather than loose blocks running together.
+function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className={first ? "space-y-2" : "space-y-2 border-t border-slate-100 pt-4"}>
+    <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
       <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
       {children}
-    </div>
+    </section>
   );
 }
 
-// Dependency-free SVG line+area chart (no chart library in this repo). Y axis
-// is the count (0 at the baseline, max at the top, both labelled); X axis is
-// the day, labelled on a sparse subset so dates don't overlap.
+// Dependency-free SVG line+area chart with a real y-axis: whole-number
+// gridlines + labels up the side, sparse date labels along the bottom.
 function TimeSeriesLineChart({
   rows,
   emptyText,
@@ -74,36 +78,37 @@ function TimeSeriesLineChart({
 }) {
   if (rows.length === 0) return <p className="text-xs text-slate-400">{emptyText}</p>;
 
-  const w = 700;
-  const h = 150;
-  const padX = 26; // room for the y-axis "0" / max labels
-  const padTop = 14;
-  const padBottom = 22;
-  const max = Math.max(1, ...rows.map((r) => r.count));
-  const plotBottom = h - padBottom;
-  const stepX = rows.length > 1 ? (w - padX * 2) / (rows.length - 1) : 0;
-
-  const points = rows.map((r, i) => {
-    const x = padX + i * stepX;
-    const y = padTop + (plotBottom - padTop) * (1 - r.count / max);
-    return { x, y };
-  });
-  const linePoints = points.map((p) => `${p.x},${p.y}`).join(" ");
-  const areaPoints = `${padX},${plotBottom} ${linePoints} ${points[points.length - 1].x},${plotBottom}`;
+  const w = 720;
+  const h = 170;
+  const plotLeft = 30;
+  const plotRight = w - 8;
+  const plotTop = 12;
+  const plotBottom = h - 22;
+  const ticks = niceTicks(Math.max(...rows.map((r) => r.count)));
+  const axisMax = ticks[ticks.length - 1];
+  const stepX = rows.length > 1 ? (plotRight - plotLeft) / (rows.length - 1) : 0;
+  const xOf = (i: number) => (rows.length > 1 ? plotLeft + i * stepX : (plotLeft + plotRight) / 2);
+  const yOf = (v: number) => plotTop + (plotBottom - plotTop) * (1 - v / axisMax);
+  const linePoints = rows.map((r, i) => `${xOf(i)},${yOf(r.count)}`).join(" ");
+  const areaPoints = `${xOf(0)},${plotBottom} ${linePoints} ${xOf(rows.length - 1)},${plotBottom}`;
   const labelEvery = Math.max(1, Math.ceil(rows.length / 6));
+  const last = rows[rows.length - 1];
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label={ariaLabel}>
-      <line x1={padX} y1={plotBottom} x2={w - 4} y2={plotBottom} stroke="#E2E8F0" strokeWidth="1" />
+      {ticks.map((t) => (
+        <g key={t}>
+          <line x1={plotLeft} y1={yOf(t)} x2={plotRight} y2={yOf(t)} stroke="#EEF2F6" strokeWidth="1" />
+          <text x={plotLeft - 6} y={yOf(t) + 3} fontSize="9" textAnchor="end" fill="#94a3b8">{t}</text>
+        </g>
+      ))}
       <polygon points={areaPoints} fill={color} fillOpacity="0.12" />
       <polyline points={linePoints} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-      <text x={padX - 4} y={plotBottom + 3} fontSize="9" textAnchor="end" fill="#94a3b8">0</text>
-      <text x={padX - 4} y={padTop + 4} fontSize="9" textAnchor="end" fill="#94a3b8">{max}</text>
+      <circle cx={xOf(rows.length - 1)} cy={yOf(last.count)} r="2.5" fill={color} />
       {rows.map((r, i) => {
         if (i % labelEvery !== 0 && i !== rows.length - 1) return null;
-        const x = padX + i * stepX;
         return (
-          <text key={r.date} x={x} y={h - 6} fontSize="9" textAnchor="middle" fill="#94a3b8">
+          <text key={r.date} x={xOf(i)} y={h - 6} fontSize="9" textAnchor="middle" fill="#94a3b8">
             {r.date.slice(5)}
           </text>
         );
@@ -112,58 +117,132 @@ function TimeSeriesLineChart({
   );
 }
 
-// Horizontal bar chart for a per-source breakdown: y axis is the source (one
-// row per channel), x axis is the count. Bar width is relative to the biggest
-// row; each row shows its raw count and (for non-'test' rows) its share.
+// Horizontal bar chart: y axis is the source (one row per channel), x axis is
+// the count. A shared x-scale with gridlines + tick labels makes it read as a
+// chart even when only one source has data.
 function SourceBarChart({ rows, emptyText }: { rows: WaitlistSourceStat[]; emptyText: string }) {
-  const max = rows.reduce((m, r) => Math.max(m, r.count), 0);
   if (rows.length === 0) return <p className="text-xs text-slate-400">{emptyText}</p>;
+  const ticks = niceTicks(Math.max(...rows.map((r) => r.count)));
+  const axisMax = ticks[ticks.length - 1];
   return (
-    <ul className="space-y-1.5">
-      {rows.map((r) => (
-        <li key={r.source} className="flex items-center gap-3">
-          <span className="w-28 shrink-0 truncate text-xs text-slate-600">
-            {SOURCE_LABELS[r.source] ?? r.source}
+    <div>
+      <ul className="space-y-2">
+        {rows.map((r) => (
+          <li key={r.source} className="flex items-center gap-3">
+            <span className="w-28 shrink-0 truncate text-xs text-slate-600">
+              {SOURCE_LABELS[r.source] ?? r.source}
+            </span>
+            <div className="relative h-6 flex-1 overflow-hidden rounded bg-slate-100">
+              {ticks.slice(1).map((t) => (
+                <span
+                  key={t}
+                  className="absolute inset-y-0 w-px bg-slate-200"
+                  style={{ left: `${(t / axisMax) * 100}%` }}
+                />
+              ))}
+              <div
+                className="absolute inset-y-0 left-0 rounded bg-orange-400"
+                style={{ width: `${Math.max(1, (r.count / axisMax) * 100)}%` }}
+              />
+            </div>
+            <span className="w-24 shrink-0 text-right text-xs tabular-nums text-slate-500">
+              {r.count}
+              {r.percent !== null && <span className="text-slate-400"> · {r.percent}%</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {/* x-axis scale, aligned under the bar track (label col 7rem + gap, value col 6rem + gap) */}
+      <div className="relative ml-[7.75rem] mr-[6.75rem] mt-1 h-4">
+        {ticks.map((t) => (
+          <span
+            key={t}
+            className="absolute -translate-x-1/2 text-[10px] tabular-nums text-slate-400"
+            style={{ left: `${(t / axisMax) * 100}%` }}
+          >
+            {t}
           </span>
-          <div className="relative h-5 flex-1 rounded bg-slate-100">
-            <div
-              className="h-5 rounded bg-orange-400"
-              style={{ width: max > 0 ? `${Math.max(2, (r.count / max) * 100)}%` : "0%" }}
-            />
-          </div>
-          <span className="w-24 shrink-0 text-right text-xs tabular-nums text-slate-500">
-            {r.count}
-            {r.percent !== null && <span className="text-slate-400"> · {r.percent}%</span>}
-          </span>
-        </li>
-      ))}
-    </ul>
+        ))}
+      </div>
+    </div>
   );
 }
 
 export default function Funnel() {
   const [data, setData] = useState<WaitlistFunnel | null>(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
 
-  useEffect(() => {
-    adminApi
-      .funnel()
-      .then(setData)
-      .catch((e) => setError(e instanceof Error ? e.message : "Couldn't load funnel data."));
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const fresh = await adminApi.funnel();
+      setData(fresh);
+      setUpdatedAt(new Date());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't load funnel data.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  if (error) return <p className="p-4 text-sm text-rose-600">{error}</p>;
-  if (!data) return <p className="p-4 text-sm text-slate-400">Loading…</p>;
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (!data) {
+    return (
+      <div className="p-4">
+        {error ? (
+          <div className="space-y-2">
+            <p className="text-sm text-rose-600">{error}</p>
+            <button
+              onClick={load}
+              disabled={loading}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {loading ? "Retrying…" : "Try again"}
+            </button>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-400">Loading…</p>
+        )}
+      </div>
+    );
+  }
 
   const conversionStats = [
-    { label: "Visits", value: data.visits },
-    { label: "Signups", value: data.submittedDb },
+    { label: "Visits", value: data.visits.toLocaleString() },
+    { label: "Signups", value: data.submittedDb.toLocaleString() },
     { label: "Conversion", value: `${data.submittedRate}%` },
   ];
 
   return (
     <div className="space-y-4 p-4">
-      <h2 className="text-sm font-semibold text-slate-900">Waitlist funnel (last 30 days)</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-slate-900">Waitlist funnel (all time)</h2>
+        <div className="flex items-center gap-3">
+          {updatedAt && (
+            <span className="text-xs text-slate-400">Updated {updatedAt.toLocaleTimeString()}</span>
+          )}
+          <button
+            onClick={load}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            <span aria-hidden className={loading ? "animate-spin" : ""}>↻</span>
+            {loading ? "Refreshing…" : "Refresh"}
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">
+          Couldn't refresh ({error}) — showing the last loaded numbers.
+        </p>
+      )}
       {data.posthogError && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
           PostHog data unavailable ({data.posthogError}) — showing your database's signup numbers
@@ -173,20 +252,20 @@ export default function Funnel() {
       )}
 
       {/* 1. Pageviews over time — PostHog pageviews, grouped by day. */}
-      <Section title="Pageviews over time" first>
+      <Card title="Pageviews over time">
         <TimeSeriesLineChart
           rows={data.visitsByDay}
           emptyText="No visits recorded yet."
           color="#3B82F6"
-          ariaLabel={`Page views per day over the last ${data.visitsByDay.length} days`}
+          ariaLabel={`Page views per day, ${data.visitsByDay.length} days`}
         />
-      </Section>
+      </Card>
 
       {/* 2. Conversion rate — visits, signups, and the % between them. */}
-      <Section title="Conversion rate">
-        <div className="grid grid-cols-3 gap-3">
+      <Card title="Conversion rate">
+        <div className="flex flex-wrap gap-3">
           {conversionStats.map((s) => (
-            <div key={s.label} className="rounded-xl bg-slate-50 p-3">
+            <div key={s.label} className="min-w-[6.5rem] rounded-lg bg-slate-50 px-4 py-3">
               <p className="text-xs text-slate-500">{s.label}</p>
               <p className="text-2xl font-semibold text-slate-900">{s.value}</p>
             </div>
@@ -196,27 +275,27 @@ export default function Funnel() {
           PostHog also recorded {data.submittedPosthog} client-side submit events (informational —
           the signup count above is the source of truth from our own database).
         </p>
-      </Section>
+      </Card>
 
       {/* 3. Signups over time — our own DB, no PostHog dependency. */}
-      <Section title="Signups over time">
+      <Card title="Signups over time">
         <TimeSeriesLineChart
           rows={data.signupsByDay}
           emptyText="No signups yet."
           color="#FB923C"
-          ariaLabel={`Signups per day over the last ${data.signupsByDay.length} days`}
+          ariaLabel={`Signups per day, ${data.signupsByDay.length} days`}
         />
-      </Section>
+      </Card>
 
       {/* 4. Signups by source — our own DB (exact, immune to ad blockers). */}
-      <Section title="Signups by source">
+      <Card title="Signups by source">
         <SourceBarChart rows={data.bySource} emptyText="No signups yet." />
-      </Section>
+      </Card>
 
       {/* 5. Pageviews by source — PostHog, grouped by utm_source. */}
-      <Section title="Pageviews by source">
+      <Card title="Pageviews by source">
         <SourceBarChart rows={data.visitsBySource} emptyText="No visits recorded yet." />
-      </Section>
+      </Card>
     </div>
   );
 }
