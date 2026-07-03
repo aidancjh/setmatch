@@ -18,6 +18,10 @@ vi.mock("../server/repo.js", () => ({
     { source: "instagram", count: 5 },
     { source: "direct", count: 2 },
   ]),
+  getWaitlistSignupsByDay: vi.fn().mockResolvedValue([
+    { date: "2026-07-02", count: 3 },
+    { date: "2026-07-03", count: 4 },
+  ]),
   logAdminAction: vi.fn().mockResolvedValue(undefined),
   findUserById: vi.fn(),
   publicUser: vi.fn(),
@@ -74,6 +78,10 @@ describe("adminRoutes", () => {
         { source: "instagram", count: 60, percent: 60 }, // 60/100
         { source: "direct", count: 40, percent: 40 }, // 40/100
       ],
+      signupsByDay: [
+        { date: "2026-07-02", count: 3 },
+        { date: "2026-07-03", count: 4 },
+      ],
       posthogError: null,
     });
   });
@@ -108,6 +116,10 @@ describe("adminRoutes", () => {
       submittedRate: 0,
       bySource: [{ source: "direct", count: 9, percent: 100 }],
       visitsBySource: [],
+      signupsByDay: [
+        { date: "2026-07-02", count: 3 },
+        { date: "2026-07-03", count: 4 },
+      ],
       posthogError: "PostHog query failed (401)",
     });
   });

@@ -16,6 +16,11 @@ interface WaitlistSourceStat {
   percent: number | null; // null for the 'test' bucket (excluded from %)
 }
 
+interface WaitlistDayStat {
+  date: string; // "YYYY-MM-DD"
+  count: number;
+}
+
 interface WaitlistFunnel {
   visits: number;
   started: number;
@@ -25,6 +30,7 @@ interface WaitlistFunnel {
   submittedRate: number;
   bySource: WaitlistSourceStat[];
   visitsBySource: WaitlistSourceStat[];
+  signupsByDay: WaitlistDayStat[];
   posthogError: string | null;
 }
 

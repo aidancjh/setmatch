@@ -7,6 +7,11 @@ interface WaitlistSourceStat {
   percent: number | null; // null for the 'test' bucket (excluded from %)
 }
 
+interface WaitlistDayStat {
+  date: string; // "YYYY-MM-DD"
+  count: number;
+}
+
 interface WaitlistFunnel {
   visits: number;
   started: number;
@@ -16,6 +21,7 @@ interface WaitlistFunnel {
   submittedRate: number;
   bySource: WaitlistSourceStat[];
   visitsBySource: WaitlistSourceStat[];
+  signupsByDay: WaitlistDayStat[];
   posthogError: string | null;
 }
 
@@ -74,6 +80,55 @@ function SourceBarChart({
   );
 }
 
+// Dependency-free SVG line chart for daily signup counts. No chart library in
+// this repo, so this is hand-rolled: a polyline for the line, a matching
+// filled polygon underneath for the area, and date labels on a sparse subset
+// of days (every ~5th, plus the last) so they don't overlap.
+function SignupsOverTimeChart({ rows }: { rows: WaitlistDayStat[] }) {
+  if (rows.length === 0) return <p className="text-xs text-slate-400">No signups yet.</p>;
+
+  const w = 700;
+  const h = 140;
+  const padX = 6;
+  const padTop = 10;
+  const padBottom = 22;
+  const max = Math.max(1, ...rows.map((r) => r.count));
+  const stepX = rows.length > 1 ? (w - padX * 2) / (rows.length - 1) : 0;
+  const plotBottom = h - padBottom;
+
+  const points = rows.map((r, i) => {
+    const x = padX + i * stepX;
+    const y = padTop + (plotBottom - padTop) * (1 - r.count / max);
+    return { x, y };
+  });
+  const linePoints = points.map((p) => `${p.x},${p.y}`).join(" ");
+  const areaPoints = `${padX},${plotBottom} ${linePoints} ${points[points.length - 1].x},${plotBottom}`;
+
+  const labelEvery = Math.max(1, Math.ceil(rows.length / 6));
+
+  return (
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      className="w-full"
+      role="img"
+      aria-label={`Signups per day over the last ${rows.length} days, ranging from 0 to ${max}`}
+    >
+      <line x1={padX} y1={plotBottom} x2={w - padX} y2={plotBottom} stroke="#E2E8F0" strokeWidth="1" />
+      <polygon points={areaPoints} fill="#FB923C" fillOpacity="0.12" />
+      <polyline points={linePoints} fill="none" stroke="#FB923C" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      {rows.map((r, i) => {
+        if (i % labelEvery !== 0 && i !== rows.length - 1) return null;
+        const x = padX + i * stepX;
+        return (
+          <text key={r.date} x={x} y={h - 6} fontSize="9" textAnchor="middle" fill="#94a3b8">
+            {r.date.slice(5)}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
+
 export default function Funnel() {
   const [data, setData] = useState<WaitlistFunnel | null>(null);
   const [error, setError] = useState("");
@@ -117,6 +172,12 @@ export default function Funnel() {
         PostHog also recorded {data.submittedPosthog} client-side submit events (informational —
         the count above is the source of truth from our own database).
       </p>
+
+      {/* Daily signup counts from our own DB — no PostHog dependency. */}
+      <div className="space-y-2 pt-2">
+        <h3 className="text-sm font-semibold text-slate-900">Signups over time (last 30 days)</h3>
+        <SignupsOverTimeChart rows={data.signupsByDay} />
+      </div>
 
       {/* Per-channel breakdown. Visits come from PostHog (pageviews); signups
           from our own DB. Percentages exclude the private 'test' bucket. */}

@@ -192,18 +192,19 @@ function withRealShare(rows) {
 }
 
 // --- Waitlist funnel analytics --------------------------------------------
-// submittedDb + bySource (from our own waitlist table) are the source of
-// truth and a hard dependency — a real DB failure here is a genuine 500.
-// PostHog (visits, started, submittedPosthog, visitsBySource) is best-effort:
+// submittedDb + bySource + signupsByDay (from our own waitlist table) are the
+// source of truth and a hard dependency — a real DB failure here is a genuine
+// 500. PostHog (visits, started, submittedPosthog, visitsBySource) is best-effort:
 // a misconfigured/unreachable PostHog project (bad key, wrong project id,
 // PostHog outage) must not take down the whole tab when the DB-backed numbers
 // are still available — degrade to zeros/empty + posthogError instead.
 router.get(
   "/analytics/funnel",
   h(async (_req, res) => {
-    const [submittedDb, rawBySource] = await Promise.all([
+    const [submittedDb, rawBySource, signupsByDay] = await Promise.all([
       repo.getWaitlistCount(),
       repo.getWaitlistCountsBySource(),
+      repo.getWaitlistSignupsByDay(),
     ]);
 
     let visits = 0;
@@ -238,6 +239,7 @@ router.get(
       submittedRate,
       bySource,
       visitsBySource,
+      signupsByDay,
       posthogError,
     });
   })
