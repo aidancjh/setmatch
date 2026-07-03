@@ -4,7 +4,7 @@
 import { Router } from "express";
 import { h } from "./lib/asyncHandler.js";
 import { requireAdminAuth } from "./adminAuth.js";
-import { queryWaitlistFunnel } from "./posthog.js";
+import { queryWaitlistFunnel, queryWaitlistVisitsBySource } from "./posthog.js";
 import * as repo from "./repo.js";
 
 const router = Router();
@@ -174,35 +174,54 @@ router.patch(
   })
 );
 
+// Attach a "% of real signups/visits" to each {source, count} row. The private
+// 'test' bucket (our own testing) is excluded from the denominator and gets a
+// null percent so self-testing never skews the numbers.
+function withRealShare(rows) {
+  const realTotal = rows
+    .filter((r) => r.source !== "test")
+    .reduce((sum, r) => sum + r.count, 0);
+  return rows.map((r) => ({
+    source: r.source,
+    count: r.count,
+    percent:
+      r.source === "test" || realTotal === 0
+        ? null
+        : Math.round((r.count / realTotal) * 1000) / 10, // one decimal place
+  }));
+}
+
 // --- Waitlist funnel analytics --------------------------------------------
 // submittedDb (from our own waitlist table) is the source of truth for actual
 // submissions; submittedPosthog is informational only (PostHog can undercount
-// due to ad blockers / consent declines).
+// due to ad blockers / consent declines). Visits-by-source come from PostHog
+// (the only place that sees pageviews); signups-by-source from our own DB.
 router.get(
   "/analytics/funnel",
   h(async (_req, res) => {
-    const [{ visits, started, submittedPosthog }, submittedDb, rawBySource] = await Promise.all([
-      queryWaitlistFunnel(),
-      repo.getWaitlistCount(),
-      repo.getWaitlistCountsBySource(),
-    ]);
+    const [{ visits, started, submittedPosthog }, submittedDb, rawBySource, rawVisitsBySource] =
+      await Promise.all([
+        queryWaitlistFunnel(),
+        repo.getWaitlistCount(),
+        repo.getWaitlistCountsBySource(),
+        queryWaitlistVisitsBySource(),
+      ]);
     const startedRate = visits > 0 ? Math.round((started / visits) * 100) : 0;
     const submittedRate = visits > 0 ? Math.round((submittedDb / visits) * 100) : 0;
-    // Per-channel attribution from our own DB (utm_source captured at signup).
-    // Percentages are of *real* signups only — the 'test' bucket (our own
-    // testing) is excluded from the denominator.
-    const realTotal = rawBySource
-      .filter((r) => r.source !== "test")
-      .reduce((sum, r) => sum + r.count, 0);
-    const bySource = rawBySource.map((r) => ({
-      source: r.source,
-      count: r.count,
-      percent:
-        r.source === "test" || realTotal === 0
-          ? null
-          : Math.round((r.count / realTotal) * 1000) / 10, // one decimal place
-    }));
-    res.json({ visits, started, submittedDb, submittedPosthog, startedRate, submittedRate, bySource });
+    const bySource = withRealShare(rawBySource);
+    const visitsBySource = withRealShare(
+      rawVisitsBySource.map((r) => ({ source: r.source, count: r.visits }))
+    );
+    res.json({
+      visits,
+      started,
+      submittedDb,
+      submittedPosthog,
+      startedRate,
+      submittedRate,
+      bySource,
+      visitsBySource,
+    });
   })
 );
 

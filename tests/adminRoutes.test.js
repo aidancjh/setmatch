@@ -25,6 +25,10 @@ vi.mock("../server/repo.js", () => ({
 
 vi.mock("../server/posthog.js", () => ({
   queryWaitlistFunnel: vi.fn().mockResolvedValue({ visits: 100, started: 40, submittedPosthog: 25 }),
+  queryWaitlistVisitsBySource: vi.fn().mockResolvedValue([
+    { source: "instagram", visits: 60 },
+    { source: "direct", visits: 40 },
+  ]),
 }));
 
 describe("adminRoutes", () => {
@@ -65,6 +69,10 @@ describe("adminRoutes", () => {
       bySource: [
         { source: "instagram", count: 5, percent: 71.4 }, // 5/7
         { source: "direct", count: 2, percent: 28.6 }, // 2/7
+      ],
+      visitsBySource: [
+        { source: "instagram", count: 60, percent: 60 }, // 60/100
+        { source: "direct", count: 40, percent: 40 }, // 40/100
       ],
     });
   });

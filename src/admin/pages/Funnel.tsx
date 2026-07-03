@@ -15,6 +15,7 @@ interface WaitlistFunnel {
   startedRate: number;
   submittedRate: number;
   bySource: WaitlistSourceStat[];
+  visitsBySource: WaitlistSourceStat[];
 }
 
 // Friendly labels for the channels we tag with utm_source.
@@ -29,6 +30,48 @@ const SOURCE_LABELS: Record<string, string> = {
   other: "Other",
   test: "Test (excluded)",
 };
+
+// Horizontal bar chart for a per-source breakdown. Bar width is relative to the
+// biggest row; each row shows its raw count and (for non-'test' rows) its share.
+function SourceBarChart({
+  title,
+  rows,
+  emptyText,
+}: {
+  title: string;
+  rows: WaitlistSourceStat[];
+  emptyText: string;
+}) {
+  const max = rows.reduce((m, r) => Math.max(m, r.count), 0);
+  return (
+    <div className="space-y-2 pt-2">
+      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+      {rows.length === 0 ? (
+        <p className="text-xs text-slate-400">{emptyText}</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {rows.map((r) => (
+            <li key={r.source} className="flex items-center gap-3">
+              <span className="w-28 shrink-0 truncate text-xs text-slate-600">
+                {SOURCE_LABELS[r.source] ?? r.source}
+              </span>
+              <div className="relative h-5 flex-1 rounded bg-slate-100">
+                <div
+                  className="h-5 rounded bg-orange-400"
+                  style={{ width: max > 0 ? `${Math.max(2, (r.count / max) * 100)}%` : "0%" }}
+                />
+              </div>
+              <span className="w-24 shrink-0 text-right text-xs tabular-nums text-slate-500">
+                {r.count}
+                {r.percent !== null && <span className="text-slate-400"> · {r.percent}%</span>}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function Funnel() {
   const [data, setData] = useState<WaitlistFunnel | null>(null);
@@ -67,37 +110,18 @@ export default function Funnel() {
         the count above is the source of truth from our own database).
       </p>
 
-      {/* Per-channel attribution from our own DB (utm_source captured at signup).
-          Percentages exclude the 'test' bucket. */}
-      <div className="space-y-2 pt-2">
-        <h3 className="text-sm font-semibold text-slate-900">Signups by source</h3>
-        {data.bySource.length === 0 ? (
-          <p className="text-xs text-slate-400">No signups yet.</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-slate-500">
-                <th className="py-1 font-medium">Source</th>
-                <th className="py-1 text-right font-medium">Signups</th>
-                <th className="py-1 text-right font-medium">Share</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.bySource.map((s) => (
-                <tr key={s.source} className="border-t border-slate-100">
-                  <td className="py-1.5 text-slate-700">
-                    {SOURCE_LABELS[s.source] ?? s.source}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums text-slate-900">{s.count}</td>
-                  <td className="py-1.5 text-right tabular-nums text-slate-500">
-                    {s.percent === null ? "—" : `${s.percent}%`}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {/* Per-channel breakdown. Visits come from PostHog (pageviews); signups
+          from our own DB. Percentages exclude the private 'test' bucket. */}
+      <SourceBarChart
+        title="Page visits by source"
+        rows={data.visitsBySource}
+        emptyText="No visits recorded yet."
+      />
+      <SourceBarChart
+        title="Signups by source"
+        rows={data.bySource}
+        emptyText="No signups yet."
+      />
     </div>
   );
 }

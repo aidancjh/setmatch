@@ -66,3 +66,52 @@ describe("posthog.queryWaitlistFunnel", () => {
     await expect(queryWaitlistFunnel()).rejects.toThrow(/PostHog query failed: unexpected result shape/);
   });
 });
+
+describe("posthog.queryWaitlistVisitsBySource", () => {
+  beforeEach(() => {
+    process.env.POSTHOG_PROJECT_ID = "494538";
+    process.env.POSTHOG_PERSONAL_API_KEY = "phx_test_key";
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.POSTHOG_PROJECT_ID;
+    delete process.env.POSTHOG_PERSONAL_API_KEY;
+  });
+
+  it("maps grouped rows to { source, visits }, coalescing empty source to 'direct'", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ results: [["instagram", 60], ["", 40]] }),
+      })
+    );
+    const { queryWaitlistVisitsBySource } = await import("../server/posthog.js");
+    const result = await queryWaitlistVisitsBySource();
+    expect(result).toEqual([
+      { source: "instagram", visits: 60 },
+      { source: "direct", visits: 40 },
+    ]);
+  });
+
+  it("skips malformed rows and returns [] when there are no results", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ results: [["tiktok", 5], ["broken"], null] }),
+      })
+    );
+    const { queryWaitlistVisitsBySource } = await import("../server/posthog.js");
+    expect(await queryWaitlistVisitsBySource()).toEqual([{ source: "tiktok", visits: 5 }]);
+  });
+
+  it("throws when PostHog responds non-2xx", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) })
+    );
+    const { queryWaitlistVisitsBySource } = await import("../server/posthog.js");
+    await expect(queryWaitlistVisitsBySource()).rejects.toThrow(/PostHog query failed/);
+  });
+});

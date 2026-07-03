@@ -18,7 +18,25 @@ const FUNNEL_QUERY = `
   WHERE timestamp > now() - INTERVAL 30 DAY
 `;
 
-export async function queryWaitlistFunnel() {
+// Page visits on /waitlist grouped by the utm_source that was on the URL when
+// PostHog captured the pageview (empty / missing → 'direct'). This is the only
+// reliable source for per-channel *visit* counts: the waitlist page is a static
+// SPA view, so visits never hit our own API — only PostHog sees them.
+const VISITS_BY_SOURCE_QUERY = `
+  SELECT
+    coalesce(nullIf(properties.utm_source, ''), 'direct') AS source,
+    count() AS visits
+  FROM events
+  WHERE event = '$pageview'
+    AND properties.$pathname = '/waitlist'
+    AND timestamp > now() - INTERVAL 30 DAY
+  GROUP BY source
+  ORDER BY visits DESC
+`;
+
+// Thin wrapper around the PostHog HogQL query endpoint. Throws if PostHog isn't
+// configured or the request fails; callers decide how to surface that.
+async function runHogQL(query) {
   const projectId = process.env.POSTHOG_PROJECT_ID;
   const apiKey = process.env.POSTHOG_PERSONAL_API_KEY;
   if (!projectId || !apiKey) {
@@ -32,14 +50,18 @@ export async function queryWaitlistFunnel() {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      query: { kind: "HogQLQuery", query: FUNNEL_QUERY },
+      query: { kind: "HogQLQuery", query },
     }),
   });
 
   if (!res.ok) {
     throw new Error(`PostHog query failed (${res.status})`);
   }
-  const data = await res.json();
+  return res.json();
+}
+
+export async function queryWaitlistFunnel() {
+  const data = await runHogQL(FUNNEL_QUERY);
   const row = data.results && data.results[0];
   if (!row) throw new Error("PostHog query failed: no results returned.");
   if (!Array.isArray(row) || row.length !== 3) {
@@ -48,4 +70,16 @@ export async function queryWaitlistFunnel() {
 
   const [visits, started, submittedPosthog] = row;
   return { visits, started, submittedPosthog };
+}
+
+/** Visit counts grouped by utm_source, most visits first: [{ source, visits }]. */
+export async function queryWaitlistVisitsBySource() {
+  const data = await runHogQL(VISITS_BY_SOURCE_QUERY);
+  const rows = Array.isArray(data.results) ? data.results : [];
+  return rows
+    .filter((r) => Array.isArray(r) && r.length === 2)
+    .map(([source, visits]) => ({
+      source: typeof source === "string" && source !== "" ? source : "direct",
+      visits: Number(visits) || 0,
+    }));
 }

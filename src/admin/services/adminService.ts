@@ -24,6 +24,7 @@ interface WaitlistFunnel {
   startedRate: number;
   submittedRate: number;
   bySource: WaitlistSourceStat[];
+  visitsBySource: WaitlistSourceStat[];
 }
 
 export const adminApi = {
