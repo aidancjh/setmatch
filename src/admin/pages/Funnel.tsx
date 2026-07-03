@@ -16,6 +16,7 @@ interface WaitlistFunnel {
   submittedRate: number;
   bySource: WaitlistSourceStat[];
   visitsBySource: WaitlistSourceStat[];
+  posthogError: string | null;
 }
 
 // Friendly labels for the channels we tag with utm_source.
@@ -96,6 +97,13 @@ export default function Funnel() {
   return (
     <div className="space-y-3 p-4">
       <h2 className="text-sm font-semibold text-slate-900">Waitlist funnel (last 30 days)</h2>
+      {data.posthogError && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          PostHog data unavailable ({data.posthogError}) — showing your database's signup count
+          only. Visits, "started an email", and visits-by-source won't be accurate until this is
+          fixed.
+        </p>
+      )}
       <div className="grid grid-cols-3 gap-3">
         {stages.map((s) => (
           <div key={s.label} className="rounded-xl bg-slate-50 p-3">

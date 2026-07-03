@@ -192,20 +192,37 @@ function withRealShare(rows) {
 }
 
 // --- Waitlist funnel analytics --------------------------------------------
-// submittedDb (from our own waitlist table) is the source of truth for actual
-// submissions; submittedPosthog is informational only (PostHog can undercount
-// due to ad blockers / consent declines). Visits-by-source come from PostHog
-// (the only place that sees pageviews); signups-by-source from our own DB.
+// submittedDb + bySource (from our own waitlist table) are the source of
+// truth and a hard dependency — a real DB failure here is a genuine 500.
+// PostHog (visits, started, submittedPosthog, visitsBySource) is best-effort:
+// a misconfigured/unreachable PostHog project (bad key, wrong project id,
+// PostHog outage) must not take down the whole tab when the DB-backed numbers
+// are still available — degrade to zeros/empty + posthogError instead.
 router.get(
   "/analytics/funnel",
   h(async (_req, res) => {
-    const [{ visits, started, submittedPosthog }, submittedDb, rawBySource, rawVisitsBySource] =
-      await Promise.all([
+    const [submittedDb, rawBySource] = await Promise.all([
+      repo.getWaitlistCount(),
+      repo.getWaitlistCountsBySource(),
+    ]);
+
+    let visits = 0;
+    let started = 0;
+    let submittedPosthog = 0;
+    let rawVisitsBySource = [];
+    let posthogError = null;
+    try {
+      const [funnel, visitsBySource] = await Promise.all([
         queryWaitlistFunnel(),
-        repo.getWaitlistCount(),
-        repo.getWaitlistCountsBySource(),
         queryWaitlistVisitsBySource(),
       ]);
+      ({ visits, started, submittedPosthog } = funnel);
+      rawVisitsBySource = visitsBySource;
+    } catch (err) {
+      console.error("[funnel] PostHog query failed:", err);
+      posthogError = err instanceof Error ? err.message : "PostHog is unavailable.";
+    }
+
     const startedRate = visits > 0 ? Math.round((started / visits) * 100) : 0;
     const submittedRate = visits > 0 ? Math.round((submittedDb / visits) * 100) : 0;
     const bySource = withRealShare(rawBySource);
@@ -221,6 +238,7 @@ router.get(
       submittedRate,
       bySource,
       visitsBySource,
+      posthogError,
     });
   })
 );

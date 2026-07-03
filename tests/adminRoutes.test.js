@@ -74,6 +74,7 @@ describe("adminRoutes", () => {
         { source: "instagram", count: 60, percent: 60 }, // 60/100
         { source: "direct", count: 40, percent: 40 }, // 40/100
       ],
+      posthogError: null,
     });
   });
 
@@ -87,5 +88,35 @@ describe("adminRoutes", () => {
     expect(res.status).toBe(200);
     expect(res.body.startedRate).toBe(0);
     expect(res.body.submittedRate).toBe(0);
+  });
+
+  it("GET /api/admin/analytics/funnel degrades gracefully (200, zeros/empty + posthogError) when PostHog fails but the DB numbers still succeed", async () => {
+    const posthog = await import("../server/posthog.js");
+    posthog.queryWaitlistFunnel.mockRejectedValueOnce(new Error("PostHog query failed (401)"));
+    const repo = await import("../server/repo.js");
+    repo.getWaitlistCount.mockResolvedValueOnce(9);
+    repo.getWaitlistCountsBySource.mockResolvedValueOnce([{ source: "direct", count: 9 }]);
+
+    const res = await request(app).get("/api/admin/analytics/funnel");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      visits: 0,
+      started: 0,
+      submittedDb: 9,
+      submittedPosthog: 0,
+      startedRate: 0,
+      submittedRate: 0,
+      bySource: [{ source: "direct", count: 9, percent: 100 }],
+      visitsBySource: [],
+      posthogError: "PostHog query failed (401)",
+    });
+  });
+
+  it("GET /api/admin/analytics/funnel 500s when the DB count itself fails (real source-of-truth failure, not degraded)", async () => {
+    const repo = await import("../server/repo.js");
+    repo.getWaitlistCount.mockRejectedValueOnce(new Error("connection terminated"));
+
+    const res = await request(app).get("/api/admin/analytics/funnel");
+    expect(res.status).toBe(500);
   });
 });
