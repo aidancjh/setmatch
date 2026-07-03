@@ -89,26 +89,30 @@ export default function Waitlist() {
         : new URLSearchParams(window.location.search).get("utm_source") || "";
   }
 
-  // --- Initialize PostHog on mount
+  // Initialize PostHog, then clean the URL. Order matters: PostHog captures the
+  // pageview (reading utm_source off the live URL) asynchronously after its CDN
+  // script loads, so we must NOT strip utm_* until it's ready — otherwise every
+  // visit is recorded untagged and the per-source visit breakdown is empty.
   useEffect(() => {
-    initPostHog();
-  }, []);
-
-  // Clean the URL: after PostHog has captured the pageview (incl. utm_source),
-  // strip every utm_* param so the address bar reads a tidy /waitlist (no
-  // reload, invisible to the user). Non-utm params are left untouched.
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    let changed = false;
-    for (const key of [...url.searchParams.keys()]) {
-      if (key.toLowerCase().startsWith("utm_")) {
-        url.searchParams.delete(key);
-        changed = true;
+    let cleaned = false;
+    const cleanUrl = () => {
+      if (cleaned) return;
+      cleaned = true;
+      const url = new URL(window.location.href);
+      let changed = false;
+      for (const key of [...url.searchParams.keys()]) {
+        if (key.toLowerCase().startsWith("utm_")) {
+          url.searchParams.delete(key);
+          changed = true;
+        }
       }
-    }
-    if (changed) {
-      window.history.replaceState({}, "", url.pathname + url.search + url.hash);
-    }
+      if (changed) {
+        window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+      }
+    };
+    initPostHog(cleanUrl); // clean once PostHog has captured the pageview
+    const fallback = window.setTimeout(cleanUrl, 4000); // safety net if PostHog is slow/blocked
+    return () => window.clearTimeout(fallback);
   }, []);
 
   // --- Animated ray field (ported from the design's canvas render loop) ------

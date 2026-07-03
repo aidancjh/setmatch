@@ -13,10 +13,17 @@ declare global {
 
 let initialized = false;
 
-export function initPostHog() {
+// onReady fires once PostHog has loaded and captured the initial pageview (so
+// the caller can safely mutate the URL afterwards without losing utm params).
+// It ALSO fires immediately when PostHog is disabled (no key / SSR) so callers
+// never hang waiting for an init that will never happen.
+export function initPostHog(onReady?: () => void) {
   if (initialized) return;
   const key = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
-  if (!key || typeof window === "undefined") return;
+  if (!key || typeof window === "undefined") {
+    onReady?.();
+    return;
+  }
   initialized = true;
 
   // Official PostHog JS snippet (loads posthog-js from their CDN, then calls
@@ -30,8 +37,15 @@ export function initPostHog() {
       api_host: "https://us.i.posthog.com",
       person_profiles: "identified_only",
       capture_pageview: true,
+      // `loaded` runs after init completes and the auto pageview (which reads
+      // utm_source off the live URL) has been captured — the safe moment to let
+      // the caller clean the address bar.
+      loaded: () => onReady?.(),
     });
   };
+  // If the CDN script is blocked (ad blocker) it never loads or captures — let
+  // the caller proceed so the URL still gets tidied.
+  script.onerror = () => onReady?.();
   document.head.appendChild(script);
 }
 
