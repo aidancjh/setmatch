@@ -1,7 +1,5 @@
 // Server-side PostHog query — uses the private Personal API Key, never the
-// public client-side project token. All queries are all-time (no date filter):
-// the funnel was only added recently, so "all time" is the honest window and
-// avoids a chart padded with empty pre-launch days.
+// public client-side project token.
 //   visits    — $pageview events on /waitlist
 //   started   — custom "waitlist_email_started" events (first keystroke)
 //   submittedPosthog — custom "waitlist_signup" events (client-fired on success)
@@ -10,16 +8,26 @@
 // (PostHog can undercount due to ad blockers / consent declines).
 const POSTHOG_HOST = process.env.POSTHOG_HOST || "https://us.posthog.com";
 
+// Everything before launch day (dev/QA traffic) is real but not meaningful to
+// show next to real launch traffic, so every PostHog-sourced metric here is
+// scoped to "since launch" — LAUNCH_DATE (UTC) onward. Deliberately asymmetric
+// with the DB-backed signup metrics in repo.js (getWaitlistCount /
+// getWaitlistCountsBySource / getWaitlistSignupsByDay), which stay all-time on
+// purpose: those are real people already on the list, and resetting them would
+// just hide them from the admin, not the database.
+const LAUNCH_DATE = "2026-07-04";
+const SINCE_LAUNCH = `timestamp >= toDateTime('${LAUNCH_DATE} 00:00:00', 'UTC')`;
+
 // Column order must match the destructuring order in queryWaitlistFunnel: [visits, started, submittedPosthog]
-// Visits exclude ?utm_source=test — the same private bucket the DB-backed
+// Visits also exclude ?utm_source=test — the same private bucket the DB-backed
 // signup queries already exclude — so testing from your own device doesn't
 // skew the real numbers. Visit https://coterie.com.de/waitlist?utm_source=test
 // from your own browser to keep your pageviews out of this count.
 const FUNNEL_QUERY = `
   SELECT
-    countIf(event = '$pageview' AND properties.$pathname = '/waitlist' AND coalesce(properties.utm_source, '') != 'test') AS visits,
-    countIf(event = 'waitlist_email_started') AS started,
-    countIf(event = 'waitlist_signup') AS submitted
+    countIf(event = '$pageview' AND properties.$pathname = '/waitlist' AND coalesce(properties.utm_source, '') != 'test' AND ${SINCE_LAUNCH}) AS visits,
+    countIf(event = 'waitlist_email_started' AND ${SINCE_LAUNCH}) AS started,
+    countIf(event = 'waitlist_signup' AND ${SINCE_LAUNCH}) AS submitted
   FROM events
 `;
 
@@ -34,20 +42,23 @@ const VISITS_BY_SOURCE_QUERY = `
   FROM events
   WHERE event = '$pageview'
     AND properties.$pathname = '/waitlist'
+    AND ${SINCE_LAUNCH}
   GROUP BY source
   ORDER BY visits DESC
 `;
 
-// Daily pageview counts on /waitlist, all-time. Grouped by UTC calendar day to
-// match repo.getWaitlistSignupsByDay(); the admin route zero-fills both series
-// onto one shared date axis. Returns only days that had at least one pageview.
-// Excludes the 'test' utm_source bucket, same as FUNNEL_QUERY's visits count.
+// Daily pageview counts on /waitlist, since launch. Grouped by UTC calendar day
+// to match repo.getWaitlistSignupsByDay(); the admin route zero-fills both
+// series onto one shared date axis. Returns only days that had at least one
+// pageview. Excludes the 'test' utm_source bucket, same as FUNNEL_QUERY's
+// visits count.
 const VISITS_BY_DAY_QUERY = `
   SELECT toDate(timestamp) AS day, count() AS visits
   FROM events
   WHERE event = '$pageview'
     AND properties.$pathname = '/waitlist'
     AND coalesce(properties.utm_source, '') != 'test'
+    AND ${SINCE_LAUNCH}
   GROUP BY day
   ORDER BY day
 `;

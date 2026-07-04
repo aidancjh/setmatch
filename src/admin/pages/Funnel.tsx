@@ -214,15 +214,15 @@ export default function Funnel() {
   }
 
   const conversionStats = [
-    { label: "Visits", value: data.visits.toLocaleString() },
-    { label: "Signups", value: data.submittedDb.toLocaleString() },
+    { label: "Visits (since launch)", value: data.visits.toLocaleString() },
+    { label: "Signups (all time)", value: data.submittedDb.toLocaleString() },
     { label: "Conversion", value: `${data.submittedRate}%` },
   ];
 
   return (
     <div className="space-y-4 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-slate-900">Waitlist funnel (all time)</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Waitlist funnel</h2>
         <div className="flex items-center gap-3">
           {updatedAt && (
             <span className="text-xs text-slate-400">Updated {updatedAt.toLocaleTimeString()}</span>
@@ -252,9 +252,13 @@ export default function Funnel() {
       )}
 
       {/* 1 & 3. Pageviews / signups over time, side by side so each chart gets
-          a squarer aspect ratio instead of stretching full-width. */}
+          a squarer aspect ratio instead of stretching full-width. Pageviews
+          are scoped to "since launch" (server/posthog.js LAUNCH_DATE) — the
+          pre-launch dev/QA traffic isn't meaningful to show next to real
+          traffic. Signups stay all-time since those are real people already
+          on the list. */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card title="Pageviews over time">
+        <Card title="Pageviews over time (since launch)">
           <TimeSeriesLineChart
             rows={data.visitsByDay}
             emptyText="No visits recorded yet."
@@ -263,7 +267,7 @@ export default function Funnel() {
           />
         </Card>
 
-        <Card title="Signups over time">
+        <Card title="Signups over time (all time)">
           <TimeSeriesLineChart
             rows={data.signupsByDay}
             emptyText="No signups yet."
@@ -284,18 +288,18 @@ export default function Funnel() {
           ))}
         </div>
         <p className="text-xs text-slate-400">
-          PostHog also recorded {data.submittedPosthog} client-side submit events (informational —
-          the signup count above is the source of truth from our own database).
+          PostHog also recorded {data.submittedPosthog} client-side submit events since launch
+          (informational — the signup count above is the source of truth from our own database).
         </p>
       </Card>
 
       {/* 4. Signups by source — our own DB (exact, immune to ad blockers). */}
-      <Card title="Signups by source">
+      <Card title="Signups by source (all time)">
         <SourceBarChart rows={data.bySource} emptyText="No signups yet." />
       </Card>
 
       {/* 5. Pageviews by source — PostHog, grouped by utm_source. */}
-      <Card title="Pageviews by source">
+      <Card title="Pageviews by source (since launch)">
         <SourceBarChart rows={data.visitsBySource} emptyText="No visits recorded yet." />
       </Card>
     </div>
