@@ -2,26 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { SpikerSilhouette, DiggerSilhouette } from "../components/PlayerSilhouettes";
 import { initPostHog, captureEvent } from "../lib/posthog";
 
-// Imported from the Claude Design project "Coterie Waitlist". The signature
-// piece is the animated canvas: warm-toned rays streaming outward from a point
-// just above centre. Ported here 1:1 from the design's render loop, wired to the
-// real /api/waitlist submit, and made responsive for phone + desktop.
-
-type Particle = {
-  dir: number;
-  r: number;
-  len: number;
-  width: number;
-  color: string;
-  jitter: number;
-};
-
-const PALETTE = [
-  "#FF6A1A", "#FF8A3D", "#FFA94D", "#FF4D2E", "#FFB627",
-  "#E8590C", "#FF7A45", "#FFC078", "#FF9F1C",
-];
-const MOTION_INTENSITY = 4.5; // slightly slower than design default of 6 (1–10)
-const BASE_LINE_COUNT = 84; // design default
+// "App sheet" design: a dark hero (headline + player art) over a white value
+// sheet, sized like a phone card. Full-bleed on phone (most signups happen
+// there); centered as a fixed-aspect card on wider screens so it always reads
+// as the same composition instead of stretching. All sizes below are fixed px
+// tuned at the card's native ~394px width — deliberate, since the card is
+// capped at that width everywhere, so there's nothing to scale.
 
 // Decorative "player" avatars rendered as self-contained inline SVG portraits.
 // The design's originals were photos from a third-party host the production CSP
@@ -31,8 +17,6 @@ const PLAYERS = [
   { bg: "#FFE3D0", skin: "#F1C7A2", hair: "#3A2A1E", shirt: "#FF8A3D" },
   { bg: "#FFE8D2", skin: "#C68642", hair: "#16110D", shirt: "#E8590C" },
   { bg: "#FFE2C4", skin: "#8D5524", hair: "#241A12", shirt: "#FFB627" },
-  { bg: "#FFEFE0", skin: "#FFD7B0", hair: "#7A4E2A", shirt: "#FF7A45" },
-  { bg: "#FFF0DE", skin: "#E8B07D", hair: "#C98A3C", shirt: "#FF9F1C" },
 ];
 
 function PlayerAvatar({ p, i }: { p: (typeof PLAYERS)[number]; i: number }) {
@@ -43,11 +27,11 @@ function PlayerAvatar({ p, i }: { p: (typeof PLAYERS)[number]; i: number }) {
       aria-hidden="true"
       style={{
         display: "block",
-        width: "clamp(32px,2.6vw,48px)",
-        height: "clamp(32px,2.6vw,48px)",
+        width: 30,
+        height: 30,
         borderRadius: "50%",
-        marginLeft: i === 0 ? 0 : "clamp(-10px,-0.8vw,-13px)",
-        border: "2.5px solid #FDFBF9",
+        marginLeft: i === 0 ? 0 : -9,
+        border: "2.5px solid #FFF",
         boxShadow: "0 2px 6px rgba(20,17,15,0.14)",
       }}
     >
@@ -67,16 +51,11 @@ function PlayerAvatar({ p, i }: { p: (typeof PLAYERS)[number]; i: number }) {
   );
 }
 
-// The value prop shown under the headline. Joiner-first, clear and direct:
-// discovery ("find a game") + the payoff ("play"), with the mid-clause picked
-// out in brand orange so the line has a focal point without a box around it.
-
 export default function Waitlist() {
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState(""); // honeypot — humans leave this blank
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Attribution: read ?utm_source= once at first render and hold onto it, so
   // it's captured before the cleanup effect below wipes it from the address
@@ -115,119 +94,6 @@ export default function Waitlist() {
     return () => window.clearTimeout(fallback);
   }, []);
 
-  // --- Animated ray field (ported from the design's canvas render loop) ------
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-    let w = 0, h = 0, cx = 0, cy = 0, maxR = 0;
-    let parts: Particle[] = [];
-    let raf = 0;
-
-    const resize = () => {
-      w = canvas.clientWidth;
-      h = canvas.clientHeight;
-      if (!w || !h) return;
-      canvas.width = Math.max(1, Math.floor(w * dpr));
-      canvas.height = Math.max(1, Math.floor(h * dpr));
-      cx = w / 2;
-      cy = h * 0.46;
-      maxR = Math.hypot(Math.max(cx, w - cx), Math.max(cy, h - cy)) * 1.02;
-    };
-
-    const count = () => {
-      const areaScale = Math.min(1.4, Math.max(0.55, (w * h) / (1280 * 800)));
-      return Math.round(BASE_LINE_COUNT * areaScale);
-    };
-
-    const make = (full: boolean): Particle => {
-      const angle = Math.random() * Math.PI * 2;
-      const r0 = 26 + Math.random() * 34;
-      const r = full ? r0 + Math.random() * (maxR - r0) : r0;
-      return {
-        dir: angle,
-        r,
-        len: 16 + Math.random() * 34,
-        width: 1.4 + Math.random() * 1.8,
-        color: PALETTE[(Math.random() * PALETTE.length) | 0],
-        jitter: (Math.random() - 0.5) * 0.6,
-      };
-    };
-
-    const seed = () => {
-      if (!maxR) return;
-      const n = count();
-      parts = [];
-      for (let i = 0; i < n; i++) parts.push(make(true));
-    };
-
-    const draw = (advance: boolean) => {
-      const speed = 0.32 + MOTION_INTENSITY * 0.26;
-      const want = count();
-      while (parts.length < want) parts.push(make(true));
-      while (parts.length > want) parts.pop();
-
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, w, h);
-      ctx.lineCap = "round";
-      for (const p of parts) {
-        if (advance) {
-          p.r += speed * (0.85 + (p.len / 50) * 0.4);
-          if (p.r > maxR) Object.assign(p, make(false));
-        }
-        const a = p.dir + Math.sin(p.r * 0.012) * 0.05 * p.jitter;
-        const ux = Math.cos(a), uy = Math.sin(a);
-        const ex = cx + ux * p.r, ey = cy + uy * p.r;
-        const sx = ex - ux * p.len, sy = ey - uy * p.len;
-        const t = p.r / maxR;
-        let op;
-        if (t < 0.1) op = t / 0.1;
-        else if (t > 0.72) op = Math.max(0, (1 - t) / 0.28);
-        else op = 1;
-        op *= 0.85;
-        ctx.globalAlpha = op;
-        ctx.strokeStyle = p.color;
-        ctx.lineWidth = p.width;
-        ctx.beginPath();
-        ctx.moveTo(sx, sy);
-        ctx.lineTo(ex, ey);
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-    };
-
-    const loop = () => {
-      if (w && h) draw(true);
-      raf = requestAnimationFrame(loop);
-    };
-
-    // A ResizeObserver sizes the backing store the moment the canvas has real
-    // dimensions (independent of when rAF first fires), then paints one static
-    // frame so the field is never blank. The rAF loop animates from there.
-    const onSize = () => {
-      resize();
-      seed();
-      if (w && h) draw(false);
-    };
-    const ro = new ResizeObserver(onSize);
-    ro.observe(canvas);
-    onSize(); // in case the observer's first callback is deferred
-    window.addEventListener("resize", onSize); // belt-and-suspenders for orientation changes
-
-    if (!reduceMotion) raf = requestAnimationFrame(loop);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-      window.removeEventListener("resize", onSize);
-    };
-  }, []);
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus("loading");
@@ -255,182 +121,127 @@ export default function Waitlist() {
   const submitted = status === "success";
 
   return (
-    <section
+    <div
+      className="wl-page"
       data-screen-label="Waitlist"
-      style={{
-        position: "relative",
-        minHeight: "100vh",
-        width: "100%",
-        overflow: "hidden",
-        background:
-          "radial-gradient(120% 90% at 50% 30%, #FFFFFF 0%, #FDFBF9 55%, #FBF5EF 100%)",
-        display: "flex",
-        flexDirection: "column",
-        fontFamily: "'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-      }}
+      style={{ fontFamily: "'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" }}
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-        /* Email box — soft pulsing orange glow (no hard outline rings) */
-        .wl-box { position:relative; border-radius:18px; background:#fff; padding:7px; }
-        @keyframes wl-glow {
+        .wl-page { min-height:100vh; min-height:100dvh; width:100%; background:#EFE9E1; display:flex; }
+        .wl-card { position:relative; width:100%; min-height:100vh; min-height:100dvh; margin:0; background:#0E0B09; overflow:hidden; }
+        @media (min-width:640px) {
+          .wl-card { width:min(94vw,430px); min-height:0; height:min(860px,92dvh); margin:auto; border-radius:36px; box-shadow:0 30px 80px rgba(23,19,15,.28); }
+        }
+        .wl-hero { position:absolute; top:0; left:0; right:0; height:47%; overflow:hidden;
+                   background:linear-gradient(160deg, #26201A 0%, #17130F 55%, #0E0B09 100%); }
+        .wl-glow { position:absolute; inset:0; background:radial-gradient(80% 60% at 78% 70%, rgba(255,106,26,.22) 0%, transparent 65%); pointer-events:none; }
+        .wl-fig { position:absolute; color:#FF6A1A; pointer-events:none; }
+        .wl-fig-spiker { right:-11.17%; bottom:9.84%; width:57.36%; }
+        .wl-fig-digger { right:62.94%; bottom:46.28%; width:32.74%; }
+        .wl-hd { position:relative; z-index:3; display:flex; align-items:center; justify-content:space-between; padding:20px 22px; }
+        .wl-logo-dot { width:24px; height:24px; border-radius:50%; background:conic-gradient(from 210deg,#FF6A1A,#FF9A3D,#FFC078,#FF4D2E,#FF6A1A); }
+        .wl-sheet { position:absolute; top:43%; left:0; right:0; bottom:0; background:#FFF; border-radius:30px 30px 0 0;
+                    box-shadow:0 -12px 40px rgba(23,19,15,.14); padding:30px 26px 26px; display:flex; flex-direction:column; overflow-y:auto; }
+        .wl-chk { display:flex; gap:11px; align-items:flex-start; font-size:15px; font-weight:600; color:#3E362F; line-height:1.35; }
+        .wl-chk-icon { width:24px; height:24px; border-radius:50%; background:#FFF3EA; color:#FF6A1A;
+                       display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; flex:none; }
+        .wl-accent { color:#FF6A1A; }
+        .wl-box { position:relative; border-radius:18px; background:#fff; padding:6px; }
+        @keyframes wl-glow-pulse {
           0%,100% { box-shadow:0 6px 22px rgba(255,106,26,0.18), 0 0 16px rgba(255,106,26,0.16); }
           50%     { box-shadow:0 10px 34px rgba(255,106,26,0.32), 0 0 30px rgba(255,106,26,0.28); }
         }
-        .wl-box-1 { animation: wl-glow 2.8s ease-in-out infinite; }
+        .wl-box-1 { animation: wl-glow-pulse 2.8s ease-in-out infinite; }
         .wl-email:focus { border-color:#FF8A3D !important; box-shadow:0 0 0 4px rgba(255,138,61,0.16) !important; }
         .wl-cta:hover:not(:disabled) { background:#F25E0F; transform:translateY(-1px); box-shadow:0 10px 24px rgba(255,106,26,0.42); }
         .wl-cta:active:not(:disabled) { transform:translateY(0); }
-        /* Design 1 — bold player silhouettes grounded in the bottom corners */
-        .wl-fig { position:absolute; bottom:-2px; z-index:2; color:#FF6A1A; opacity:.95; pointer-events:none; height:auto; }
-        .wl-spiker { left:clamp(-32px, -1.5vw, 0px); width:clamp(220px, 26vw, 560px); }
-        .wl-digger { right:clamp(-32px, -1.5vw, 0px); width:clamp(240px, 28vw, 600px); }
-        @media (max-width: 760px) {
-          /* Shrink + fade so they frame the form instead of crowding it */
-          .wl-fig { opacity:.13; }
-          .wl-spiker { width:160px; left:-30px; }
-          .wl-digger { width:175px; right:-30px; }
-        }
-        @media (max-width: 480px) {
-          .wl-form { flex-direction: column; }
-          .wl-cta { width: 100%; }
-          .wl-formwrap { max-width: 300px !important; }
-          .wl-spiker { width:128px; left:-26px; }
-          .wl-digger { width:140px; right:-26px; }
-        }
         @media (prefers-reduced-motion: reduce) {
           .wl-box-1 { animation: none !important; box-shadow:0 8px 26px rgba(255,106,26,0.22), 0 0 22px rgba(255,106,26,0.18) !important; }
         }
       `}</style>
 
-      {/* Animated ray field */}
-      <canvas
-        ref={canvasRef}
-        aria-hidden="true"
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block", zIndex: 0 }}
-      />
-      {/* Soft vignette so the centre content stays legible over the rays */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          inset: 0,
-          zIndex: 1,
-          pointerEvents: "none",
-          background:
-            "radial-gradient(46% 40% at 50% 46%, rgba(253,251,249,0.92) 0%, rgba(253,251,249,0.7) 38%, rgba(253,251,249,0) 70%)",
-        }}
-      />
+      <div className="wl-card">
+        <div className="wl-hero">
+          <div className="wl-glow" aria-hidden="true" />
+          <DiggerSilhouette className="wl-fig wl-fig-digger" aria-hidden="true" />
+          <SpikerSilhouette className="wl-fig wl-fig-spiker" aria-hidden="true" />
 
-      {/* Player silhouettes (traced from reference art) — spiker left, receiver
-          right, both facing inward toward the headline. Decorative only. */}
-      <SpikerSilhouette className="wl-fig wl-spiker" aria-hidden="true" />
-      <DiggerSilhouette className="wl-fig wl-digger" aria-hidden="true" />
+          <header className="wl-hd">
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div className="wl-logo-dot" />
+              <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", color: "#FFF" }}>
+                coterie
+              </span>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", color: "#8C7F73" }}>
+              Volleyball · Singapore
+            </span>
+          </header>
 
-      {/* Header */}
-      <header
-        style={{
-          position: "relative",
-          zIndex: 3,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "clamp(18px,2.2vw,34px) clamp(20px,5vw,72px)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "clamp(8px,0.9vw,14px)" }}>
-          <div
-            style={{
-              width: "clamp(22px,2.4vw,40px)",
-              height: "clamp(22px,2.4vw,40px)",
-              borderRadius: "50%",
-              background: "conic-gradient(from 210deg, #FF6A1A, #FF9A3D, #FFC078, #FF4D2E, #FF6A1A)",
-              boxShadow: "0 2px 10px rgba(255,106,26,0.35)",
-            }}
-          />
-          <span style={{ fontSize: "clamp(17px,1.8vw,30px)", fontWeight: 700, letterSpacing: "-0.02em", color: "#1A1614" }}>
-            coterie
-          </span>
-        </div>
-        <span style={{ fontSize: "clamp(12.5px,1.1vw,18px)", fontWeight: 600, letterSpacing: "0.04em", color: "#9A8E84" }}>
-          Volleyball · Singapore
-        </span>
-      </header>
-
-      {/* Main */}
-      <main
-        style={{
-          position: "relative",
-          zIndex: 3,
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
-          padding: "clamp(24px,3vw,40px) clamp(20px,5vw,72px) clamp(56px,7vw,96px)",
-        }}
-      >
-        {/* "Launches soon" badge */}
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "clamp(9px,0.9vw,15px) clamp(18px,1.7vw,30px)",
-            border: "1px solid #F2D9C5",
-            background: "rgba(255,247,240,0.8)",
-            borderRadius: 100,
-            marginBottom: "clamp(26px,2.6vw,46px)",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "clamp(13px,1vw,18px)",
-              fontWeight: 700,
-              letterSpacing: "0.14em",
-              color: "#C4622A",
-              textTransform: "uppercase",
-            }}
-          >
-            Launches soon
-          </span>
+          <div style={{ position: "absolute", left: 26, bottom: 52, zIndex: 3, textAlign: "left" }}>
+            <div
+              style={{
+                display: "inline-flex",
+                padding: "6px 14px",
+                borderRadius: 100,
+                background: "rgba(255,106,26,.16)",
+                border: "1px solid rgba(255,138,61,.45)",
+                color: "#FF8A3D",
+                fontSize: 10.5,
+                fontWeight: 800,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+              }}
+            >
+              Launches soon
+            </div>
+            <h1
+              style={{
+                margin: "14px 0 0",
+                fontSize: 40,
+                lineHeight: 1.02,
+                letterSpacing: "-0.03em",
+                fontWeight: 800,
+                color: "#FFF",
+              }}
+            >
+              Play more
+              <br />
+              volleyball.
+            </h1>
+          </div>
         </div>
 
-        {/* Headline */}
-        <h1
-          style={{
-            margin: 0,
-            fontSize: "clamp(2.6rem,6vw,7.5rem)",
-            lineHeight: 0.98,
-            fontWeight: 800,
-            letterSpacing: "-0.035em",
-            color: "#15110F",
-            maxWidth: "13ch",
-          }}
-        >
-          Join the Waitlist
-        </h1>
+        <div className="wl-sheet">
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div className="wl-chk">
+              <span className="wl-chk-icon">✓</span>
+              Find volleyball games <span className="wl-accent">near</span> you
+            </div>
+            <div className="wl-chk">
+              <span className="wl-chk-icon">✓</span>
+              Always have reliable and friendly teammates
+            </div>
+            <div className="wl-chk">
+              <span className="wl-chk-icon">✓</span>
+              Meet players at <span className="wl-accent">your skill level</span>
+            </div>
+          </div>
 
-        {/* Tagline — borderless kicker line under the headline. No box; the
-            mid-clause is picked out in brand orange as the line's focal point. */}
-        <p
-          style={{
-            margin: "clamp(20px,2.1vw,34px) 0 0",
-            maxWidth: "min(90vw, 560px)",
-            textAlign: "center",
-            fontSize: "clamp(1rem, 1.5vw, 1.45rem)",
-            fontWeight: 600,
-            color: "#6F665E",
-            letterSpacing: "-0.01em",
-            lineHeight: 1.4,
-          }}
-        >
-          Find a game near you, <span style={{ color: "#FF6A1A" }}>grab your spot</span>, and play
-        </p>
+          <div style={{ flex: 1 }} />
 
-        {/* Form / success */}
-        <div className="wl-formwrap" style={{ width: "100%", maxWidth: "clamp(380px, 34vw, 640px)", marginTop: "clamp(28px,3vw,48px)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <div style={{ display: "flex" }} aria-hidden="true">
+              {PLAYERS.map((p, i) => (
+                <PlayerAvatar key={i} p={p} i={i} />
+              ))}
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#6F665E" }}>
+              40+ players already on the list
+            </span>
+          </div>
+
           {submitted ? (
             <div
               style={{
@@ -438,7 +249,7 @@ export default function Waitlist() {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 11,
-                padding: "clamp(16px,1.4vw,24px) clamp(20px,2vw,30px)",
+                padding: "17px 22px",
                 background: "#FFF3EA",
                 border: "1px solid #F2D9C5",
                 borderRadius: 14,
@@ -446,8 +257,8 @@ export default function Waitlist() {
             >
               <span
                 style={{
-                  width: "clamp(24px,1.8vw,32px)",
-                  height: "clamp(24px,1.8vw,32px)",
+                  width: 24,
+                  height: 24,
                   borderRadius: "50%",
                   background: "#FF6A1A",
                   color: "#fff",
@@ -455,17 +266,17 @@ export default function Waitlist() {
                   alignItems: "center",
                   justifyContent: "center",
                   fontWeight: 800,
-                  fontSize: "clamp(13px,1vw,16px)",
+                  fontSize: 13,
                   flex: "none",
                 }}
               >
                 ✓
               </span>
-              <span style={{ fontSize: "clamp(15px,1.1vw,19px)", fontWeight: 600, color: "#15110F" }}>{message}</span>
+              <span style={{ fontSize: 15, fontWeight: 600, color: "#15110F" }}>{message}</span>
             </div>
           ) : (
             <div className="wl-box wl-box-1">
-              <form onSubmit={handleSubmit} className="wl-form" style={{ display: "flex", gap: 8, width: "100%" }}>
+              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 7, width: "100%" }}>
                 {/* Honeypot: off-screen, hidden from tab order + screen readers.
                     Real users never fill it; auto-fill bots do and get dropped. */}
                 <input
@@ -491,11 +302,9 @@ export default function Waitlist() {
                   aria-label="Email address"
                   className="wl-email"
                   style={{
-                    flex: 1,
-                    minWidth: 0,
-                    padding: "clamp(14px,1.2vw,20px) clamp(16px,1.4vw,22px)",
+                    padding: 15,
                     fontFamily: "inherit",
-                    fontSize: "clamp(15px,1.1vw,19px)",
+                    fontSize: 16,
                     fontWeight: 500,
                     color: "#15110F",
                     background: "#fff",
@@ -509,10 +318,9 @@ export default function Waitlist() {
                   disabled={status === "loading"}
                   className="wl-cta"
                   style={{
-                    flex: "none",
-                    padding: "clamp(14px,1.2vw,20px) clamp(22px,2vw,34px)",
+                    padding: 15,
                     fontFamily: "inherit",
-                    fontSize: "clamp(15px,1.1vw,19px)",
+                    fontSize: 16,
                     fontWeight: 700,
                     letterSpacing: "-0.01em",
                     color: "#fff",
@@ -525,44 +333,21 @@ export default function Waitlist() {
                     transition: "transform .15s ease, box-shadow .15s ease, background .15s ease",
                   }}
                 >
-                  {status === "loading" ? "Joining…" : "Join Now"}
+                  {status === "loading" ? "Joining…" : "Join the waitlist"}
                 </button>
               </form>
             </div>
           )}
           {status === "error" && (
-            <p style={{ margin: "12px 2px 0", fontSize: "clamp(13.5px,0.95vw,16px)", fontWeight: 600, color: "#E8590C", textAlign: "left" }}>
+            <p style={{ margin: "10px 2px 0", fontSize: 13.5, fontWeight: 600, color: "#E8590C", textAlign: "left" }}>
               {message}
             </p>
           )}
+          <p style={{ textAlign: "center", margin: "14px 0 0", fontSize: 11.5, color: "#B4A99E", fontWeight: 500 }}>
+            Join the waitlist — one email when we launch.
+          </p>
         </div>
-
-        {/* Social proof */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 13, marginTop: "clamp(22px,2.2vw,38px)" }}>
-          <div style={{ display: "flex" }} aria-hidden="true">
-            {PLAYERS.map((p, i) => (
-              <PlayerAvatar key={i} p={p} i={i} />
-            ))}
-          </div>
-          <span style={{ fontSize: "clamp(13.5px,1vw,17px)", fontWeight: 600, color: "#6F665E" }}>
-            Join 40+ players already on the list
-          </span>
-        </div>
-
-        {/* Positioning line — plain text, styled like the old subtitle.
-            coterie is the app name, so this frames what it is, not who made it. */}
-        <p
-          style={{
-            margin: "clamp(30px,3vw,50px) 0 0",
-            fontSize: "clamp(1rem,1.3vw,1.4rem)",
-            lineHeight: 1.5,
-            fontWeight: 500,
-            color: "#6F665E",
-          }}
-        >
-          <strong style={{ color: "#FF6A1A", fontWeight: 700 }}>Coterie</strong> · Play volleyball in Singapore
-        </p>
-      </main>
-    </section>
+      </div>
+    </div>
   );
 }
