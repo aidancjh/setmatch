@@ -193,25 +193,41 @@ export default function WaitlistMobile() {
         @media (min-width:640px) {
           .wl-card { width:min(94vw,430px); min-height:0; height:min(860px,92dvh); margin:auto; border-radius:36px; box-shadow:0 30px 80px rgba(23,19,15,.28); }
         }
-        /* Hero layers (bottom → top): background, glow + silhouettes (z1),
-           scrim (z2), then text (z3). The scrim is the key robustness piece —
-           a dark gradient anchored to the bottom + bottom-left that guarantees
-           the badge/headline stay legible no matter how the silhouettes land
-           on a given phone's aspect ratio, so the art can never "collide" with
-           the words the way fixed-px text vs %-sized art otherwise would. */
-        .wl-hero { position:absolute; top:0; left:0; right:0; height:47%; overflow:hidden;
+        /* Silhouette robustness: the text (header 64px tall, badge+headline
+           anchored bottom:52px) is all fixed px, so the figures are anchored in
+           fixed px to the SAME corners — the art-vs-text geometry is then
+           identical on every device instead of %-sized art drifting against
+           px text across aspect ratios (the bug reported on iPhone 16 Pro).
+           The hero is a size container so the digger can adapt to the one
+           thing that truly varies: the hero's height. */
+        .wl-hero { position:absolute; top:0; left:0; right:0; height:47%; overflow:hidden; container-type:size;
                    background:linear-gradient(160deg, #26201A 0%, #17130F 55%, #0E0B09 100%); }
-        .wl-glow { position:absolute; inset:0; z-index:1; background:radial-gradient(78% 58% at 80% 50%, rgba(255,106,26,.20) 0%, transparent 62%); pointer-events:none; }
+        .wl-glow { position:absolute; inset:0; z-index:1; background:radial-gradient(80% 60% at 78% 70%, rgba(255,106,26,.22) 0%, transparent 65%); pointer-events:none; }
         .wl-fig { position:absolute; z-index:1; color:#FF6A1A; pointer-events:none; }
-        /* Spiker: hero art, anchored bottom-right. Digger: subtle background
-           accent, anchored TOP-left (not bottom) so it stays in the top corner
-           and can never reach down into the badge/headline safe zone. */
-        .wl-fig-spiker { right:-12%; bottom:4%; width:55%; }
-        .wl-fig-digger { left:-8%; top:5%; width:29%; opacity:.22; }
-        .wl-scrim { position:absolute; inset:0; z-index:2; pointer-events:none;
-                    background:
-                      linear-gradient(to top, rgba(14,11,9,0.95) 3%, rgba(14,11,9,0.72) 22%, rgba(14,11,9,0.24) 44%, rgba(14,11,9,0) 62%),
-                      radial-gradient(135% 80% at 8% 108%, rgba(14,11,9,0.6) 0%, rgba(14,11,9,0) 55%); }
+        /* Spiker: hero art, bottom-right, feet tucked under the sheet edge.
+           222px at the 394px reference width; below that it scales with the
+           viewport (56.35vw = 222/394) so narrow phones get the same
+           composition proportionally smaller instead of the fixed-size art
+           creeping left into the headline. The min/max caps freeze it at the
+           reference size inside the >=640px centered card (vw > card width). */
+        /* The bottom offset rises as the figure shrinks (26 percent of the
+           width deficit vs the 394px reference) so the between-legs gap stays
+           vertically aligned with the fixed-px headline lines. */
+        .wl-fig-spiker { right:max(-58px,-14.76vw); bottom:calc(14px + max(0px, 102.4px - 26vw)); width:min(222px,56.35vw); }
+        /* Digger: subtle accent pinned just below the 64px header. Height
+           budget between header bottom (66px) and the badge top (hero height
+           - 177px) varies per phone, so its size derives from the hero's real
+           height (cqh): width w satisfies 66 + 0.958w <= H - 183, i.e.
+           w <= 1.043H - 260 — clamped a margin stricter. Px fallback first
+           for browsers without container-query units. */
+        .wl-fig-digger { left:-14px; top:66px; width:76px; width:clamp(52px, calc(104cqh - 275px), 128px); opacity:.3; }
+        /* Hero too short for even the smallest digger to clear the badge
+           (tiny landscape windows) — drop the accent, keep the layout. */
+        @container (max-height:296px) { .wl-fig-digger { display:none; } }
+        /* Legacy 320px-class devices: the 40px headline itself is too wide to
+           share the hero with the art — shrink it (needs !important to beat
+           the inline style). */
+        @media (max-width:340px) { .wl-hero h1 { font-size:33px !important; } }
         .wl-hd { position:relative; z-index:3; display:flex; align-items:center; justify-content:space-between; padding:20px 22px; }
         .wl-logo-dot { width:24px; height:24px; border-radius:50%; background:conic-gradient(from 210deg,#FF6A1A,#FF9A3D,#FFC078,#FF4D2E,#FF6A1A); }
         .wl-sheet { position:absolute; top:43%; left:0; right:0; bottom:0; background:#FFF; border-radius:30px 30px 0 0;
@@ -256,9 +272,6 @@ export default function WaitlistMobile() {
           <div className="wl-glow" aria-hidden="true" />
           <DiggerSilhouette className="wl-fig wl-fig-digger" aria-hidden="true" />
           <SpikerSilhouette className="wl-fig wl-fig-spiker" aria-hidden="true" />
-          {/* Scrim sits above the art, below the text — keeps the headline
-              legible over any silhouette on every screen size. */}
-          <div className="wl-scrim" aria-hidden="true" />
 
           <header className="wl-hd">
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
