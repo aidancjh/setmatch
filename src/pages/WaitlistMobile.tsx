@@ -204,26 +204,29 @@ export default function WaitlistMobile() {
                    background:linear-gradient(160deg, #26201A 0%, #17130F 55%, #0E0B09 100%); }
         .wl-glow { position:absolute; inset:0; z-index:1; background:radial-gradient(80% 60% at 78% 70%, rgba(255,106,26,.22) 0%, transparent 65%); pointer-events:none; }
         .wl-fig { position:absolute; z-index:1; color:#FF6A1A; pointer-events:none; }
-        /* Spiker: hero art, bottom-right, feet tucked under the sheet edge.
-           222px at the 394px reference width; below that it scales with the
-           viewport (56.35vw = 222/394) so narrow phones get the same
-           composition proportionally smaller instead of the fixed-size art
-           creeping left into the headline. The min/max caps freeze it at the
-           reference size inside the >=640px centered card (vw > card width). */
-        /* The bottom offset rises as the figure shrinks (26 percent of the
-           width deficit vs the 394px reference) so the between-legs gap stays
-           vertically aligned with the fixed-px headline lines. */
-        .wl-fig-spiker { right:max(-58px,-14.76vw); bottom:calc(14px + max(0px, 102.4px - 26vw)); width:min(222px,56.35vw); }
-        /* Digger: subtle accent pinned just below the 64px header. Height
-           budget between header bottom (66px) and the badge top (hero height
-           - 177px) varies per phone, so its size derives from the hero's real
-           height (cqh): width w satisfies 66 + 0.958w <= H - 183, i.e.
-           w <= 1.043H - 260 — clamped a margin stricter. Px fallback first
-           for browsers without container-query units. */
-        .wl-fig-digger { left:-14px; top:66px; width:76px; width:clamp(52px, calc(104cqh - 275px), 128px); opacity:.3; }
+        /* Spiker: hero art, bottom-right, raised so the legs sit higher and
+           more transparent (client-tuned composition). 212px at the 394px
+           reference width; below that it scales with the viewport
+           (53.81vw = 212/394) so narrow phones get the same composition
+           proportionally smaller instead of the fixed-size art creeping left
+           into the headline. The min/max caps freeze it at the reference size
+           inside the >=640px centered card (vw > card width). */
+        /* The bottom offset rises as the figure shrinks, re-tuned (rate 70,
+           was 26) for this more-raised composition — verified via rendered
+           ink-vs-headline measurement across the device matrix below. */
+        .wl-fig-spiker { right:max(-31px,-7.87vw); bottom:calc(39px + max(0px, 394px - 100vw)); width:min(212px,53.81vw); opacity:.82; }
+        /* Digger: subtle accent pinned below the 64px header (client-tuned:
+           lower and larger than the original corner tuck, at ~49% opacity).
+           Height budget between digger top (84px) and the badge top (hero
+           height - 177px) varies per phone, so its size derives from the
+           hero's real height (cqh), capped at the chosen 113px so it never
+           grows larger on tall phones: w <= H - 261 (in px) becomes
+           104cqh - 290px with a safety margin baked in. Px fallback first for
+           browsers without container-query units. */
+        .wl-fig-digger { left:2px; top:84px; width:90px; width:clamp(40px, calc(104cqh - 278px), 113px); opacity:.49; }
         /* Hero too short for even the smallest digger to clear the badge
            (tiny landscape windows) — drop the accent, keep the layout. */
-        @container (max-height:296px) { .wl-fig-digger { display:none; } }
+        @container (max-height:300px) { .wl-fig-digger { display:none; } }
         /* Legacy 320px-class devices: the 40px headline itself is too wide to
            share the hero with the art — shrink it (needs !important to beat
            the inline style). */
