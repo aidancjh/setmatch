@@ -193,12 +193,25 @@ export default function WaitlistMobile() {
         @media (min-width:640px) {
           .wl-card { width:min(94vw,430px); min-height:0; height:min(860px,92dvh); margin:auto; border-radius:36px; box-shadow:0 30px 80px rgba(23,19,15,.28); }
         }
+        /* Hero layers (bottom → top): background, glow + silhouettes (z1),
+           scrim (z2), then text (z3). The scrim is the key robustness piece —
+           a dark gradient anchored to the bottom + bottom-left that guarantees
+           the badge/headline stay legible no matter how the silhouettes land
+           on a given phone's aspect ratio, so the art can never "collide" with
+           the words the way fixed-px text vs %-sized art otherwise would. */
         .wl-hero { position:absolute; top:0; left:0; right:0; height:47%; overflow:hidden;
                    background:linear-gradient(160deg, #26201A 0%, #17130F 55%, #0E0B09 100%); }
-        .wl-glow { position:absolute; inset:0; background:radial-gradient(80% 60% at 78% 70%, rgba(255,106,26,.22) 0%, transparent 65%); pointer-events:none; }
-        .wl-fig { position:absolute; color:#FF6A1A; pointer-events:none; }
-        .wl-fig-spiker { right:-11.17%; bottom:9.84%; width:57.36%; }
-        .wl-fig-digger { right:62.94%; bottom:46.28%; width:32.74%; }
+        .wl-glow { position:absolute; inset:0; z-index:1; background:radial-gradient(78% 58% at 80% 50%, rgba(255,106,26,.20) 0%, transparent 62%); pointer-events:none; }
+        .wl-fig { position:absolute; z-index:1; color:#FF6A1A; pointer-events:none; }
+        /* Spiker: hero art, anchored bottom-right. Digger: subtle background
+           accent, anchored TOP-left (not bottom) so it stays in the top corner
+           and can never reach down into the badge/headline safe zone. */
+        .wl-fig-spiker { right:-12%; bottom:4%; width:55%; }
+        .wl-fig-digger { left:-8%; top:5%; width:29%; opacity:.22; }
+        .wl-scrim { position:absolute; inset:0; z-index:2; pointer-events:none;
+                    background:
+                      linear-gradient(to top, rgba(14,11,9,0.95) 3%, rgba(14,11,9,0.72) 22%, rgba(14,11,9,0.24) 44%, rgba(14,11,9,0) 62%),
+                      radial-gradient(135% 80% at 8% 108%, rgba(14,11,9,0.6) 0%, rgba(14,11,9,0) 55%); }
         .wl-hd { position:relative; z-index:3; display:flex; align-items:center; justify-content:space-between; padding:20px 22px; }
         .wl-logo-dot { width:24px; height:24px; border-radius:50%; background:conic-gradient(from 210deg,#FF6A1A,#FF9A3D,#FFC078,#FF4D2E,#FF6A1A); }
         .wl-sheet { position:absolute; top:43%; left:0; right:0; bottom:0; background:#FFF; border-radius:30px 30px 0 0;
@@ -243,6 +256,9 @@ export default function WaitlistMobile() {
           <div className="wl-glow" aria-hidden="true" />
           <DiggerSilhouette className="wl-fig wl-fig-digger" aria-hidden="true" />
           <SpikerSilhouette className="wl-fig wl-fig-spiker" aria-hidden="true" />
+          {/* Scrim sits above the art, below the text — keeps the headline
+              legible over any silhouette on every screen size. */}
+          <div className="wl-scrim" aria-hidden="true" />
 
           <header className="wl-hd">
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
