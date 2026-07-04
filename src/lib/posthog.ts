@@ -7,6 +7,7 @@ declare global {
     posthog?: {
       init: (key: string, opts?: Record<string, unknown>) => void;
       capture: (event: string, props?: Record<string, unknown>) => void;
+      opt_out_capturing: () => void;
     };
   }
 }
@@ -40,13 +41,31 @@ export function initPostHog(onReady?: () => void) {
       // `loaded` runs after init completes and the auto pageview (which reads
       // utm_source off the live URL) has been captured — the safe moment to let
       // the caller clean the address bar.
-      loaded: () => onReady?.(),
+      loaded: () => {
+        maybeOptOut();
+        onReady?.();
+      },
     });
   };
   // If the CDN script is blocked (ad blocker) it never loads or captures — let
   // the caller proceed so the URL still gets tidied.
   script.onerror = () => onReady?.();
   document.head.appendChild(script);
+}
+
+// One-time device opt-out: visiting with ?ph_optout=1 calls PostHog's own
+// opt_out_capturing(), which persists in this browser (localStorage) so it's
+// never tracked again — no need to revisit the link or append the param each
+// time. Runs after the initial pageview is captured, so that one visit still
+// counts; every visit after is excluded. Strips the param from the address
+// bar afterwards so a bookmarked/shared link looks like a normal URL.
+function maybeOptOut() {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("ph_optout") !== "1") return;
+  window.posthog?.opt_out_capturing();
+  url.searchParams.delete("ph_optout");
+  window.history.replaceState({}, "", url.pathname + url.search + url.hash);
 }
 
 export function captureEvent(name: string) {
