@@ -37,11 +37,15 @@ export function initPostHog(onReady?: () => void) {
     window.posthog?.init(key, {
       api_host: "https://us.i.posthog.com",
       person_profiles: "identified_only",
-      capture_pageview: true,
-      // `loaded` runs after init completes and the auto pageview (which reads
-      // utm_source off the live URL) has been captured — the safe moment to let
-      // the caller clean the address bar.
+      // Automatic capture_pageview fires from inside init() itself, before
+      // PostHog's UTM-extraction is guaranteed ready when loaded via this
+      // async snippet — it was shipping every pageview as "direct" regardless
+      // of ?utm_source=. Disabled in favor of a manual capture() in `loaded`
+      // (PostHog's own documented fix for this), which runs once the library
+      // is fully initialized and reliably reads utm_source off the live URL.
+      capture_pageview: false,
       loaded: () => {
+        window.posthog?.capture("$pageview");
         maybeOptOut();
         onReady?.();
       },
