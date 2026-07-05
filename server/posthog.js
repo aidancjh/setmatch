@@ -18,6 +18,17 @@ const POSTHOG_HOST = process.env.POSTHOG_HOST || "https://us.posthog.com";
 const LAUNCH_DATE = "2026-07-04";
 const SINCE_LAUNCH = `timestamp >= toDateTime('${LAUNCH_DATE} 00:00:00', 'UTC')`;
 
+// A capture bug (fixed 2026-07-05, see git history on server/posthog.js) meant
+// every pageview shipped with no utm_source at all, regardless of the real
+// link clicked — so pre-fix events can't be trusted for *source attribution*
+// specifically, even the "direct" bucket (it doesn't mean "no tag was on the
+// link", it means "we failed to read whatever tag was there"). The by-source
+// breakdown alone uses this later cutoff; total visit counts and the
+// pageviews-over-time chart aren't affected by the bug and keep using
+// SINCE_LAUNCH above.
+const UTM_FIX_DATE = "2026-07-05 02:40:00";
+const SINCE_UTM_FIX = `timestamp >= toDateTime('${UTM_FIX_DATE}', 'UTC')`;
+
 // Column order must match the destructuring order in queryWaitlistFunnel: [visits, started, submittedPosthog]
 // Visits also exclude ?utm_source=test — the same private bucket the DB-backed
 // signup queries already exclude — so testing from your own device doesn't
@@ -42,7 +53,7 @@ const VISITS_BY_SOURCE_QUERY = `
   FROM events
   WHERE event = '$pageview'
     AND properties.$pathname = '/waitlist'
-    AND ${SINCE_LAUNCH}
+    AND ${SINCE_UTM_FIX}
   GROUP BY source
   ORDER BY visits DESC
 `;

@@ -298,8 +298,11 @@ export default function Funnel() {
         <SourceBarChart rows={data.bySource} emptyText="No signups yet." />
       </Card>
 
-      {/* 5. Pageviews by source — PostHog, grouped by utm_source. */}
-      <Card title="Pageviews by source (since launch)">
+      {/* 5. Pageviews by source — PostHog, grouped by utm_source. Scoped to a
+          later cutoff than the rest of the launch metrics (see
+          server/posthog.js SINCE_UTM_FIX) since a capture bug meant pre-fix
+          pageviews carry no reliable source tag at all. */}
+      <Card title="Pageviews by source (since tracking fix)">
         <SourceBarChart rows={data.visitsBySource} emptyText="No visits recorded yet." />
       </Card>
     </div>
