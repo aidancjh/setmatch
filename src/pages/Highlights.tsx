@@ -7,7 +7,7 @@ import { celebrate } from "../lib/celebrate";
 import type { Highlight, HighlightComment } from "../types";
 
 const HL_CACHE_KEY = "highlights";
-import { ChatIcon, HeartIcon, TrashIcon, UploadIcon } from "../components/icons";
+import { ChatIcon, HeartIcon, TrashIcon } from "../components/icons";
 import { HighlightCardSkeleton } from "../components/Skeleton";
 import ReportButton from "../components/ReportButton";
 
@@ -401,7 +401,20 @@ function UploadModal({
   const [error, setError] = useState("");
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
-  const fileRef = useRef<HTMLInputElement>(null);
+  // Three separate hidden inputs, one per source. This mirrors how trusted
+  // native apps present media access — Photo Library / Camera / Files — while
+  // staying a pure web app: each input just biases which OS picker opens, and
+  // the browser sandbox still only ever hands us the single file the user
+  // picks (no silent library access, nothing read until they hit Share).
+  const libraryRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const filesRef = useRef<HTMLInputElement>(null);
+
+  function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (f) pickFile(f);
+    e.target.value = ""; // let the user re-pick the same file after an error
+  }
 
   function pickFile(f: File) {
     const type = detectMediaType(f);
@@ -500,16 +513,48 @@ function UploadModal({
             {step === "pick" ? "Share a highlight" : step === "crop" ? "Crop photo" : step === "trim" ? "Trim video" : "Add a caption"}
           </h2>
 
-          {/* ---- Step 1: pick ---- */}
+          {/* ---- Step 1: pick (source sheet — Library / Camera / Files) ---- */}
           {step === "pick" && (
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 py-12 text-slate-400 transition hover:border-brand hover:text-brand active:scale-[0.98]"
-            >
-              <UploadIcon className="h-10 w-10" />
-              <span className="text-sm font-medium">Tap to choose a video or photo</span>
-              <span className="text-xs">MP4, MOV, JPG, PNG · up to 200 MB</span>
-            </button>
+            <div className="flex flex-col gap-2.5">
+              <button
+                onClick={() => libraryRef.current?.click()}
+                className="flex items-center gap-3 rounded-2xl border border-brand bg-brand p-4 text-left text-white transition active:scale-[0.98]"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                    <rect x="3" y="3" width="18" height="18" rx="3" />
+                    <circle cx="8.5" cy="8.5" r="1.8" />
+                    <path d="m3 16 5-4 4 3 3-2 6 5" />
+                  </svg>
+                </span>
+                <span className="text-[15px] font-bold">Photo Library</span>
+              </button>
+
+              <button
+                onClick={() => cameraRef.current?.click()}
+                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-brand/30 hover:bg-brand/5 active:scale-[0.98]"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                </span>
+                <span className="text-[15px] font-bold text-slate-900">Take Photo or Video</span>
+              </button>
+
+              <button
+                onClick={() => filesRef.current?.click()}
+                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-brand/30 hover:bg-brand/5 active:scale-[0.98]"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.6 3.9A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z" />
+                  </svg>
+                </span>
+                <span className="text-[15px] font-bold text-slate-900">Browse Files</span>
+              </button>
+            </div>
           )}
 
           {/* ---- Step 2a: crop (photos only) ---- */}
@@ -613,16 +658,31 @@ function UploadModal({
           )}
         </div>
 
+        {/* Photo Library — media only; iOS shows its Photos picker. */}
         <input
-          ref={fileRef}
+          ref={libraryRef}
           type="file"
-          accept="video/*,image/*"
+          accept="image/*,video/*"
           className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) pickFile(f);
-            e.target.value = ""; // let the user re-pick the same file after an error
-          }}
+          onChange={onInputChange}
+        />
+        {/* Camera — `capture` opens the camera directly on mobile. */}
+        <input
+          ref={cameraRef}
+          type="file"
+          accept="image/*,video/*"
+          capture="environment"
+          className="hidden"
+          onChange={onInputChange}
+        />
+        {/* Files — no accept filter so the OS Files/storage browser opens and
+            can reach media the Photos picker hides (e.g. some .mov/.heic);
+            pickFile() still validates and rejects non-media with a message. */}
+        <input
+          ref={filesRef}
+          type="file"
+          className="hidden"
+          onChange={onInputChange}
         />
       </div>
     </div>
