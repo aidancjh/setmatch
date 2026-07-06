@@ -14,6 +14,7 @@ import { adminApi } from "./services/adminService";
 import { useAdminAuth as useAuth } from "./auth/AdminAuthContext";
 import { formatDate } from "../lib/format";
 import Funnel from "./pages/Funnel";
+import { MegaphoneIcon, VideoIcon } from "../components/icons";
 
 type Tab =
   | "overview"
@@ -359,7 +360,9 @@ export default function AdminApp() {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-sm">🎬</div>
+                        <div className="flex h-full w-full items-center justify-center">
+                          <VideoIcon className="h-4 w-4 text-slate-400" aria-hidden />
+                        </div>
                       )}
                     </div>
                     <div className="min-w-0">
@@ -684,7 +687,10 @@ function BroadcastBox() {
 
   return (
     <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-      <p className="text-sm font-semibold text-slate-900">📣 Broadcast announcement</p>
+      <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+        <MegaphoneIcon className="h-4 w-4 text-brand" aria-hidden />
+        Broadcast announcement
+      </p>
       <p className="mb-3 text-xs text-slate-400">
         Sends an in-app notification to every user. Use sparingly.
       </p>

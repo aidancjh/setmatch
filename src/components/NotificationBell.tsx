@@ -8,20 +8,31 @@ import {
 } from "../services/gamesService";
 import { useAuth } from "../auth/AuthContext";
 import { timeAgo } from "../lib/format";
-import { BellIcon } from "./icons";
+import {
+  BellIcon,
+  ChatIcon,
+  ClockIcon,
+  IconChip,
+  MegaphoneIcon,
+  PencilIcon,
+  SparklesIcon,
+  UserMinusIcon,
+  UserPlusIcon,
+  XCircleIcon,
+} from "./icons";
 
 const POLL_MS = 45000;
 
-const ICON: Record<string, string> = {
-  join: "🙋",
-  leave: "👋",
-  promoted: "🎉",
-  edited: "✏️",
-  cancelled: "❌",
-  comment: "💬",
-  message: "💬",
-  reminder: "⏰",
-  announcement: "📣",
+const ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+  join: UserPlusIcon,
+  leave: UserMinusIcon,
+  promoted: SparklesIcon,
+  edited: PencilIcon,
+  cancelled: XCircleIcon,
+  comment: ChatIcon,
+  message: ChatIcon,
+  reminder: ClockIcon,
+  announcement: MegaphoneIcon,
 };
 
 export default function NotificationBell() {
@@ -132,7 +143,14 @@ export default function NotificationBell() {
                         n.read ? "" : "bg-brand/5"
                       } ${n.gameId ? "hover:bg-slate-50" : "cursor-default"}`}
                     >
-                      <span aria-hidden>{ICON[n.type] ?? "🔔"}</span>
+                      {(() => {
+                        const TypeIcon = ICON[n.type] ?? BellIcon;
+                        return (
+                          <IconChip size="sm" className="mt-0.5">
+                            <TypeIcon className="h-4 w-4" />
+                          </IconChip>
+                        );
+                      })()}
                       <span className="min-w-0 flex-1">
                         <span className="block text-slate-700">{n.message}</span>
                         <span className="text-xs text-slate-400">

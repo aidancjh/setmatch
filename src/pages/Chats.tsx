@@ -4,6 +4,7 @@ import type { ChatSummary } from "../types";
 import { getChats } from "../services/gamesService";
 import { formatDate, isPast, timeAgo } from "../lib/format";
 import { isChatUnread } from "../lib/chatSeen";
+import { ChatIcon, IconChip } from "../components/icons";
 
 export default function Chats() {
   const [chats, setChats] = useState<ChatSummary[] | null>(null);
@@ -48,8 +49,10 @@ export default function Chats() {
           </button>
         </div>
       ) : chats && chats.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
-          <p className="mb-2 text-3xl">💬</p>
+        <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
+          <IconChip size="lg" className="mb-2">
+            <ChatIcon className="h-6 w-6" />
+          </IconChip>
           <p className="font-semibold text-slate-700">No chats yet</p>
           <p className="mt-1 text-sm text-slate-500">
             Join or host a game and its chat shows up here.
@@ -68,7 +71,7 @@ export default function Chats() {
             const unread = isChatUnread(c.gameId, c.lastMessageAt);
             const preview = c.lastMessage
               ? `${c.lastSender ? c.lastSender.split(" ")[0] + ": " : ""}${c.lastMessage}`
-              : "No messages yet — say hi 👋";
+              : "No messages yet — say hi";
             return (
               <Link
                 key={c.gameId}

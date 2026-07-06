@@ -5,6 +5,18 @@ import { getUserHighlights } from "../services/gamesService";
 import { api } from "../lib/api";
 import type { Highlight, SkillLevel } from "../types";
 import { SkillBadge, RatingHero, RatingEmpty } from "../components/Badges";
+import {
+  CameraIcon,
+  ClapperIcon,
+  HeartIcon,
+  IconChip,
+  LeafIcon,
+  PencilIcon,
+  TrophyIcon,
+  UsersIcon,
+  XIcon,
+  ZapIcon,
+} from "../components/icons";
 
 const skills: SkillLevel[] = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 const GENDER_OPTIONS = ["Man", "Woman", "Non-binary", "Prefer not to say"];
@@ -35,11 +47,11 @@ function computeAge(birthdate: string | null | undefined): number | null {
   return age >= 0 ? age : null;
 }
 
-const SKILL_INFO: Record<SkillLevel, { emoji: string; desc: string }> = {
-  Beginner:       { emoji: "🌱", desc: "New to the game. Casual, friendly rallies — mistakes totally fine." },
-  Intermediate:   { emoji: "⚡", desc: "Comfortable with bumping, setting, serving. Know the rules and rotations." },
-  Advanced:       { emoji: "🏆", desc: "Consistent technique. Competitive experience, performs under pressure." },
-  "All Levels":   { emoji: "🤝", desc: "Happy in any game at any pace. Just here to play!" },
+const SKILL_INFO: Record<SkillLevel, { Icon: React.ComponentType<{ className?: string }>; desc: string }> = {
+  Beginner:       { Icon: LeafIcon, desc: "New to the game. Casual, friendly rallies — mistakes totally fine." },
+  Intermediate:   { Icon: ZapIcon, desc: "Comfortable with bumping, setting, serving. Know the rules and rotations." },
+  Advanced:       { Icon: TrophyIcon, desc: "Consistent technique. Competitive experience, performs under pressure." },
+  "All Levels":   { Icon: UsersIcon, desc: "Happy in any game at any pace. Just here to play!" },
 };
 
 // ---------------------------------------------------------------------------
@@ -193,7 +205,9 @@ function HighlightGrid({
       <div className="mt-6">
         <p className="mb-2 text-sm font-semibold text-slate-900">My Highlights</p>
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-8 text-center">
-          <p className="text-2xl">🎬</p>
+          <IconChip size="lg">
+            <ClapperIcon className="h-6 w-6" />
+          </IconChip>
           <p className="mt-1 text-sm text-slate-400">No highlights yet</p>
           <button
             onClick={onNavigate}
@@ -237,8 +251,9 @@ function HighlightGrid({
               </div>
             )}
             {h.likesCount > 0 && (
-              <span className="absolute bottom-0.5 right-0.5 rounded bg-black/50 px-0.5 text-[9px] text-white">
-                ♥{h.likesCount}
+              <span className="absolute bottom-0.5 right-0.5 inline-flex items-center gap-0.5 rounded bg-black/50 px-0.5 text-[9px] text-white">
+                <HeartIcon filled className="h-2 w-2" aria-hidden />
+                {h.likesCount}
               </span>
             )}
           </button>
@@ -264,9 +279,10 @@ function HighlightGrid({
             )}
             <button
               onClick={() => setPlaying(null)}
-              className="absolute -top-10 right-0 text-white/60 hover:text-white"
+              className="absolute -top-10 right-0 inline-flex items-center gap-1 text-white/60 hover:text-white"
             >
-              ✕ Close
+              <XIcon className="h-3.5 w-3.5" aria-hidden />
+              Close
             </button>
           </div>
         </div>
@@ -453,7 +469,11 @@ export default function Profile() {
               <img src={displayAvatar} alt={name} className="h-full w-full object-cover" />
             ) : initials}
             <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
-              <span className="text-xs font-semibold text-white">{uploading ? "…" : "📷"}</span>
+              {uploading ? (
+                <span className="text-xs font-semibold text-white">…</span>
+              ) : (
+                <CameraIcon className="h-5 w-5 text-white" aria-hidden />
+              )}
             </div>
           </button>
           <p className="mt-1.5 text-xs text-slate-400">Tap to change photo</p>
@@ -485,9 +505,11 @@ export default function Profile() {
             </div>
             {showSkillInfo && (
               <div className="mb-3 space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-3">
-                {(Object.entries(SKILL_INFO) as [SkillLevel, { emoji: string; desc: string }][]).map(([s, { emoji, desc }]) => (
+                {(Object.entries(SKILL_INFO) as [SkillLevel, { Icon: React.ComponentType<{ className?: string }>; desc: string }][]).map(([s, { Icon, desc }]) => (
                   <div key={s} className="flex gap-2 text-sm">
-                    <span className="shrink-0">{emoji}</span>
+                    <IconChip size="sm">
+                      <Icon className="h-4 w-4" />
+                    </IconChip>
                     <div><span className="font-semibold text-slate-800">{s}:</span>{" "}<span className="text-slate-500">{desc}</span></div>
                   </div>
                 ))}
@@ -627,9 +649,10 @@ export default function Profile() {
           {/* Edit button */}
           <button
             onClick={() => setEditing(true)}
-            className="mt-4 w-full rounded-xl border border-brand/30 bg-brand/5 py-2 text-sm font-semibold text-brand transition hover:bg-brand/10 active:scale-[0.98]"
+            className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-brand/30 bg-brand/5 py-2 text-sm font-semibold text-brand transition hover:bg-brand/10 active:scale-[0.98]"
           >
-            ✏️ Edit profile
+            <PencilIcon className="h-4 w-4" aria-hidden />
+            Edit profile
           </button>
 
           {/* Banner picker box */}

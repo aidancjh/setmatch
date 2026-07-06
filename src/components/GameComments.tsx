@@ -5,6 +5,7 @@ import { addComment, deleteComment, getComments } from "../services/gamesService
 import { useAuth } from "../auth/AuthContext";
 import { timeAgo } from "../lib/format";
 import ReportButton from "./ReportButton";
+import { StarIcon, XIcon } from "./icons";
 
 /**
  * Per-game discussion thread. Anyone can read; signed-in users can post.
@@ -102,8 +103,9 @@ export default function GameComments({
                     >
                       {c.userName}
                       {c.userId === hostId && (
-                        <span className="ml-1 text-xs font-medium text-amber-600">
-                          ⭐ host
+                        <span className="ml-1 inline-flex items-center gap-0.5 text-xs font-medium text-amber-600">
+                          <StarIcon filled className="h-3 w-3" aria-hidden />
+                          host
                         </span>
                       )}
                     </Link>
@@ -116,7 +118,7 @@ export default function GameComments({
                         className="ml-auto text-xs text-slate-300 hover:text-rose-500"
                         aria-label="Delete message"
                       >
-                        ✕
+                        <XIcon className="h-3.5 w-3.5" />
                       </button>
                     ) : user && user.id !== c.userId ? (
                       <ReportButton

@@ -2,19 +2,27 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import type { SkillLevel } from "../types";
-import { VolleyballIcon } from "../components/icons";
+import {
+  CheckIcon,
+  IconChip,
+  LeafIcon,
+  TrophyIcon,
+  UsersIcon,
+  VolleyballIcon,
+  ZapIcon,
+} from "../components/icons";
 
 const GENDER_OPTIONS = ["Man", "Woman", "Non-binary", "Prefer not to say"];
 
 const SKILL_CARDS: {
   level: SkillLevel;
-  emoji: string;
+  Icon: React.ComponentType<{ className?: string }>;
   tagline: string;
   bullets: string[];
 }[] = [
   {
     level: "Beginner",
-    emoji: "🌱",
+    Icon: LeafIcon,
     tagline: "New to the game",
     bullets: [
       "Still learning to bump, set, and serve",
@@ -24,7 +32,7 @@ const SKILL_CARDS: {
   },
   {
     level: "Intermediate",
-    emoji: "⚡",
+    Icon: ZapIcon,
     tagline: "Comfortable player",
     bullets: [
       "Confident with basic skills and rotations",
@@ -34,7 +42,7 @@ const SKILL_CARDS: {
   },
   {
     level: "Advanced",
-    emoji: "🏆",
+    Icon: TrophyIcon,
     tagline: "Competitive experience",
     bullets: [
       "Consistent technique and accurate play",
@@ -44,7 +52,7 @@ const SKILL_CARDS: {
   },
   {
     level: "All Levels",
-    emoji: "🤝",
+    Icon: UsersIcon,
     tagline: "Just here to play",
     bullets: [
       "Happy in any game at any pace",
@@ -176,7 +184,7 @@ export default function Onboarding() {
 
       {/* Skill level cards */}
       <div className="flex-1 space-y-3">
-        {SKILL_CARDS.map(({ level, emoji, tagline, bullets }) => {
+        {SKILL_CARDS.map(({ level, Icon, tagline, bullets }) => {
           const isSelected = selected === level;
           return (
             <button
@@ -189,7 +197,9 @@ export default function Onboarding() {
               }`}
             >
               <div className="mb-2 flex items-center gap-2.5">
-                <span className="text-2xl">{emoji}</span>
+                <IconChip size="md">
+                  <Icon className="h-5 w-5" />
+                </IconChip>
                 <div>
                   <p className={`font-bold ${isSelected ? "text-brand" : "text-slate-900"}`}>
                     {level}
@@ -197,8 +207,8 @@ export default function Onboarding() {
                   <p className="text-xs text-slate-400">{tagline}</p>
                 </div>
                 {isSelected && (
-                  <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-white">
-                    ✓
+                  <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white">
+                    <CheckIcon className="h-3 w-3" />
                   </span>
                 )}
               </div>

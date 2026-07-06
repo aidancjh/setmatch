@@ -3,7 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { api, setToken } from "../lib/api";
 import type { User } from "../types";
-import { VolleyballIcon } from "../components/icons";
+import { IconChip, MailIcon, VolleyballIcon } from "../components/icons";
 
 type Mode = "signup" | "login" | "forgot" | "reset";
 
@@ -169,8 +169,10 @@ export default function Auth() {
             <VolleyballIcon className="h-12 w-12 text-brand" />
             <span className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900">Coterie</span>
           </div>
-          <div className="rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-sm">
-            <p className="text-3xl mb-2">📬</p>
+          <div className="flex flex-col items-center rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-sm">
+            <IconChip size="lg" className="mb-2">
+              <MailIcon className="h-6 w-6" />
+            </IconChip>
             <p className="font-semibold text-slate-900">Check your inbox</p>
             <p className="mt-1 text-sm text-slate-500">
               If an account exists for <strong>{email}</strong>, a reset link is on its way.

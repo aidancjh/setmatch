@@ -7,6 +7,7 @@ import { isPast } from "../lib/format";
 import GameCard from "../components/GameCard";
 import { GameCardSkeleton } from "../components/Skeleton";
 import Modal from "../components/Modal";
+import { SearchIcon, XIcon } from "../components/icons";
 
 // ---------------------------------------------------------------------------
 // Filter options (mirror the create-game form)
@@ -200,7 +201,7 @@ export default function BrowseGames() {
       {/* Search + Filters button */}
       <div className="mb-4 flex items-center gap-2">
         <div className="flex flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
-          <span className="text-slate-400" aria-hidden>🔍</span>
+          <SearchIcon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -324,7 +325,7 @@ function FilterModal({
             aria-label="Close filters"
             className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 active:scale-90"
           >
-            ✕
+            <XIcon className="h-4 w-4" />
           </button>
         </div>
 

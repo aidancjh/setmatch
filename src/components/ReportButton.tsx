@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api } from "../lib/api";
 import type { ReportTargetType } from "../types";
+import { CheckIcon, IconChip } from "./icons";
 
 const REASONS = ["Spam", "Inappropriate", "Harassment", "Misleading", "Other"];
 
@@ -66,8 +67,10 @@ export default function ReportButton({
               <div className="h-1 w-10 rounded-full bg-slate-200" />
             </div>
             {done ? (
-              <div className="py-8 text-center">
-                <p className="mb-1 text-2xl">✓</p>
+              <div className="flex flex-col items-center py-8 text-center">
+                <IconChip size="lg" className="mb-2">
+                  <CheckIcon className="h-6 w-6" />
+                </IconChip>
                 <p className="font-semibold text-slate-800">Thanks for the report</p>
                 <p className="text-sm text-slate-500">Our team will take a look.</p>
               </div>

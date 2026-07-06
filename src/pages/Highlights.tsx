@@ -7,7 +7,7 @@ import { celebrate } from "../lib/celebrate";
 import type { Highlight, HighlightComment } from "../types";
 
 const HL_CACHE_KEY = "highlights";
-import { ChatIcon, HeartIcon, TrashIcon } from "../components/icons";
+import { ChatIcon, ClapperIcon, HeartIcon, IconChip, TrashIcon } from "../components/icons";
 import { HighlightCardSkeleton } from "../components/Skeleton";
 import ReportButton from "../components/ReportButton";
 
@@ -1040,8 +1040,10 @@ export default function Highlights() {
           </button>
         </div>
       ) : highlights.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
-          <p className="mb-2 text-3xl">🎬</p>
+        <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
+          <IconChip size="lg" className="mb-2">
+            <ClapperIcon className="h-6 w-6" />
+          </IconChip>
           <p className="font-semibold text-slate-700">No highlights yet</p>
           <p className="mt-1 text-sm text-slate-500">Be the first to share a sports clip!</p>
           <button

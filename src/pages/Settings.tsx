@@ -10,6 +10,7 @@ import {
 } from "../services/gamesService";
 import { setToken } from "../lib/api";
 import { feedbackEnabled, setFeedbackEnabled, playSound } from "../lib/feedback";
+import { CheckIcon, IconChip } from "../components/icons";
 
 // ---------------------------------------------------------------------------
 // FAQ data
@@ -199,8 +200,10 @@ function FeedbackForm({ type, label, onDone }: { type: "feedback" | "bug"; label
   }
 
   if (done) return (
-    <div className="px-4 py-6 text-center">
-      <p className="text-2xl mb-1">✓</p>
+    <div className="flex flex-col items-center px-4 py-6 text-center">
+      <IconChip size="lg" className="mb-2">
+        <CheckIcon className="h-6 w-6" />
+      </IconChip>
       <p className="font-semibold text-slate-800">Thanks! We got your {type === "bug" ? "report" : "feedback"}.</p>
       <button onClick={onDone} className="mt-3 text-sm text-brand font-medium">Done</button>
     </div>

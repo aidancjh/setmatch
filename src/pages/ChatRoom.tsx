@@ -5,6 +5,7 @@ import { deleteMessage, getGame, getMessages, sendMessage } from "../services/ga
 import { useAuth } from "../auth/AuthContext";
 import { formatDate, timeAgo } from "../lib/format";
 import { markChatSeen } from "../lib/chatSeen";
+import { IconChip, LockIcon } from "../components/icons";
 
 const POLL_MS = 4000;
 
@@ -120,8 +121,10 @@ export default function ChatRoom() {
       </div>
 
       {accessDenied ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
-          <p className="mb-2 text-3xl">🔒</p>
+        <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
+          <IconChip size="lg" className="mb-2">
+            <LockIcon className="h-6 w-6" />
+          </IconChip>
           <p className="font-semibold text-slate-700">You're not in this game</p>
           <p className="mt-1 text-sm text-slate-500">
             Join the game to see and post in its chat.

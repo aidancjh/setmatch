@@ -24,6 +24,23 @@ import Modal from "../components/Modal";
 import { api } from "../lib/api";
 import { celebrate } from "../lib/celebrate";
 import ReportButton from "../components/ReportButton";
+import {
+  ArrowUpIcon,
+  CalendarIcon,
+  ChatIcon,
+  CheckIcon,
+  CoinsIcon,
+  IconChip,
+  MapPinIcon,
+  NoteIcon,
+  RefreshIcon,
+  StarIcon,
+  TargetIcon,
+  UserIcon,
+  UsersIcon,
+  VolleyballIcon,
+  XIcon,
+} from "../components/icons";
 
 export default function GameDetail() {
   const { id = "" } = useParams();
@@ -271,8 +288,8 @@ export default function GameDetail() {
               <>
                 {/* Checkmark */}
                 <div className="flex justify-center pt-7 pb-3">
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-full text-3xl text-white ${joinModal === "confirmed" ? "bg-brand" : "bg-amber-500"}`}>
-                    ✓
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-full text-white ${joinModal === "confirmed" ? "bg-brand" : "bg-amber-500"}`}>
+                    <CheckIcon className="h-7 w-7" />
                   </div>
                 </div>
                 {/* Heading */}
@@ -504,7 +521,7 @@ export default function GameDetail() {
 
       {/* Info card */}
       <div className="mb-4 space-y-2 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-700 shadow-sm">
-        <InfoRow icon="📅" label="When">
+        <InfoRow icon={<CalendarIcon className="h-4 w-4" />} label="When">
           <div className="flex items-start gap-2">
             <span className="flex-1">
               {formatDate(game.date)} · {formatTimeRange(game.time, game.endTime)}
@@ -515,12 +532,13 @@ export default function GameDetail() {
                 className="shrink-0 flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-500 transition hover:bg-slate-100 active:scale-95"
                 aria-label="Add to calendar"
               >
-                📅 Add
+                <CalendarIcon className="h-3 w-3" />
+                Add
               </a>
             )}
           </div>
         </InfoRow>
-        <InfoRow icon="📍" label="Where">
+        <InfoRow icon={<MapPinIcon className="h-4 w-4" />} label="Where">
           <div className="flex items-start gap-2">
             <span className="flex-1">
               {game.location}
@@ -538,7 +556,7 @@ export default function GameDetail() {
             </a>
           </div>
         </InfoRow>
-        <InfoRow icon="👤" label="Host">
+        <InfoRow icon={<UserIcon className="h-4 w-4" />} label="Host">
           <Link
             to={`/user/${game.hostId}`}
             className="font-medium text-slate-900 underline-offset-2 hover:underline"
@@ -547,32 +565,32 @@ export default function GameDetail() {
           </Link>
         </InfoRow>
         {game.gender !== "Open" && (
-          <InfoRow icon="👥" label="Gender">
+          <InfoRow icon={<UsersIcon className="h-4 w-4" />} label="Gender">
             {game.gender === "Men" ? "Men's" : game.gender === "Women" ? "Women's" : game.gender}
           </InfoRow>
         )}
         {game.netHeight && game.netHeight !== "Venue Standard" && (
-          <InfoRow icon="🏐" label="Net height">
+          <InfoRow icon={<VolleyballIcon className="h-4 w-4" />} label="Net height">
             {game.netHeight}
           </InfoRow>
         )}
         {game.rotationType && game.rotationType !== "Standard" && (
-          <InfoRow icon="🔄" label="Rotation">
+          <InfoRow icon={<RefreshIcon className="h-4 w-4" />} label="Rotation">
             {game.rotationType}
           </InfoRow>
         )}
         {game.positionsNeeded && game.positionsNeeded.length > 0 && (
-          <InfoRow icon="🎯" label="Positions needed">
+          <InfoRow icon={<TargetIcon className="h-4 w-4" />} label="Positions needed">
             {game.positionsNeeded.join(", ")}
           </InfoRow>
         )}
         {game.costPerPerson > 0 && (
-          <InfoRow icon="💰" label="Cost per person">
+          <InfoRow icon={<CoinsIcon className="h-4 w-4" />} label="Cost per person">
             {formatMoney(game.costPerPerson)}
           </InfoRow>
         )}
         {game.notes && (
-          <InfoRow icon="📝" label="Notes">
+          <InfoRow icon={<NoteIcon className="h-4 w-4" />} label="Notes">
             {game.notes}
           </InfoRow>
         )}
@@ -594,8 +612,10 @@ export default function GameDetail() {
                   youAre ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"
                 }`}
               >
-                <Link to={`/user/${p.id}`} className="transition hover:opacity-80">
-                  {p.id === game.hostId && "⭐ "}
+                <Link to={`/user/${p.id}`} className="inline-flex items-center gap-1 transition hover:opacity-80">
+                  {p.id === game.hostId && (
+                    <StarIcon filled className="h-3 w-3 text-amber-500" aria-hidden />
+                  )}
                   {p.name}
                   {youAre && " (you)"}
                 </Link>
@@ -605,7 +625,7 @@ export default function GameDetail() {
                     aria-label={`Remove ${p.name} from the game`}
                     className="-mr-0.5 ml-0.5 leading-none text-slate-400 transition hover:text-rose-500"
                   >
-                    ✕
+                    <XIcon className="h-3 w-3" />
                   </button>
                 )}
               </span>
@@ -650,14 +670,14 @@ export default function GameDetail() {
                         title="Move into game"
                         className="ml-0.5 leading-none text-emerald-600 transition hover:text-emerald-700"
                       >
-                        ↑
+                        <ArrowUpIcon className="h-3 w-3" />
                       </button>
                       <button
                         onClick={() => handleRemoveMember(p.id)}
                         aria-label={`Remove ${p.name} from the waitlist`}
                         className="-mr-0.5 leading-none text-amber-500 transition hover:text-rose-500"
                       >
-                        ✕
+                        <XIcon className="h-3 w-3" />
                       </button>
                     </>
                   )}
@@ -715,13 +735,14 @@ export default function GameDetail() {
             <div className="flex gap-2">
               <button
                 onClick={handleInterested}
-                className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.97] ${
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.97] ${
                   interested
                     ? "bg-brand text-white shadow-sm hover:bg-brand-dark"
                     : "border border-brand/40 bg-brand/5 text-brand hover:bg-brand/10"
                 }`}
               >
-                {interested ? "★ Interested" : "☆ Interested"}
+                <StarIcon filled={interested} className="h-4 w-4" aria-hidden />
+                Interested
                 {game.interestedIds.length > 0 && ` (${game.interestedIds.length})`}
               </button>
               <button
@@ -739,7 +760,8 @@ export default function GameDetail() {
             onClick={() => navigate(`/chats/${game.id}`)}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-brand/40 bg-brand/5 py-2.5 text-sm font-semibold text-brand transition-all duration-150 hover:bg-brand/10 active:scale-[0.97]"
           >
-            💬 Open group chat
+            <ChatIcon className="h-4 w-4" aria-hidden />
+            Open group chat
           </button>
         )}
 
@@ -844,13 +866,13 @@ function InfoRow({
   label,
   children,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex gap-2">
-      <span aria-hidden>{icon}</span>
+    <div className="flex gap-2.5">
+      <IconChip size="sm">{icon}</IconChip>
       <div className="min-w-0 flex-1">
         <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
           {label}

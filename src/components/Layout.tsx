@@ -9,6 +9,8 @@ import { refreshAll } from "../services/gamesService";
 import {
   CalendarIcon,
   ChatIcon,
+  ClapperIcon,
+  IconChip,
   PlusIcon,
   SearchIcon,
   SettingsIcon,
@@ -35,13 +37,13 @@ function PostSheet({ onClose }: { onClose: () => void }) {
 
   const options = [
     {
-      icon: "📅",
+      Icon: CalendarIcon,
       label: "Post a game",
       sub: "Schedule a volleyball game and invite players",
       action: () => { navigate("/create"); onClose(); },
     },
     {
-      icon: "🎬",
+      Icon: ClapperIcon,
       label: "Share a highlight",
       sub: "Upload a sports clip for everyone to see",
       action: () => { navigate("/highlights?upload=1"); onClose(); },
@@ -74,7 +76,9 @@ function PostSheet({ onClose }: { onClose: () => void }) {
               onClick={o.action}
               className="flex w-full items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-left transition hover:border-brand/30 hover:bg-brand/5 active:scale-[0.98]"
             >
-              <span className="text-2xl">{o.icon}</span>
+              <IconChip size="md">
+                <o.Icon className="h-5 w-5" />
+              </IconChip>
               <div>
                 <p className="font-semibold text-slate-900">{o.label}</p>
                 <p className="text-sm text-slate-500">{o.sub}</p>
