@@ -92,7 +92,6 @@ function TimeSeriesLineChart({
   const linePoints = rows.map((r, i) => `${xOf(i)},${yOf(r.count)}`).join(" ");
   const areaPoints = `${xOf(0)},${plotBottom} ${linePoints} ${xOf(rows.length - 1)},${plotBottom}`;
   const labelEvery = Math.max(1, Math.ceil(rows.length / 6));
-  const last = rows[rows.length - 1];
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label={ariaLabel}>
@@ -104,7 +103,12 @@ function TimeSeriesLineChart({
       ))}
       <polygon points={areaPoints} fill={color} fillOpacity="0.12" />
       <polyline points={linePoints} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={xOf(rows.length - 1)} cy={yOf(last.count)} r="2.5" fill={color} />
+      {/* One dot per day, with a native tooltip (hover/tap) showing the exact count. */}
+      {rows.map((r, i) => (
+        <circle key={r.date} cx={xOf(i)} cy={yOf(r.count)} r="2.5" fill={color}>
+          <title>{`${r.date}: ${r.count}`}</title>
+        </circle>
+      ))}
       {rows.map((r, i) => {
         if (i % labelEvery !== 0 && i !== rows.length - 1) return null;
         return (
