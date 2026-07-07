@@ -65,6 +65,52 @@ describe("posthog.queryWaitlistFunnel", () => {
     const { queryWaitlistFunnel } = await import("../server/posthog.js");
     await expect(queryWaitlistFunnel()).rejects.toThrow(/PostHog query failed: unexpected result shape/);
   });
+
+  it("does not retry a non-transient status (401) — fails immediately", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: false, status: 401, json: async () => ({}) });
+    vi.stubGlobal("fetch", fetchMock);
+    const { queryWaitlistFunnel } = await import("../server/posthog.js");
+    await expect(queryWaitlistFunnel()).rejects.toThrow(/PostHog query failed \(401\)/);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  describe("transient-failure retry (429/502/503/504)", () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it("retries a 504 and succeeds on the second attempt", async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce({ ok: false, status: 504, json: async () => ({}) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [[120, 45, 30]] }) });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const { queryWaitlistFunnel } = await import("../server/posthog.js");
+      const resultPromise = queryWaitlistFunnel();
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(result).toEqual({ visits: 120, started: 45, submittedPosthog: 30 });
+    });
+
+    it("gives up after 3 total attempts (initial + 2 retries) and throws the last status", async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue({ ok: false, status: 502, json: async () => ({}) });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const { queryWaitlistFunnel } = await import("../server/posthog.js");
+      const resultPromise = queryWaitlistFunnel();
+      const assertion = expect(resultPromise).rejects.toThrow(/PostHog query failed \(502\)/);
+      await vi.runAllTimersAsync();
+      await assertion;
+
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+  });
 });
 
 describe("posthog.queryWaitlistVisitsBySource", () => {

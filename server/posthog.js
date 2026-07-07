@@ -82,8 +82,16 @@ function toDateString(value) {
   return String(value).slice(0, 10);
 }
 
+const RETRYABLE_STATUSES = new Set([429, 502, 503, 504]);
+const MAX_RETRIES = 2;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 // Thin wrapper around the PostHog HogQL query endpoint. Throws if PostHog isn't
-// configured or the request fails; callers decide how to surface that.
+// configured or the request fails; callers decide how to surface that (the
+// admin funnel route degrades gracefully rather than 500ing). Transient
+// failures (PostHog cold start / gateway blip — 429/502/503/504) are retried
+// with backoff before giving up, since these clear themselves within a
+// second or two in practice (a manual refresh was enough to fix it).
 async function runHogQL(query) {
   const projectId = process.env.POSTHOG_PROJECT_ID;
   const apiKey = process.env.POSTHOG_PERSONAL_API_KEY;
@@ -91,21 +99,29 @@ async function runHogQL(query) {
     throw new Error("PostHog is not configured (POSTHOG_PROJECT_ID / POSTHOG_PERSONAL_API_KEY missing).");
   }
 
-  const res = await fetch(`${POSTHOG_HOST}/api/projects/${projectId}/query/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      query: { kind: "HogQLQuery", query },
-    }),
-  });
+  let lastStatus;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const res = await fetch(`${POSTHOG_HOST}/api/projects/${projectId}/query/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        query: { kind: "HogQLQuery", query },
+      }),
+    });
 
-  if (!res.ok) {
+    if (res.ok) return res.json();
+
+    lastStatus = res.status;
+    if (RETRYABLE_STATUSES.has(res.status) && attempt < MAX_RETRIES) {
+      await sleep(500 * (attempt + 1));
+      continue;
+    }
     throw new Error(`PostHog query failed (${res.status})`);
   }
-  return res.json();
+  throw new Error(`PostHog query failed (${lastStatus})`);
 }
 
 export async function queryWaitlistFunnel() {
