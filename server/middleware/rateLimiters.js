@@ -82,3 +82,17 @@ export const adminApiLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many requests — slow down." },
 });
+
+// Admin password login: a single shared low-entropy password is the most
+// attractive brute-force target in the app, so this is the strictest limiter
+// here. Only failed attempts count (skipSuccessfulRequests), so the real
+// admin is never locked out by their own retries — only sustained wrong-
+// password guessing trips it, capping any one IP to 5 guesses / 15 min.
+export const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many failed login attempts — please wait 15 minutes and try again." },
+});

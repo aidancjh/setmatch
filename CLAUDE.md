@@ -48,8 +48,10 @@ capped connection pool (`DB_POOL_MAX`) so admin traffic can never starve the con
 - `server/admin-server.js` — Express entry, mounts `server/adminRoutes.js` behind
   `server/adminAuth.js`'s `requireAdminAuth`. Serves `dist-admin/` in production.
 - `src/admin/` — separate React app (`src/admin-main.tsx` entry, built via
-  `vite.admin.config.ts` into `dist-admin/`). Sign-in is Google-OAuth-only, lookup-only
-  (never creates a user — an admin account must already exist with `role = 'admin'`).
+  `vite.admin.config.ts` into `dist-admin/`). Sign-in is a single shared password
+  (`POST /api/auth/login`, bcrypt-hashed via `ADMIN_PASSWORD_HASH`, rate-limited via
+  `adminLoginLimiter`) that logs into the existing admin user identified by
+  `ADMIN_LOGIN_EMAIL` — that account must already exist with `role = 'admin'`.
 - Local dev: `npm run dev:admin` (API, port 4100) + `npm run dev:admin:web` (Vite, port
   5174) — copy `.env.admin.example` to `.env.admin` first.
 - `npm run build` produces both `dist/` (consumer) and `dist-admin/` (admin) from one command.

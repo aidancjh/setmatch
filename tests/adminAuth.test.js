@@ -6,11 +6,14 @@ vi.mock("../server/repo.js", () => ({
 }));
 
 const ADMIN_SECRET = "test-admin-secret-not-for-production";
+// bcrypt hash of "test-admin-password-not-for-production" (cost 4 — matches vitest.config.ts).
+const ADMIN_PASSWORD_HASH = "$2a$04$bdfehVzJBxP0H9L1gZxJeeoWoQBuutCoyxsFdYqOrRpyTvsNT64n2";
 
 describe("adminAuth", () => {
   beforeEach(() => {
     vi.resetModules();
     process.env.ADMIN_JWT_SECRET = ADMIN_SECRET;
+    process.env.ADMIN_PASSWORD_HASH = ADMIN_PASSWORD_HASH;
   });
 
   it("signAdminToken produces a token with aud=admin, tv, and an 8h expiry", async () => {
@@ -89,5 +92,29 @@ describe("adminAuth", () => {
     await requireAdminAuth(req, res, next);
     expect(next).toHaveBeenCalledOnce();
     expect(req.userId).toBe("user_3");
+  });
+
+  describe("verifyAdminPassword", () => {
+    it("returns true for the correct password", async () => {
+      const { verifyAdminPassword } = await import("../server/adminAuth.js");
+      expect(verifyAdminPassword("test-admin-password-not-for-production")).toBe(true);
+    });
+
+    it("returns false for an incorrect password", async () => {
+      const { verifyAdminPassword } = await import("../server/adminAuth.js");
+      expect(verifyAdminPassword("wrong-password")).toBe(false);
+    });
+
+    it("returns false for empty/non-string input without throwing", async () => {
+      const { verifyAdminPassword } = await import("../server/adminAuth.js");
+      expect(verifyAdminPassword("")).toBe(false);
+      expect(verifyAdminPassword(undefined)).toBe(false);
+    });
+
+    it("fails closed (false) when ADMIN_PASSWORD_HASH isn't configured", async () => {
+      delete process.env.ADMIN_PASSWORD_HASH;
+      const { verifyAdminPassword } = await import("../server/adminAuth.js");
+      expect(verifyAdminPassword("test-admin-password-not-for-production")).toBe(false);
+    });
   });
 });

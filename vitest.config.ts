@@ -16,6 +16,10 @@ export default defineConfig({
       NODE_ENV: "test",
       JWT_SECRET: "test-secret-not-for-production",
       ADMIN_JWT_SECRET: "test-admin-secret-not-for-production",
+      // bcrypt hash of "test-admin-password-not-for-production" (cost 4 — fast
+      // hashing keeps the test suite quick; real deploys use cost 12).
+      ADMIN_PASSWORD_HASH: "$2a$04$bdfehVzJBxP0H9L1gZxJeeoWoQBuutCoyxsFdYqOrRpyTvsNT64n2",
+      ADMIN_LOGIN_EMAIL: "admin@example.com",
       // Falls back to an unreachable dummy so pure-logic tests never touch a DB.
       // To run the DB-gated tests (e.g. tests/join-race.test.js) point this at a
       // throwaway Postgres and set RUN_DB_TESTS=1.

@@ -5,20 +5,19 @@
 //     can never authenticate here
 //   - own rate limiter (adminApiLimiter) — can't be starved by consumer traffic
 //     because it isn't the same process
-//   - own Google OAuth callback — LOOKUP ONLY, never creates a user. Signing
-//     in here with a non-admin Google account is refused, not silently
-//     turned into a new account (unlike the consumer app's Google flow).
+//   - own password login (server/adminAuth.js's verifyAdminPassword) — a
+//     single shared bcrypt-hashed password, gated by adminLoginLimiter so
+//     brute-forcing it is impractical (5 failed guesses / 15 min / IP)
 import express from "express";
 import helmet from "helmet";
 import fs from "node:fs";
 import path from "node:path";
-import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { helmetOptions } from "./security.js";
-import { adminApiLimiter } from "./middleware/rateLimiters.js";
-import { signAdminToken } from "./adminAuth.js";
+import { adminApiLimiter, adminLoginLimiter } from "./middleware/rateLimiters.js";
+import { signAdminToken, verifyAdminPassword } from "./adminAuth.js";
 import adminRoutes from "./adminRoutes.js";
-import { findUserByEmail } from "./repo.js";
+import { findUserByEmail, logAdminAction } from "./repo.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -37,80 +36,42 @@ app.use((req, res, next) => {
   next();
 });
 
-// --- Admin Google OAuth (lookup-only, never creates a user) ---------------
-const oauthStates = new Map();
-const oauthCleanup = setInterval(() => {
-  const now = Date.now();
-  for (const [k, exp] of oauthStates) if (now > exp) oauthStates.delete(k);
-}, 60_000);
-if (typeof oauthCleanup.unref === "function") oauthCleanup.unref();
+// --- Admin password login ---------------------------------------------------
+// The password itself carries no identity, so the account it logs into is
+// fixed by ADMIN_LOGIN_EMAIL (an existing admin user's email — same row the
+// old Google flow looked up). This keeps suspension, role checks, and the
+// token_version revoke lever all working exactly as before; only how the
+// password is *verified* changed. Generic error messages throughout — never
+// reveal whether the failure was a wrong password vs. a misconfigured server.
+app.post("/api/auth/login", adminLoginLimiter, async (req, res) => {
+  const password = typeof req.body?.password === "string" ? req.body.password : "";
+  if (!password) return res.status(400).json({ error: "Password is required." });
 
-app.get("/api/auth/google", (req, res) => {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  if (!clientId) return res.status(503).json({ error: "Google login is not configured." });
-
-  const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
-  const state = crypto.randomBytes(16).toString("hex");
-  oauthStates.set(state, Date.now() + 10 * 60 * 1000);
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: `${appUrl}/api/auth/google/callback`,
-    response_type: "code",
-    scope: "openid email profile",
-    prompt: "select_account",
-    state,
-  });
-  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
-});
-
-app.get("/api/auth/google/callback", async (req, res) => {
-  const { code, error, state } = req.query;
-  const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
-
-  if (!state || !oauthStates.has(state) || Date.now() > oauthStates.get(state)) {
-    oauthStates.delete(state);
-    return res.redirect(`${appUrl}/?error=google_cancelled`);
+  if (!verifyAdminPassword(password)) {
+    return res.status(401).json({ error: "Incorrect password." });
   }
-  oauthStates.delete(state);
-  if (error || !code) return res.redirect(`${appUrl}/?error=google_cancelled`);
+
+  const loginEmail = process.env.ADMIN_LOGIN_EMAIL;
+  if (!loginEmail) {
+    console.error("[admin-api] ADMIN_LOGIN_EMAIL is not configured.");
+    return res.status(503).json({ error: "Admin login is not configured." });
+  }
 
   try {
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = `${appUrl}/api/auth/google/callback`;
-
-    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        code,
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-        grant_type: "authorization_code",
-      }),
-    });
-    const tokenData = await tokenRes.json();
-    if (!tokenData.access_token) return res.redirect(`${appUrl}/?error=google_failed`);
-
-    const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` },
-    });
-    const googleUser = await userRes.json();
-    if (!googleUser.email) return res.redirect(`${appUrl}/?error=google_failed`);
-
-    // Lookup only — an admin account must already exist with this email.
-    // Signing in with Google never creates a new user from this service.
-    const user = await findUserByEmail(googleUser.email);
+    const user = await findUserByEmail(loginEmail);
     if (!user || (user.role || "user") !== "admin") {
-      return res.redirect(`${appUrl}/?error=not_admin`);
+      return res.status(403).json({ error: "Admin access required." });
     }
-    if (user.suspended) return res.redirect(`${appUrl}/?error=suspended`);
+    if (user.suspended) {
+      return res.status(403).json({ error: "This account has been suspended." });
+    }
 
-    res.redirect(`${appUrl}/?token=${signAdminToken(user.id, user.token_version)}`);
+    const token = signAdminToken(user.id, user.token_version);
+    logAdminAction(user.id, "login", "Signed in with the admin password").catch(() => {});
+    res.json({ token });
   } catch (err) {
-    console.error("[admin-api] google callback failed:", err);
-    res.redirect(`${appUrl}/?error=google_failed`);
+    console.error("[admin-api] login failed:", err);
+    res.status(503).json({ error: "Service temporarily unavailable. Please try again." });
   }
 });
 
