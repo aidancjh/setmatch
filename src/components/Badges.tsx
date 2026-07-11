@@ -1,10 +1,10 @@
 import type { GameType, SkillLevel } from "../types";
 
 const skillStyles: Record<SkillLevel, string> = {
-  Beginner: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  Intermediate: "bg-sky-50 text-sky-700 ring-sky-600/20",
-  Advanced: "bg-rose-50 text-rose-700 ring-rose-600/20",
-  "All Levels": "bg-slate-100 text-slate-600 ring-slate-500/20",
+  Beginner: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
+  Intermediate: "bg-sky-500/15 text-sky-300 ring-sky-500/30",
+  Advanced: "bg-rose-500/15 text-rose-300 ring-rose-500/30",
+  "All Levels": "bg-slate-800 text-slate-300 ring-slate-500/20",
 };
 
 export function SkillBadge({
@@ -42,7 +42,7 @@ export function StarRating({
   const sizeCls = size === "lg" ? "text-3xl" : size === "sm" ? "text-base" : "text-xl";
   return (
     <span className={`relative inline-block leading-none ${sizeCls}`} aria-hidden>
-      <span className="whitespace-nowrap tracking-[0.1em] text-slate-200">★★★★★</span>
+      <span className="whitespace-nowrap tracking-[0.1em] text-slate-700">★★★★★</span>
       <span
         className="absolute inset-0 overflow-hidden whitespace-nowrap tracking-[0.1em] text-amber-400"
         style={{ width: `${pct}%` }}
@@ -59,18 +59,18 @@ export function StarRating({
  */
 export function RatingHero({ avg, count }: { avg: number; count: number }) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-100 p-4 ring-1 ring-amber-200/60">
+    <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-blue-600/25 to-blue-500/10 p-4 ring-1 ring-blue-500/30">
       <div className="shrink-0 text-center">
-        <div className="text-4xl font-extrabold leading-none text-slate-900">
+        <div className="text-4xl font-extrabold leading-none text-white">
           {avg.toFixed(1)}
         </div>
-        <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-amber-600/80">
+        <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-blue-300/80">
           out of 5
         </div>
       </div>
       <div className="min-w-0 flex-1">
         <StarRating avg={avg} size="lg" />
-        <p className="mt-1.5 text-xs font-medium text-slate-500">
+        <p className="mt-1.5 text-xs font-medium text-slate-400">
           Player rating · {count} vote{count === 1 ? "" : "s"}
         </p>
       </div>
@@ -82,7 +82,7 @@ export function RatingHero({ avg, count }: { avg: number; count: number }) {
  * player has no votes yet so every profile has a consistent ratings area. */
 export function RatingEmpty() {
   return (
-    <div className="flex items-center gap-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200/60">
+    <div className="flex items-center gap-4 rounded-2xl bg-slate-800 p-4 ring-1 ring-slate-700/60">
       <div className="shrink-0 text-center">
         <div className="text-4xl font-extrabold leading-none text-slate-300">—</div>
         <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
@@ -98,9 +98,9 @@ export function RatingEmpty() {
 }
 
 const typeStyles: Record<GameType, string> = {
-  Indoor: "bg-sky-50 text-sky-700 ring-sky-600/20",
-  Beach: "bg-amber-50 text-amber-700 ring-amber-600/20",
-  Grass: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+  Indoor: "bg-sky-500/15 text-sky-300 ring-sky-500/30",
+  Beach: "bg-amber-500/15 text-amber-300 ring-amber-500/30",
+  Grass: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
 };
 
 export function TypeBadge({ type }: { type: GameType }) {
@@ -113,15 +113,15 @@ export function TypeBadge({ type }: { type: GameType }) {
 
 /** Spots-left pill that turns urgent (amber/red) as a game fills up. */
 export function SpotsBadge({ left, total }: { left: number; total: number }) {
-  let cls = "bg-emerald-50 text-emerald-700 ring-emerald-600/20";
+  let cls = "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30";
   let label = `${left} spot${left === 1 ? "" : "s"} left`;
   if (left === 0) {
-    cls = "bg-slate-200 text-slate-600 ring-slate-500/20";
+    cls = "bg-slate-700 text-slate-300 ring-slate-500/20";
     label = "Full · join waitlist";
   } else if (left <= 2) {
-    cls = "bg-rose-50 text-rose-700 ring-rose-600/20";
+    cls = "bg-rose-500/15 text-rose-300 ring-rose-500/30";
   } else if (left <= 4) {
-    cls = "bg-amber-50 text-amber-700 ring-amber-600/20";
+    cls = "bg-amber-500/15 text-amber-300 ring-amber-500/30";
   }
   return (
     <span

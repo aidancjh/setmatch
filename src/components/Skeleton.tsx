@@ -1,10 +1,10 @@
 function Pulse({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-md bg-slate-100 ${className ?? ""}`} />;
+  return <div className={`animate-pulse rounded-md bg-slate-800 ${className ?? ""}`} />;
 }
 
 export function GameCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-sm">
       <div className="mb-2 flex items-start justify-between gap-2">
         <Pulse className="h-5 w-40" />
         <Pulse className="h-5 w-16" />
@@ -26,7 +26,7 @@ export function GameCardSkeleton() {
 
 export function HighlightCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-sm">
       <Pulse className="aspect-video w-full rounded-none" />
       <div className="space-y-2 p-3">
         <div className="flex items-center gap-2">

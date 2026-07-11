@@ -54,18 +54,18 @@ const FAQ = [
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-b border-slate-100 last:border-0">
+    <div className="border-b border-slate-800 last:border-0">
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between py-3.5 text-left"
       >
-        <span className="pr-3 text-sm font-medium text-slate-800">{q}</span>
+        <span className="pr-3 text-sm font-medium text-slate-100">{q}</span>
         <span className="shrink-0 text-slate-400 transition-transform" style={{ transform: open ? "rotate(180deg)" : undefined }}>
           ▾
         </span>
       </button>
       {open && (
-        <p className="pb-3.5 text-sm leading-relaxed text-slate-500">{a}</p>
+        <p className="pb-3.5 text-sm leading-relaxed text-slate-400">{a}</p>
       )}
     </div>
   );
@@ -112,7 +112,7 @@ function BlockedUsers() {
                 u.name.charAt(0).toUpperCase()
               )}
             </div>
-            <span className="truncate text-sm text-slate-700">{u.name}</span>
+            <span className="truncate text-sm text-slate-200">{u.name}</span>
           </div>
           <button
             onClick={() => unblock(u.id)}
@@ -130,7 +130,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div className="mb-6">
       <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{title}</p>
-      <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
         {children}
       </div>
     </div>
@@ -141,7 +141,7 @@ function ToggleRow({ label, sub, on, onToggle }: { label: string; sub?: string; 
   return (
     <div className="flex w-full items-center justify-between px-4 py-3.5 text-left border-b border-slate-50 last:border-0">
       <div className="pr-3">
-        <p className="text-sm font-medium text-slate-800">{label}</p>
+        <p className="text-sm font-medium text-slate-100">{label}</p>
         {sub && <p className="text-xs text-slate-400">{sub}</p>}
       </div>
       <button
@@ -149,10 +149,10 @@ function ToggleRow({ label, sub, on, onToggle }: { label: string; sub?: string; 
         aria-checked={on}
         aria-label={label}
         onClick={onToggle}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${on ? "bg-brand" : "bg-slate-200"}`}
+        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${on ? "bg-brand" : "bg-slate-700"}`}
       >
         <span
-          className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
+          className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-slate-900 shadow transition-transform duration-200"
           style={{ transform: on ? "translateX(20px)" : "translateX(0)" }}
         />
       </button>
@@ -164,10 +164,10 @@ function Row({ label, sub, onClick, danger }: { label: string; sub?: string; onC
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center justify-between px-4 py-3.5 text-left transition hover:bg-slate-50 border-b border-slate-50 last:border-0"
+      className="flex w-full items-center justify-between px-4 py-3.5 text-left transition hover:bg-slate-800 border-b border-slate-50 last:border-0"
     >
       <div>
-        <p className={`text-sm font-medium ${danger ? "text-rose-600" : "text-slate-800"}`}>{label}</p>
+        <p className={`text-sm font-medium ${danger ? "text-rose-600" : "text-slate-100"}`}>{label}</p>
         {sub && <p className="text-xs text-slate-400">{sub}</p>}
       </div>
       {onClick && <span className="text-slate-300">›</span>}
@@ -204,30 +204,30 @@ function FeedbackForm({ type, label, onDone }: { type: "feedback" | "bug"; label
       <IconChip size="lg" className="mb-2">
         <CheckIcon className="h-6 w-6" />
       </IconChip>
-      <p className="font-semibold text-slate-800">Thanks! We got your {type === "bug" ? "report" : "feedback"}.</p>
+      <p className="font-semibold text-slate-100">Thanks! We got your {type === "bug" ? "report" : "feedback"}.</p>
       <button onClick={onDone} className="mt-3 text-sm text-brand font-medium">Done</button>
     </div>
   );
 
   return (
     <div className="px-4 py-4 space-y-3">
-      <p className="text-sm font-semibold text-slate-800">{label}</p>
+      <p className="text-sm font-semibold text-slate-100">{label}</p>
       <input
         value={subject}
         onChange={(e) => setSubject(e.target.value.slice(0, 200))}
         placeholder="Subject (optional)"
-        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+        className="w-full rounded-xl border border-slate-700 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
       />
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value.slice(0, 2000))}
         placeholder="Describe in detail…"
         rows={4}
-        className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+        className="w-full resize-none rounded-xl border border-slate-700 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
       />
       {error && <p className="text-sm text-rose-600">{error}</p>}
       <div className="flex gap-2">
-        <button onClick={onDone} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-500">Cancel</button>
+        <button onClick={onDone} className="flex-1 rounded-xl border border-slate-700 py-2.5 text-sm font-semibold text-slate-400">Cancel</button>
         <button onClick={handleSend} disabled={busy} className="flex-1 rounded-xl bg-brand py-2.5 text-sm font-semibold text-white disabled:opacity-50">
           {busy ? "Sending…" : "Send"}
         </button>
@@ -281,12 +281,12 @@ export default function Settings() {
       <div className="mb-5 flex items-center gap-3">
         <button
           onClick={() => navigate("/profile")}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 hover:bg-slate-800"
           aria-label="Back to profile"
         >
           ←
         </button>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">Settings</h1>
+        <h1 className="text-xl font-bold tracking-tight text-white">Settings</h1>
       </div>
 
       {/* FAQ */}
@@ -354,7 +354,7 @@ export default function Settings() {
         {panel === "delete" ? (
           <div className="px-4 py-4">
             <p className="text-sm font-semibold text-rose-700 mb-1">Delete your account?</p>
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-sm text-slate-400 mb-4">
               This permanently deletes your profile, games, highlights, and reviews. There is no undo.
             </p>
             <input
@@ -363,7 +363,7 @@ export default function Settings() {
               onChange={(e) => setDeletePassword(e.target.value)}
               placeholder="Enter your password to confirm"
               autoComplete="current-password"
-              className="mb-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-slate-400"
+              className="mb-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm outline-none transition focus:border-slate-400"
             />
             <p className="mb-3 text-xs text-slate-400">Signed in with Google? Leave this blank.</p>
             {deleteError && (
@@ -372,7 +372,7 @@ export default function Settings() {
             <div className="flex gap-2">
               <button
                 onClick={() => setPanel(null)}
-                className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-500"
+                className="flex-1 rounded-xl border border-slate-700 py-2.5 text-sm font-semibold text-slate-400"
               >
                 Cancel
               </button>

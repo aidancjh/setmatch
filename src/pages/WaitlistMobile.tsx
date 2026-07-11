@@ -17,9 +17,9 @@ import { initPostHog, captureEvent } from "../lib/posthog";
 // blocks — these read as real profile pictures while making zero network
 // requests (no external dependency, no privacy leak, no broken images).
 const PLAYERS = [
-  { bg: "#FFE3D0", skin: "#F1C7A2", hair: "#3A2A1E", shirt: "#FF8A3D" },
-  { bg: "#FFE8D2", skin: "#C68642", hair: "#16110D", shirt: "#E8590C" },
-  { bg: "#FFE2C4", skin: "#8D5524", hair: "#241A12", shirt: "#FFB627" },
+  { bg: "#D9E9F7", skin: "#F1C7A2", hair: "#2A3648", shirt: "#3F8FDB" },
+  { bg: "#DBEAF8", skin: "#C68642", hair: "#0F1622", shirt: "#0A58A4" },
+  { bg: "#D3E5F6", skin: "#8D5524", hair: "#182131", shirt: "#7CB8ED" },
 ];
 
 // FAQ content shown in the centered modal. Kept in sync with the desktop
@@ -52,7 +52,7 @@ function PlayerAvatar({ p, i }: { p: (typeof PLAYERS)[number]; i: number }) {
         borderRadius: "50%",
         marginLeft: i === 0 ? 0 : -9,
         border: "2.5px solid #FFF",
-        boxShadow: "0 2px 6px rgba(20,17,15,0.14)",
+        boxShadow: "0 2px 6px rgba(13,20,30,0.14)",
       }}
     >
       <defs>
@@ -94,14 +94,14 @@ function FaqModal({ onClose }: { onClose: () => void }) {
         <button type="button" onClick={onClose} aria-label="Close" className="wl-faq-close">
           ×
         </button>
-        <h2 id="wl-faq-title" style={{ margin: "0 26px 16px 0", fontSize: 18, fontWeight: 800, color: "#15110F" }}>
+        <h2 id="wl-faq-title" style={{ margin: "0 26px 16px 0", fontSize: 18, fontWeight: 800, color: "#0F1B2D" }}>
           FAQ
         </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {FAQS.map((f, i) => (
             <div key={i}>
-              <p style={{ margin: "0 0 5px", fontSize: 14, fontWeight: 700, color: "#15110F" }}>{f.q}</p>
-              <p style={{ margin: 0, fontSize: 13.5, fontWeight: 500, color: "#6F665E", lineHeight: 1.5 }}>{f.a}</p>
+              <p style={{ margin: "0 0 5px", fontSize: 14, fontWeight: 700, color: "#0F1B2D" }}>{f.q}</p>
+              <p style={{ margin: 0, fontSize: 13.5, fontWeight: 500, color: "#5B6B7E", lineHeight: 1.5 }}>{f.a}</p>
             </div>
           ))}
         </div>
@@ -184,14 +184,14 @@ export default function WaitlistMobile() {
     <div
       className="wl-page"
       data-screen-label="Waitlist"
-      style={{ fontFamily: "'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" }}
+      style={{ fontFamily: "'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-        .wl-page { min-height:100vh; min-height:100dvh; width:100%; background:#EFE9E1; display:flex; }
-        .wl-card { position:relative; width:100%; min-height:100vh; min-height:100dvh; margin:0; background:#0E0B09; overflow:hidden; }
+        @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap');
+        .wl-page { min-height:100vh; min-height:100dvh; width:100%; background:#E8EEF5; display:flex; }
+        .wl-card { position:relative; width:100%; min-height:100vh; min-height:100dvh; margin:0; background:#0A0F16; overflow:hidden; }
         @media (min-width:640px) {
-          .wl-card { width:min(94vw,430px); min-height:0; height:min(860px,92dvh); margin:auto; border-radius:36px; box-shadow:0 30px 80px rgba(23,19,15,.28); }
+          .wl-card { width:min(94vw,430px); min-height:0; height:min(860px,92dvh); margin:auto; border-radius:36px; box-shadow:0 30px 80px rgba(15,22,34,.28); }
         }
         /* Silhouette robustness: the text (header 64px tall, badge+headline
            anchored bottom:52px) is all fixed px, so the figures are anchored in
@@ -201,9 +201,9 @@ export default function WaitlistMobile() {
            The hero is a size container so the digger can adapt to the one
            thing that truly varies: the hero's height. */
         .wl-hero { position:absolute; top:0; left:0; right:0; height:47%; overflow:hidden; container-type:size;
-                   background:linear-gradient(160deg, #26201A 0%, #17130F 55%, #0E0B09 100%); }
-        .wl-glow { position:absolute; inset:0; z-index:1; background:radial-gradient(80% 60% at 78% 70%, rgba(255,106,26,.22) 0%, transparent 65%); pointer-events:none; }
-        .wl-fig { position:absolute; z-index:1; color:#FF6A1A; pointer-events:none; }
+                   background:linear-gradient(160deg, #1B2534 0%, #101724 55%, #0A0F16 100%); }
+        .wl-glow { position:absolute; inset:0; z-index:1; background:radial-gradient(80% 60% at 78% 70%, rgba(11,110,205,.22) 0%, transparent 65%); pointer-events:none; }
+        .wl-fig { position:absolute; z-index:1; color:#0B6ECD; pointer-events:none; }
         /* Spiker: hero art, bottom-right, raised so the legs sit higher and
            more transparent (client-tuned composition). 212px at the 394px
            reference width; below that it scales with the viewport
@@ -232,40 +232,40 @@ export default function WaitlistMobile() {
            the inline style). */
         @media (max-width:340px) { .wl-hero h1 { font-size:33px !important; } }
         .wl-hd { position:relative; z-index:3; display:flex; align-items:center; justify-content:space-between; padding:20px 22px; }
-        .wl-logo-dot { width:24px; height:24px; border-radius:50%; background:conic-gradient(from 210deg,#FF6A1A,#FF9A3D,#FFC078,#FF4D2E,#FF6A1A); }
+        .wl-logo-dot { width:24px; height:24px; border-radius:50%; background:conic-gradient(from 210deg,#0B6ECD,#4D97DE,#A8CDF0,#E11D48,#0B6ECD); }
         .wl-sheet { position:absolute; top:43%; left:0; right:0; bottom:0; background:#FFF; border-radius:30px 30px 0 0;
-                    box-shadow:0 -12px 40px rgba(23,19,15,.14); padding:30px 26px 26px; display:flex; flex-direction:column; overflow-y:auto; }
-        .wl-chk { display:flex; gap:11px; align-items:flex-start; font-size:15px; font-weight:600; color:#3E362F; line-height:1.35; }
-        .wl-chk-icon { width:24px; height:24px; border-radius:50%; background:#FFF3EA; color:#FF6A1A;
+                    box-shadow:0 -12px 40px rgba(15,22,34,.14); padding:30px 26px 26px; display:flex; flex-direction:column; overflow-y:auto; }
+        .wl-chk { display:flex; gap:11px; align-items:flex-start; font-size:15px; font-weight:600; color:#2F3A4C; line-height:1.35; }
+        .wl-chk-icon { width:24px; height:24px; border-radius:50%; background:#EAF3FC; color:#0B6ECD;
                        display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; flex:none; }
-        .wl-accent { color:#FF6A1A; }
+        .wl-accent { color:#0B6ECD; }
         .wl-box { position:relative; border-radius:18px; background:#fff; padding:6px; }
         @keyframes wl-glow-pulse {
-          0%,100% { box-shadow:0 6px 22px rgba(255,106,26,0.18), 0 0 16px rgba(255,106,26,0.16); }
-          50%     { box-shadow:0 10px 34px rgba(255,106,26,0.32), 0 0 30px rgba(255,106,26,0.28); }
+          0%,100% { box-shadow:0 6px 22px rgba(11,110,205,0.18), 0 0 16px rgba(11,110,205,0.16); }
+          50%     { box-shadow:0 10px 34px rgba(11,110,205,0.32), 0 0 30px rgba(11,110,205,0.28); }
         }
         .wl-box-1 { animation: wl-glow-pulse 2.8s ease-in-out infinite; }
-        .wl-email:focus { border-color:#FF8A3D !important; box-shadow:0 0 0 4px rgba(255,138,61,0.16) !important; }
-        .wl-cta:hover:not(:disabled) { background:#F25E0F; transform:translateY(-1px); box-shadow:0 10px 24px rgba(255,106,26,0.42); }
+        .wl-email:focus { border-color:#3F8FDB !important; box-shadow:0 0 0 4px rgba(63,143,219,0.16) !important; }
+        .wl-cta:hover:not(:disabled) { background:#0959A8; transform:translateY(-1px); box-shadow:0 10px 24px rgba(11,110,205,0.42); }
         .wl-cta:active:not(:disabled) { transform:translateY(0); }
         .wl-faq-btn { flex:none; margin-left:auto; padding:6px 13px; font-family:inherit; font-size:11.5px; font-weight:700;
-                      color:#C4622A; background:#FFF3EA; border:1px solid #F2D9C5; border-radius:100px; cursor:pointer;
+                      color:#33689E; background:#EAF3FC; border:1px solid #CCDEF0; border-radius:100px; cursor:pointer;
                       white-space:nowrap; }
-        .wl-faq-btn:hover { background:#FFEEDD; }
-        .wl-faq-backdrop { position:fixed; inset:0; z-index:50; background:rgba(15,11,9,0.55); display:flex;
+        .wl-faq-btn:hover { background:#E4EFFA; }
+        .wl-faq-backdrop { position:fixed; inset:0; z-index:50; background:rgba(9,15,24,0.55); display:flex;
                            align-items:center; justify-content:center; padding:20px;
                            animation: wl-faq-fade .16s ease-out; }
         .wl-faq-box { position:relative; width:100%; max-width:340px; max-height:80vh; overflow-y:auto;
-                      background:#FFF; border-radius:20px; padding:26px 22px 22px; box-shadow:0 30px 70px rgba(20,17,15,0.35);
+                      background:#FFF; border-radius:20px; padding:26px 22px 22px; box-shadow:0 30px 70px rgba(13,20,30,0.35);
                       animation: wl-faq-pop .16s ease-out; }
         .wl-faq-close { position:absolute; top:14px; right:14px; width:28px; height:28px; border-radius:50%; border:none;
-                        background:#F5F1EC; color:#6F665E; font-size:16px; font-weight:700; cursor:pointer;
+                        background:#EFF3F8; color:#5B6B7E; font-size:16px; font-weight:700; cursor:pointer;
                         display:flex; align-items:center; justify-content:center; line-height:1; }
-        .wl-faq-close:hover { background:#EFE9E1; }
+        .wl-faq-close:hover { background:#E8EEF5; }
         @keyframes wl-faq-fade { from { opacity:0; } to { opacity:1; } }
         @keyframes wl-faq-pop { from { opacity:0; transform:scale(.96); } to { opacity:1; transform:scale(1); } }
         @media (prefers-reduced-motion: reduce) {
-          .wl-box-1 { animation: none !important; box-shadow:0 8px 26px rgba(255,106,26,0.22), 0 0 22px rgba(255,106,26,0.18) !important; }
+          .wl-box-1 { animation: none !important; box-shadow:0 8px 26px rgba(11,110,205,0.22), 0 0 22px rgba(11,110,205,0.18) !important; }
           .wl-faq-backdrop, .wl-faq-box { animation: none !important; }
         }
       `}</style>
@@ -283,7 +283,7 @@ export default function WaitlistMobile() {
                 coterie
               </span>
             </div>
-            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", color: "#8C7F73" }}>
+            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", color: "#7A8899" }}>
               Volleyball · Singapore
             </span>
           </header>
@@ -294,9 +294,9 @@ export default function WaitlistMobile() {
                 display: "inline-flex",
                 padding: "6px 14px",
                 borderRadius: 100,
-                background: "rgba(255,106,26,.16)",
-                border: "1px solid rgba(255,138,61,.45)",
-                color: "#FF8A3D",
+                background: "rgba(11,110,205,.16)",
+                border: "1px solid rgba(63,143,219,.45)",
+                color: "#3F8FDB",
                 fontSize: 10.5,
                 fontWeight: 800,
                 letterSpacing: "0.14em",
@@ -355,7 +355,7 @@ export default function WaitlistMobile() {
                 <PlayerAvatar key={i} p={p} i={i} />
               ))}
             </div>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#6F665E" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#5B6B7E" }}>
               40+ players already on the list
             </span>
             <button type="button" onClick={() => setFaqOpen(true)} className="wl-faq-btn">
@@ -371,8 +371,8 @@ export default function WaitlistMobile() {
                 justifyContent: "center",
                 gap: 11,
                 padding: "17px 22px",
-                background: "#FFF3EA",
-                border: "1px solid #F2D9C5",
+                background: "#EAF3FC",
+                border: "1px solid #CCDEF0",
                 borderRadius: 14,
               }}
             >
@@ -381,7 +381,7 @@ export default function WaitlistMobile() {
                   width: 24,
                   height: 24,
                   borderRadius: "50%",
-                  background: "#FF6A1A",
+                  background: "#0B6ECD",
                   color: "#fff",
                   display: "inline-flex",
                   alignItems: "center",
@@ -393,7 +393,7 @@ export default function WaitlistMobile() {
               >
                 ✓
               </span>
-              <span style={{ fontSize: 15, fontWeight: 600, color: "#15110F" }}>{message}</span>
+              <span style={{ fontSize: 15, fontWeight: 600, color: "#0F1B2D" }}>{message}</span>
             </div>
           ) : (
             <div className="wl-box wl-box-1">
@@ -427,9 +427,9 @@ export default function WaitlistMobile() {
                     fontFamily: "inherit",
                     fontSize: 16,
                     fontWeight: 500,
-                    color: "#15110F",
+                    color: "#0F1B2D",
                     background: "#fff",
-                    border: `1px solid ${status === "error" ? "#FF4D2E" : "transparent"}`,
+                    border: `1px solid ${status === "error" ? "#E11D48" : "transparent"}`,
                     borderRadius: 12,
                     outline: "none",
                   }}
@@ -445,12 +445,12 @@ export default function WaitlistMobile() {
                     fontWeight: 700,
                     letterSpacing: "-0.01em",
                     color: "#fff",
-                    background: "#FF6A1A",
+                    background: "#0B6ECD",
                     border: "none",
                     borderRadius: 12,
                     cursor: status === "loading" ? "not-allowed" : "pointer",
                     opacity: status === "loading" ? 0.85 : 1,
-                    boxShadow: "0 6px 18px rgba(255,106,26,0.35)",
+                    boxShadow: "0 6px 18px rgba(11,110,205,0.35)",
                     transition: "transform .15s ease, box-shadow .15s ease, background .15s ease",
                   }}
                 >
@@ -460,11 +460,11 @@ export default function WaitlistMobile() {
             </div>
           )}
           {status === "error" && (
-            <p style={{ margin: "10px 2px 0", fontSize: 13.5, fontWeight: 600, color: "#E8590C", textAlign: "left" }}>
+            <p style={{ margin: "10px 2px 0", fontSize: 13.5, fontWeight: 600, color: "#0A58A4", textAlign: "left" }}>
               {message}
             </p>
           )}
-          <p style={{ textAlign: "center", margin: "14px 0 0", fontSize: 11.5, color: "#B4A99E", fontWeight: 500 }}>
+          <p style={{ textAlign: "center", margin: "14px 0 0", fontSize: 11.5, color: "#A3AFBE", fontWeight: 500 }}>
             Join the waitlist — one email when we launch.
           </p>
         </div>

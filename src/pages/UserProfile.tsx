@@ -60,10 +60,10 @@ export default function UserProfile() {
   if (profile === null) {
     return (
       <div className="py-10 text-center">
-        <p className="text-sm text-slate-500">Player not found.</p>
+        <p className="text-sm text-slate-400">Player not found.</p>
         <button
           onClick={() => navigate("/")}
-          className="mt-3 text-sm font-semibold text-slate-900 underline"
+          className="mt-3 text-sm font-semibold text-white underline"
         >
           Back to browse
         </button>
@@ -80,24 +80,24 @@ export default function UserProfile() {
     : profile.bannerColor
       ? { backgroundColor: profile.bannerColor }
       : undefined;
-  const bannerCls = `h-24${!bannerStyle ? " bg-gradient-to-br from-brand to-orange-400" : ""}`;
+  const bannerCls = `h-24${!bannerStyle ? " bg-gradient-to-br from-brand to-sky-400" : ""}`;
 
   return (
     <div>
       <button
         onClick={() => navigate(-1)}
-        className="mb-3 text-sm font-medium text-slate-500 hover:text-slate-900"
+        className="mb-3 text-sm font-medium text-slate-400 hover:text-white"
       >
         ← Back
       </button>
 
       {/* Header card */}
-      <div className="mb-4 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+      <div className="mb-4 overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 shadow-sm">
         <div className={bannerCls} style={bannerStyle} />
         <div className="px-4 pb-5">
           {/* Avatar — centered, overlapping banner (z-10 keeps it above the banner) */}
           <div className="relative z-10 -mt-12 flex justify-center">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-3xl font-bold text-white ring-4 ring-white">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-3xl font-bold text-white ring-4 ring-slate-900">
               {profile.avatarUrl ? (
                 <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" />
               ) : (
@@ -108,7 +108,7 @@ export default function UserProfile() {
 
           {/* Name + info — centered */}
           <div className="mt-3 text-center">
-            <p className="text-xl font-bold text-slate-900">
+            <p className="text-xl font-bold text-white">
               {profile.name}
               {isMe && <span className="ml-1 text-sm font-normal text-slate-400">(you)</span>}
             </p>
@@ -126,7 +126,7 @@ export default function UserProfile() {
           </div>
 
           {profile.bio && (
-            <p className="mt-4 border-t border-slate-50 pt-4 text-sm leading-relaxed text-slate-600">
+            <p className="mt-4 border-t border-slate-50 pt-4 text-sm leading-relaxed text-slate-300">
               {profile.bio}
             </p>
           )}
@@ -155,13 +155,13 @@ export default function UserProfile() {
 
       {/* Stats */}
       <div className="mb-5 grid grid-cols-3 gap-2">
-        <div className="rounded-2xl bg-gradient-to-br from-brand/10 to-orange-100/60 p-3 text-center ring-1 ring-brand/15">
+        <div className="rounded-2xl bg-gradient-to-br from-brand/20 to-sky-500/10 p-3 text-center ring-1 ring-brand/25">
           <p className="text-2xl font-bold text-brand">{profile.gamesHosted}</p>
-          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">Hosted</p>
+          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-400">Hosted</p>
         </div>
         <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-sky-100/60 p-3 text-center ring-1 ring-sky-200/60">
           <p className="text-2xl font-bold text-sky-600">{profile.gamesPlayed}</p>
-          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">Joined</p>
+          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-400">Joined</p>
         </div>
         <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 p-3 text-center ring-1 ring-emerald-200/60">
           <p className="text-2xl font-bold text-emerald-600">
@@ -169,15 +169,15 @@ export default function UserProfile() {
               ? (POSITION_ABBR[profile.favoritePositions[0]] ?? profile.favoritePositions[0].slice(0, 3).toUpperCase())
               : "—"}
           </p>
-          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">Position</p>
+          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-400">Position</p>
         </div>
       </div>
 
-      <h2 className="mb-2 text-sm font-semibold text-slate-900">
+      <h2 className="mb-2 text-sm font-semibold text-white">
         Upcoming games {isMe ? "you're" : `${profile.name} is`} hosting
       </h2>
       {profile.hostedUpcoming.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-8 text-center text-sm text-slate-400">
+        <p className="rounded-2xl border border-dashed border-slate-700 bg-slate-800 py-8 text-center text-sm text-slate-400">
           No upcoming games hosted.
         </p>
       ) : (
@@ -189,12 +189,12 @@ export default function UserProfile() {
       )}
 
       {!isMe && (
-        <div className="mt-6 border-t border-slate-100 pt-4 text-center">
+        <div className="mt-6 border-t border-slate-800 pt-4 text-center">
           <button
             onClick={toggleBlock}
             className={`text-xs font-medium transition ${
               blocked
-                ? "text-slate-500 hover:text-slate-700"
+                ? "text-slate-400 hover:text-slate-200"
                 : "text-slate-400 hover:text-rose-500"
             }`}
           >

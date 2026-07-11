@@ -87,10 +87,10 @@ export default function GameDetail() {
   if (game === null) {
     return (
       <div className="py-10 text-center">
-        <p className="text-sm text-slate-500">This game no longer exists.</p>
+        <p className="text-sm text-slate-400">This game no longer exists.</p>
         <button
           onClick={() => navigate("/")}
-          className="mt-3 text-sm font-semibold text-slate-900 underline"
+          className="mt-3 text-sm font-semibold text-white underline"
         >
           Back to browse
         </button>
@@ -217,47 +217,47 @@ export default function GameDetail() {
         <Modal
           onClose={() => { if (!joining) setJoinModal(null); }}
           backdropClassName="bg-black/70"
-          panelClassName="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
+          panelClassName="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-slate-900 shadow-2xl"
           labelledBy="join-modal-title"
         >
             {joinModal === "preview" ? (
               <>
                 {/* Heading */}
                 <div className="px-8 pb-2 pt-7 text-center">
-                  <h2 id="join-modal-title" className="text-2xl font-bold leading-tight text-slate-900">Join this game?</h2>
-                  <p className="mt-1.5 text-sm text-slate-500">
+                  <h2 id="join-modal-title" className="text-2xl font-bold leading-tight text-white">Join this game?</h2>
+                  <p className="mt-1.5 text-sm text-slate-400">
                     Review the details before claiming your spot.
                   </p>
                 </div>
                 {/* Divider */}
-                <div className="mx-8 my-4 h-px bg-slate-100" />
+                <div className="mx-8 my-4 h-px bg-slate-800" />
                 {/* Details */}
                 <div className="space-y-3 px-8">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Game</span>
-                    <span className="max-w-[65%] text-right text-sm font-semibold text-slate-800">{game.title}</span>
+                    <span className="max-w-[65%] text-right text-sm font-semibold text-slate-100">{game.title}</span>
                   </div>
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Date</span>
-                    <span className="text-right text-sm font-semibold text-slate-800">{formatDate(game.date)}</span>
+                    <span className="text-right text-sm font-semibold text-slate-100">{formatDate(game.date)}</span>
                   </div>
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Time</span>
-                    <span className="text-right text-sm font-semibold text-slate-800">{formatTimeRange(game.time, game.endTime)}</span>
+                    <span className="text-right text-sm font-semibold text-slate-100">{formatTimeRange(game.time, game.endTime)}</span>
                   </div>
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Location</span>
-                    <span className="max-w-[60%] text-right text-sm font-semibold leading-snug text-slate-800">{game.location}</span>
+                    <span className="max-w-[60%] text-right text-sm font-semibold leading-snug text-slate-100">{game.location}</span>
                   </div>
                   {game.costPerPerson > 0 && (
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Cost</span>
-                      <span className="text-sm font-semibold text-slate-800">{formatMoney(game.costPerPerson)} per person</span>
+                      <span className="text-sm font-semibold text-slate-100">{formatMoney(game.costPerPerson)} per person</span>
                     </div>
                   )}
                 </div>
                 {game.notes && (
-                  <div className="mx-8 mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
+                  <div className="mx-8 mt-4 rounded-xl bg-slate-800 px-4 py-3 text-sm leading-relaxed text-slate-300">
                     {game.notes}
                   </div>
                 )}
@@ -278,7 +278,7 @@ export default function GameDetail() {
                   <button
                     onClick={() => setJoinModal(null)}
                     disabled={joining}
-                    className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-medium text-slate-600 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-60"
+                    className="w-full rounded-2xl border border-slate-700 py-3 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-800 active:scale-[0.97] disabled:opacity-60"
                   >
                     Cancel
                   </button>
@@ -288,46 +288,46 @@ export default function GameDetail() {
               <>
                 {/* Checkmark */}
                 <div className="flex justify-center pt-7 pb-3">
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-full text-white ${joinModal === "confirmed" ? "bg-brand" : "bg-amber-500"}`}>
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-full text-white ${joinModal === "confirmed" ? "bg-brand" : "bg-sky-500"}`}>
                     <CheckIcon className="h-7 w-7" />
                   </div>
                 </div>
                 {/* Heading */}
                 <div className="px-8 pb-2 text-center">
-                  <h2 id="join-modal-title" className="text-3xl font-bold leading-tight text-slate-900">
+                  <h2 id="join-modal-title" className="text-3xl font-bold leading-tight text-white">
                     {joinModal === "confirmed" ? "You're In!" : "You're on the List!"}
                   </h2>
-                  <p className="mt-2 text-sm text-slate-500">
+                  <p className="mt-2 text-sm text-slate-400">
                     {joinModal === "confirmed"
-                      ? <>Your spot for <strong className="text-slate-700">{game.title}</strong> is confirmed.</>
-                      : <>You're on the waitlist for <strong className="text-slate-700">{game.title}</strong>. We'll notify you if a spot opens.</>}
+                      ? <>Your spot for <strong className="text-slate-200">{game.title}</strong> is confirmed.</>
+                      : <>You're on the waitlist for <strong className="text-slate-200">{game.title}</strong>. We'll notify you if a spot opens.</>}
                   </p>
                 </div>
                 {/* Divider */}
-                <div className="mx-8 my-4 h-px bg-slate-100" />
+                <div className="mx-8 my-4 h-px bg-slate-800" />
                 {/* Details */}
                 <div className="space-y-3 px-8">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Date</span>
-                    <span className="text-right text-sm font-semibold text-slate-800">{formatDate(game.date)}</span>
+                    <span className="text-right text-sm font-semibold text-slate-100">{formatDate(game.date)}</span>
                   </div>
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Time</span>
-                    <span className="text-right text-sm font-semibold text-slate-800">{formatTimeRange(game.time, game.endTime)}</span>
+                    <span className="text-right text-sm font-semibold text-slate-100">{formatTimeRange(game.time, game.endTime)}</span>
                   </div>
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Location</span>
-                    <span className="max-w-[60%] text-right text-sm font-semibold leading-snug text-slate-800">{game.location}</span>
+                    <span className="max-w-[60%] text-right text-sm font-semibold leading-snug text-slate-100">{game.location}</span>
                   </div>
                   {game.costPerPerson > 0 && (
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Cost</span>
-                      <span className="text-sm font-semibold text-slate-800">{formatMoney(game.costPerPerson)} per person</span>
+                      <span className="text-sm font-semibold text-slate-100">{formatMoney(game.costPerPerson)} per person</span>
                     </div>
                   )}
                 </div>
                 {game.notes && (
-                  <div className="mx-8 mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
+                  <div className="mx-8 mt-4 rounded-xl bg-slate-800 px-4 py-3 text-sm leading-relaxed text-slate-300">
                     {game.notes}
                   </div>
                 )}
@@ -354,32 +354,32 @@ export default function GameDetail() {
         <Modal
           onClose={() => { if (!leaving) setLeaveModal(false); }}
           backdropClassName="bg-black/70"
-          panelClassName="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
+          panelClassName="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-slate-900 shadow-2xl"
           labelledBy="leave-modal-title"
         >
             <div className="px-8 pb-2 pt-7 text-center">
-              <h2 id="leave-modal-title" className="text-2xl font-bold leading-tight text-slate-900">
+              <h2 id="leave-modal-title" className="text-2xl font-bold leading-tight text-white">
                 {waiting ? "Leave waitlist?" : "Leave this game?"}
               </h2>
-              <p className="mt-1.5 text-sm text-slate-500">
+              <p className="mt-1.5 text-sm text-slate-400">
                 {waiting
                   ? "You'll lose your waitlist position."
                   : "Your spot will open up for someone else."}
               </p>
             </div>
-            <div className="mx-8 my-4 h-px bg-slate-100" />
+            <div className="mx-8 my-4 h-px bg-slate-800" />
             <div className="space-y-3 px-8">
               <div className="flex items-baseline justify-between gap-2">
                 <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Game</span>
-                <span className="max-w-[65%] text-right text-sm font-semibold text-slate-800">{game.title}</span>
+                <span className="max-w-[65%] text-right text-sm font-semibold text-slate-100">{game.title}</span>
               </div>
               <div className="flex items-baseline justify-between gap-2">
                 <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Date</span>
-                <span className="text-right text-sm font-semibold text-slate-800">{formatDate(game.date)}</span>
+                <span className="text-right text-sm font-semibold text-slate-100">{formatDate(game.date)}</span>
               </div>
               <div className="flex items-baseline justify-between gap-2">
                 <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Time</span>
-                <span className="text-right text-sm font-semibold text-slate-800">{formatTimeRange(game.time, game.endTime)}</span>
+                <span className="text-right text-sm font-semibold text-slate-100">{formatTimeRange(game.time, game.endTime)}</span>
               </div>
             </div>
             <div className="space-y-2 px-8 pb-2 pt-5">
@@ -398,7 +398,7 @@ export default function GameDetail() {
               <button
                 onClick={() => setLeaveModal(false)}
                 disabled={leaving}
-                className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-medium text-slate-600 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-60"
+                className="w-full rounded-2xl border border-slate-700 py-3 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-800 active:scale-[0.97] disabled:opacity-60"
               >
                 Cancel
               </button>
@@ -414,26 +414,26 @@ export default function GameDetail() {
         <Modal
           onClose={() => { if (!deleting) setDeleteModal(false); }}
           backdropClassName="bg-black/70"
-          panelClassName="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
+          panelClassName="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-slate-900 shadow-2xl"
           labelledBy="delete-modal-title"
         >
           <div className="px-8 pb-2 pt-7 text-center">
-            <h2 id="delete-modal-title" className="text-2xl font-bold leading-tight text-slate-900">
+            <h2 id="delete-modal-title" className="text-2xl font-bold leading-tight text-white">
               Delete this game?
             </h2>
-            <p className="mt-1.5 text-sm text-slate-500">
+            <p className="mt-1.5 text-sm text-slate-400">
               This can't be undone. Everyone in the game will be notified it was cancelled.
             </p>
           </div>
-          <div className="mx-8 my-4 h-px bg-slate-100" />
+          <div className="mx-8 my-4 h-px bg-slate-800" />
           <div className="space-y-3 px-8">
             <div className="flex items-baseline justify-between gap-2">
               <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Game</span>
-              <span className="max-w-[65%] text-right text-sm font-semibold text-slate-800">{game.title}</span>
+              <span className="max-w-[65%] text-right text-sm font-semibold text-slate-100">{game.title}</span>
             </div>
             <div className="flex items-baseline justify-between gap-2">
               <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Date</span>
-              <span className="text-right text-sm font-semibold text-slate-800">{formatDate(game.date)}</span>
+              <span className="text-right text-sm font-semibold text-slate-100">{formatDate(game.date)}</span>
             </div>
           </div>
           <div className="space-y-2 px-8 pb-2 pt-5">
@@ -447,7 +447,7 @@ export default function GameDetail() {
             <button
               onClick={() => setDeleteModal(false)}
               disabled={deleting}
-              className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-medium text-slate-600 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-60"
+              className="w-full rounded-2xl border border-slate-700 py-3 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-800 active:scale-[0.97] disabled:opacity-60"
             >
               Cancel
             </button>
@@ -463,14 +463,14 @@ export default function GameDetail() {
         <Modal
           onClose={() => { if (!cancelingSeries) setSeriesModal(false); }}
           backdropClassName="bg-black/70"
-          panelClassName="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
+          panelClassName="animate-pop-in w-full max-w-sm overflow-hidden rounded-3xl bg-slate-900 shadow-2xl"
           labelledBy="series-modal-title"
         >
           <div className="px-8 pb-2 pt-7 text-center">
-            <h2 id="series-modal-title" className="text-2xl font-bold leading-tight text-slate-900">
+            <h2 id="series-modal-title" className="text-2xl font-bold leading-tight text-white">
               Cancel the whole series?
             </h2>
-            <p className="mt-1.5 text-sm text-slate-500">
+            <p className="mt-1.5 text-sm text-slate-400">
               This game and every later weekly occurrence will be cancelled. Members
               of each will be notified. This can't be undone.
             </p>
@@ -486,7 +486,7 @@ export default function GameDetail() {
             <button
               onClick={() => setSeriesModal(false)}
               disabled={cancelingSeries}
-              className="w-full rounded-2xl border border-slate-200 py-3 text-sm font-medium text-slate-600 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-60"
+              className="w-full rounded-2xl border border-slate-700 py-3 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-800 active:scale-[0.97] disabled:opacity-60"
             >
               Keep them
             </button>
@@ -499,16 +499,16 @@ export default function GameDetail() {
 
       <button
         onClick={() => navigate(-1)}
-        className="mb-3 text-sm font-medium text-slate-500 hover:text-slate-900"
+        className="mb-3 text-sm font-medium text-slate-400 hover:text-white"
       >
         ← Back
       </button>
 
       <div className="mb-3 flex items-start justify-between gap-3">
-        <h1 className="text-2xl font-bold leading-tight tracking-tight text-slate-900">
+        <h1 className="text-2xl font-bold leading-tight tracking-tight text-white">
           {game.title}
         </h1>
-        <span className="shrink-0 rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-500">
+        <span className="shrink-0 rounded-md bg-slate-800 px-2 py-1 text-xs font-medium text-slate-400">
           {relativeDay(game.date)}
         </span>
       </div>
@@ -520,7 +520,7 @@ export default function GameDetail() {
       </div>
 
       {/* Info card */}
-      <div className="mb-4 space-y-2 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-700 shadow-sm">
+      <div className="mb-4 space-y-2 rounded-2xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-200 shadow-sm">
         <InfoRow icon={<CalendarIcon className="h-4 w-4" />} label="When">
           <div className="flex items-start gap-2">
             <span className="flex-1">
@@ -529,7 +529,7 @@ export default function GameDetail() {
             {!past && (
               <a
                 href={`/api/games/${game.id}/ics`}
-                className="shrink-0 flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-500 transition hover:bg-slate-100 active:scale-95"
+                className="shrink-0 flex items-center gap-1 rounded-full border border-slate-700 bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-400 transition hover:bg-slate-800 active:scale-95"
                 aria-label="Add to calendar"
               >
                 <CalendarIcon className="h-3 w-3" />
@@ -548,7 +548,7 @@ export default function GameDetail() {
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([game.location, game.area].filter(Boolean).join(", "))}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="shrink-0 flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-500 transition hover:bg-slate-100 active:scale-95"
+              className="shrink-0 flex items-center gap-1 rounded-full border border-slate-700 bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-400 transition hover:bg-slate-800 active:scale-95"
               aria-label="Open in Google Maps"
             >
               <MapsIcon className="h-3 w-3" />
@@ -559,7 +559,7 @@ export default function GameDetail() {
         <InfoRow icon={<UserIcon className="h-4 w-4" />} label="Host">
           <Link
             to={`/user/${game.hostId}`}
-            className="font-medium text-slate-900 underline-offset-2 hover:underline"
+            className="font-medium text-white underline-offset-2 hover:underline"
           >
             {game.hostName}
           </Link>
@@ -597,8 +597,8 @@ export default function GameDetail() {
       </div>
 
       {/* Roster */}
-      <div className="mb-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        <h2 className="mb-2 text-sm font-semibold text-slate-900">
+      <div className="mb-4 rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-sm">
+        <h2 className="mb-2 text-sm font-semibold text-white">
           Roster ({game.players.length}/{game.totalSlots})
         </h2>
         <div className="flex flex-wrap gap-1.5">
@@ -609,7 +609,7 @@ export default function GameDetail() {
               <span
                 key={p.id}
                 className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                  youAre ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"
+                  youAre ? "bg-emerald-100 text-emerald-800" : "bg-slate-800 text-slate-200"
                 }`}
               >
                 <Link to={`/user/${p.id}`} className="inline-flex items-center gap-1 transition hover:opacity-80">
@@ -634,7 +634,7 @@ export default function GameDetail() {
           {Array.from({ length: left }).map((_, i) => (
             <span
               key={`open-${i}`}
-              className="rounded-full border border-dashed border-slate-200 px-2.5 py-1 text-xs text-slate-400"
+              className="rounded-full border border-dashed border-slate-700 px-2.5 py-1 text-xs text-slate-400"
             >
               open
             </span>
@@ -648,7 +648,7 @@ export default function GameDetail() {
         )}
 
         {game.waitlist.length > 0 && (
-          <div className="mt-3 border-t border-slate-100 pt-3">
+          <div className="mt-3 border-t border-slate-800 pt-3">
             <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
               Waitlist ({game.waitlist.length})
             </h3>
@@ -656,7 +656,7 @@ export default function GameDetail() {
               {game.waitlist.map((p, i) => (
                 <span
                   key={p.id}
-                  className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700"
+                  className="inline-flex items-center gap-1 rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-medium text-sky-300"
                 >
                   <Link to={`/user/${p.id}`} className="transition hover:opacity-80">
                     {i + 1}. {p.name}
@@ -675,7 +675,7 @@ export default function GameDetail() {
                       <button
                         onClick={() => handleRemoveMember(p.id)}
                         aria-label={`Remove ${p.name} from the waitlist`}
-                        className="-mr-0.5 leading-none text-amber-500 transition hover:text-rose-500"
+                        className="-mr-0.5 leading-none text-sky-400 transition hover:text-rose-500"
                       >
                         <XIcon className="h-3 w-3" />
                       </button>
@@ -702,7 +702,7 @@ export default function GameDetail() {
       {/* Primary action */}
       <div className="space-y-2">
         {past ? (
-          <p className="rounded-xl bg-slate-100 py-3 text-center text-sm font-medium text-slate-500">
+          <p className="rounded-xl bg-slate-800 py-3 text-center text-sm font-medium text-slate-400">
             This game has already taken place.
           </p>
         ) : (
@@ -718,7 +718,7 @@ export default function GameDetail() {
             {!joined && !waiting && left === 0 && (
               <button
                 onClick={handleJoin}
-                className="w-full rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-amber-600 active:scale-[0.97] active:opacity-90"
+                className="w-full rounded-xl bg-sky-600 py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-sky-700 active:scale-[0.97] active:opacity-90"
               >
                 Game full — join waitlist
               </button>
@@ -766,7 +766,7 @@ export default function GameDetail() {
         )}
 
         {isHost && (
-          <div className="space-y-2 border-t border-slate-100 pt-3">
+          <div className="space-y-2 border-t border-slate-800 pt-3">
             <button
               onClick={() => navigate(`/game/${game.id}/edit`)}
               className="w-full rounded-xl border border-brand/40 bg-brand/5 py-2.5 text-sm font-semibold text-brand transition hover:bg-brand/10 active:scale-[0.98]"
@@ -791,7 +791,7 @@ export default function GameDetail() {
         )}
 
         {!isHost && (
-          <div className="border-t border-slate-100 pt-3 text-center">
+          <div className="border-t border-slate-800 pt-3 text-center">
             <ReportButton
               targetType="game"
               targetId={game.id}
@@ -804,14 +804,14 @@ export default function GameDetail() {
 
       {/* Rate teammates (only shown after game ends, only for confirmed players) */}
       {ratables && ratables.length > 0 && (
-        <div className="mb-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-          <h2 className="mb-1 text-sm font-semibold text-slate-900">Rate your teammates</h2>
+        <div className="mb-4 rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-sm">
+          <h2 className="mb-1 text-sm font-semibold text-white">Rate your teammates</h2>
           <p className="mb-3 text-xs text-slate-400">Ratings are anonymous and averaged on each player's profile.</p>
           {ratingMsg && <p className="mb-2 text-xs font-medium text-emerald-600">{ratingMsg}</p>}
           <div className="space-y-3">
             {ratables.map((r) => (
               <div key={r.id} className="flex items-center justify-between gap-3">
-                <Link to={`/user/${r.id}`} className="text-sm font-medium text-slate-700 hover:underline truncate">
+                <Link to={`/user/${r.id}`} className="text-sm font-medium text-slate-200 hover:underline truncate">
                   {r.name}
                 </Link>
                 <div className="flex shrink-0 gap-1.5">
@@ -833,7 +833,7 @@ export default function GameDetail() {
                           .catch(() => {});
                       }}
                       className={`text-2xl leading-none transition active:scale-90 ${
-                        r.myRating !== null && star <= r.myRating ? "text-amber-400" : "text-slate-200 hover:text-amber-300"
+                        r.myRating !== null && star <= r.myRating ? "text-amber-400" : "text-slate-600 hover:text-amber-300"
                       }`}
                     >
                       ★

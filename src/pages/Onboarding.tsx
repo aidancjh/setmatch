@@ -90,31 +90,31 @@ export default function Onboarding() {
 
   if (step === 2) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-white px-5 py-10">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-900 px-5 py-10">
         <div className="mb-7 flex flex-col items-center text-center">
           <VolleyballIcon className="h-10 w-10 text-brand" />
-          <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-white">
             A bit about you
           </h1>
-          <p className="mt-1.5 text-sm text-slate-500">
+          <p className="mt-1.5 text-sm text-slate-400">
             Optional — you can always update this in your profile.
           </p>
         </div>
 
         <div className="flex-1 space-y-5">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Birthday</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-200">Birthday</label>
             <input
               type="date"
               value={birthdate}
               onChange={(e) => setBirthdate(e.target.value)}
               max={new Date().toISOString().slice(0, 10)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
+              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
             />
           </div>
 
           <div>
-            <p className="mb-1.5 text-sm font-medium text-slate-700">Gender</p>
+            <p className="mb-1.5 text-sm font-medium text-slate-200">Gender</p>
             <div className="flex flex-wrap gap-2">
               {GENDER_OPTIONS.map((g) => (
                 <button
@@ -122,7 +122,7 @@ export default function Onboarding() {
                   type="button"
                   onClick={() => setUserGender(g === userGender ? "" : g)}
                   className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-                    userGender === g ? "bg-brand text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    userGender === g ? "bg-brand text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                   }`}
                 >
                   {g}
@@ -131,20 +131,20 @@ export default function Onboarding() {
             </div>
           </div>
 
-          <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-3">
+          <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-800 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Privacy</p>
             <label className="flex cursor-pointer items-center justify-between gap-3">
-              <span className="text-sm text-slate-700">Show my age on profile</span>
+              <span className="text-sm text-slate-200">Show my age on profile</span>
               <button type="button" onClick={() => setShowAge((v) => !v)}
-                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${showAge ? "bg-brand" : "bg-slate-200"}`}>
-                <span className={`mt-0.5 ml-0.5 inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${showAge ? "translate-x-4" : "translate-x-0"}`} />
+                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${showAge ? "bg-brand" : "bg-slate-700"}`}>
+                <span className={`mt-0.5 ml-0.5 inline-block h-4 w-4 rounded-full bg-slate-900 shadow transition-transform ${showAge ? "translate-x-4" : "translate-x-0"}`} />
               </button>
             </label>
             <label className="flex cursor-pointer items-center justify-between gap-3">
-              <span className="text-sm text-slate-700">Show my gender on profile</span>
+              <span className="text-sm text-slate-200">Show my gender on profile</span>
               <button type="button" onClick={() => setShowGender((v) => !v)}
-                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${showGender ? "bg-brand" : "bg-slate-200"}`}>
-                <span className={`mt-0.5 ml-0.5 inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${showGender ? "translate-x-4" : "translate-x-0"}`} />
+                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${showGender ? "bg-brand" : "bg-slate-700"}`}>
+                <span className={`mt-0.5 ml-0.5 inline-block h-4 w-4 rounded-full bg-slate-900 shadow transition-transform ${showGender ? "translate-x-4" : "translate-x-0"}`} />
               </button>
             </label>
           </div>
@@ -160,7 +160,7 @@ export default function Onboarding() {
           </button>
           <button
             onClick={() => handleFinish({ skip: true })}
-            className="mt-3 w-full text-center text-sm text-slate-400 hover:text-slate-600"
+            className="mt-3 w-full text-center text-sm text-slate-400 hover:text-slate-300"
           >
             Skip for now
           </button>
@@ -170,14 +170,14 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-white px-5 py-10">
+    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-900 px-5 py-10">
       {/* Header */}
       <div className="mb-7 flex flex-col items-center text-center">
         <VolleyballIcon className="h-10 w-10 text-brand" />
-        <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900">
+        <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-white">
           Welcome to Coterie!
         </h1>
-        <p className="mt-1.5 text-sm text-slate-500">
+        <p className="mt-1.5 text-sm text-slate-400">
           What's your volleyball level? We'll use this to show you the right games.
         </p>
       </div>
@@ -193,7 +193,7 @@ export default function Onboarding() {
               className={`w-full rounded-2xl border-2 p-4 text-left transition active:scale-[0.98] ${
                 isSelected
                   ? "border-brand bg-brand/5"
-                  : "border-slate-100 bg-white hover:border-slate-200"
+                  : "border-slate-800 bg-slate-900 hover:border-slate-700"
               }`}
             >
               <div className="mb-2 flex items-center gap-2.5">
@@ -201,7 +201,7 @@ export default function Onboarding() {
                   <Icon className="h-5 w-5" />
                 </IconChip>
                 <div>
-                  <p className={`font-bold ${isSelected ? "text-brand" : "text-slate-900"}`}>
+                  <p className={`font-bold ${isSelected ? "text-brand" : "text-white"}`}>
                     {level}
                   </p>
                   <p className="text-xs text-slate-400">{tagline}</p>
@@ -214,7 +214,7 @@ export default function Onboarding() {
               </div>
               <ul className="space-y-0.5 pl-1">
                 {bullets.map((b) => (
-                  <li key={b} className="flex items-start gap-1.5 text-xs text-slate-500">
+                  <li key={b} className="flex items-start gap-1.5 text-xs text-slate-400">
                     <span className="mt-px text-slate-300">•</span>
                     {b}
                   </li>
@@ -236,7 +236,7 @@ export default function Onboarding() {
         </button>
         <button
           onClick={() => { localStorage.setItem("coterie.welcomed", "1"); navigate("/", { replace: true }); }}
-          className="mt-3 w-full text-center text-sm text-slate-400 hover:text-slate-600"
+          className="mt-3 w-full text-center text-sm text-slate-400 hover:text-slate-300"
         >
           Skip for now
         </button>

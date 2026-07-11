@@ -26,8 +26,8 @@ export default function Chats() {
   return (
     <div>
       <div className="mb-4">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Chats</h1>
-        <p className="text-sm text-slate-500">
+        <h1 className="text-2xl font-bold tracking-tight text-white">Chats</h1>
+        <p className="text-sm text-slate-400">
           Group chats for every game you've joined.
         </p>
       </div>
@@ -35,7 +35,7 @@ export default function Chats() {
       {chats === null && !error ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-100" />
+            <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-800" />
           ))}
         </div>
       ) : error ? (
@@ -49,12 +49,12 @@ export default function Chats() {
           </button>
         </div>
       ) : chats && chats.length === 0 ? (
-        <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
+        <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-700 bg-slate-800 py-16 text-center">
           <IconChip size="lg" className="mb-2">
             <ChatIcon className="h-6 w-6" />
           </IconChip>
-          <p className="font-semibold text-slate-700">No chats yet</p>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="font-semibold text-slate-200">No chats yet</p>
+          <p className="mt-1 text-sm text-slate-400">
             Join or host a game and its chat shows up here.
           </p>
           <Link
@@ -76,14 +76,14 @@ export default function Chats() {
               <Link
                 key={c.gameId}
                 to={`/chats/${c.gameId}`}
-                className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm transition active:scale-[0.99]"
+                className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-3 shadow-sm transition active:scale-[0.99]"
               >
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand/10 text-base font-bold text-brand">
                   {c.title.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="truncate text-sm font-semibold text-slate-900">
+                    <span className="truncate text-sm font-semibold text-white">
                       {c.title}
                     </span>
                     <span className="shrink-0 text-[11px] text-slate-400">
@@ -95,8 +95,8 @@ export default function Chats() {
                       !c.lastMessage
                         ? "text-slate-400 italic"
                         : unread
-                        ? "font-semibold text-slate-700"
-                        : "text-slate-500"
+                        ? "font-semibold text-slate-200"
+                        : "text-slate-400"
                     }`}
                   >
                     {preview}
@@ -109,7 +109,7 @@ export default function Chats() {
                   />
                 )}
                 {past && !unread && (
-                  <span className="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
+                  <span className="shrink-0 rounded-md bg-slate-800 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
                     ended
                   </span>
                 )}

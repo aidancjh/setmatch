@@ -66,8 +66,8 @@ export default function GameComments({
   };
 
   return (
-    <div className="mt-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-      <h2 className="mb-3 text-sm font-semibold text-slate-900">
+    <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-sm">
+      <h2 className="mb-3 text-sm font-semibold text-white">
         Discussion
         {comments && comments.length > 0 && (
           <span className="ml-1 font-normal text-slate-400">
@@ -91,7 +91,7 @@ export default function GameComments({
               <li key={c.id} className="flex gap-2.5">
                 <Link
                   to={`/user/${c.userId}`}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-500"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-400"
                 >
                   {c.userName.charAt(0).toUpperCase()}
                 </Link>
@@ -99,11 +99,11 @@ export default function GameComments({
                   <div className="flex items-baseline gap-2">
                     <Link
                       to={`/user/${c.userId}`}
-                      className="text-sm font-semibold text-slate-800 underline-offset-2 hover:underline"
+                      className="text-sm font-semibold text-slate-100 underline-offset-2 hover:underline"
                     >
                       {c.userName}
                       {c.userId === hostId && (
-                        <span className="ml-1 inline-flex items-center gap-0.5 text-xs font-medium text-amber-600">
+                        <span className="ml-1 inline-flex items-center gap-0.5 text-xs font-medium text-amber-400">
                           <StarIcon filled className="h-3 w-3" aria-hidden />
                           host
                         </span>
@@ -128,7 +128,7 @@ export default function GameComments({
                       />
                     ) : null}
                   </div>
-                  <p className="whitespace-pre-wrap break-words text-sm text-slate-700">
+                  <p className="whitespace-pre-wrap break-words text-sm text-slate-200">
                     {c.body}
                   </p>
                 </div>
@@ -143,7 +143,7 @@ export default function GameComments({
       )}
 
       {/* Composer */}
-      <form onSubmit={handlePost} className="mt-3 flex items-end gap-2 border-t border-slate-100 pt-3">
+      <form onSubmit={handlePost} className="mt-3 flex items-end gap-2 border-t border-slate-800 pt-3">
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -155,7 +155,7 @@ export default function GameComments({
           }}
           rows={1}
           placeholder={user ? "Write a message…" : "Sign in to join the chat"}
-          className="max-h-28 min-h-[2.5rem] flex-1 resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
+          className="max-h-28 min-h-[2.5rem] flex-1 resize-none rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-slate-400"
         />
         <button
           type="submit"

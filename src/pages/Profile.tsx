@@ -33,7 +33,7 @@ const POSITION_ABBR: Record<string, string> = {
 
 // "" = gradient default; hex = solid color
 const BANNER_COLORS = [
-  "#f97316", "#eab308", "#22c55e", "#06b6d4",
+  "#14b8a6", "#eab308", "#22c55e", "#06b6d4",
   "#3b82f6", "#6366f1", "#8b5cf6", "#ec4899",
   "#ef4444", "#64748b", "#0f172a",
 ];
@@ -203,8 +203,8 @@ function HighlightGrid({
   if (highlights.length === 0) {
     return (
       <div className="mt-6">
-        <p className="mb-2 text-sm font-semibold text-slate-900">My Highlights</p>
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-8 text-center">
+        <p className="mb-2 text-sm font-semibold text-white">My Highlights</p>
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-700 bg-slate-800 py-8 text-center">
           <IconChip size="lg">
             <ClapperIcon className="h-6 w-6" />
           </IconChip>
@@ -223,7 +223,7 @@ function HighlightGrid({
   return (
     <div className="mt-6">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-sm font-semibold text-slate-900">
+        <p className="text-sm font-semibold text-white">
           My Highlights <span className="font-normal text-slate-400">({highlights.length})</span>
         </p>
         <button onClick={onNavigate} className="text-xs font-semibold text-brand">
@@ -446,7 +446,7 @@ export default function Profile() {
     : bannerColor
       ? { backgroundColor: bannerColor }
       : undefined;
-  const bannerCls = `relative h-24${!bannerStyle ? " bg-gradient-to-br from-brand to-orange-400" : ""}`;
+  const bannerCls = `relative h-24${!bannerStyle ? " bg-gradient-to-br from-brand to-sky-400" : ""}`;
 
   // ── Edit mode ────────────────────────────────────────────────────────────
 
@@ -454,10 +454,10 @@ export default function Profile() {
     return (
       <div>
         <div className="mb-4 flex items-center gap-2">
-          <button onClick={handleCancelEdit} className="text-sm font-medium text-slate-400 hover:text-slate-700">
+          <button onClick={handleCancelEdit} className="text-sm font-medium text-slate-400 hover:text-slate-200">
             ← Cancel
           </button>
-          <h1 className="text-lg font-bold text-slate-900">Edit profile</h1>
+          <h1 className="text-lg font-bold text-white">Edit profile</h1>
         </div>
 
         <div className="mb-5 flex flex-col items-center">
@@ -482,35 +482,35 @@ export default function Profile() {
 
         <div className="space-y-4">
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-slate-700">Display name</span>
+            <span className="mb-1.5 block text-sm font-medium text-slate-200">Display name</span>
             <input value={name} onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400" />
+              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-slate-400" />
           </label>
 
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-slate-700">Bio</span>
+            <span className="mb-1.5 block text-sm font-medium text-slate-200">Bio</span>
             <textarea value={bio} onChange={(e) => setBio(e.target.value.slice(0, 300))}
               placeholder="Tell other players a bit about yourself…" rows={2}
-              className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400" />
+              className="w-full resize-none rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-slate-400" />
             <p className="mt-0.5 text-right text-xs text-slate-400">{bio.length}/300</p>
           </label>
 
           <div>
             <div className="mb-1.5 flex items-center gap-1.5">
-              <span className="text-sm font-medium text-slate-700">Skill level</span>
+              <span className="text-sm font-medium text-slate-200">Skill level</span>
               <button onClick={() => setShowSkillInfo((v) => !v)}
-                className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-400 hover:border-brand hover:text-brand transition">
+                className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-600 text-[11px] font-bold text-slate-400 hover:border-brand hover:text-brand transition">
                 ?
               </button>
             </div>
             {showSkillInfo && (
-              <div className="mb-3 space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-3">
+              <div className="mb-3 space-y-2 rounded-xl border border-slate-800 bg-slate-800 p-3">
                 {(Object.entries(SKILL_INFO) as [SkillLevel, { Icon: React.ComponentType<{ className?: string }>; desc: string }][]).map(([s, { Icon, desc }]) => (
                   <div key={s} className="flex gap-2 text-sm">
                     <IconChip size="sm">
                       <Icon className="h-4 w-4" />
                     </IconChip>
-                    <div><span className="font-semibold text-slate-800">{s}:</span>{" "}<span className="text-slate-500">{desc}</span></div>
+                    <div><span className="font-semibold text-slate-100">{s}:</span>{" "}<span className="text-slate-400">{desc}</span></div>
                   </div>
                 ))}
               </div>
@@ -518,7 +518,7 @@ export default function Profile() {
             <div className="flex flex-wrap gap-1.5">
               {skills.map((s) => (
                 <button key={s} onClick={() => setSkill(s)}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${skill === s ? "bg-brand text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${skill === s ? "bg-brand text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}`}>
                   {s}
                 </button>
               ))}
@@ -526,18 +526,18 @@ export default function Profile() {
           </div>
 
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-slate-700">Birthday</span>
+            <span className="mb-1.5 block text-sm font-medium text-slate-200">Birthday</span>
             <input type="date" value={birthdate || ""} onChange={(e) => setBirthdate(e.target.value)}
               max={new Date().toISOString().slice(0, 10)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400" />
+              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-slate-400" />
           </label>
 
           <div>
-            <span className="mb-1.5 block text-sm font-medium text-slate-700">Gender</span>
+            <span className="mb-1.5 block text-sm font-medium text-slate-200">Gender</span>
             <div className="flex flex-wrap gap-1.5">
               {GENDER_OPTIONS.map((g) => (
                 <button key={g} type="button" onClick={() => setUserGender(g === userGender ? "" : g)}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${userGender === g ? "bg-brand text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${userGender === g ? "bg-brand text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}`}>
                   {g}
                 </button>
               ))}
@@ -545,14 +545,14 @@ export default function Profile() {
           </div>
 
           <div>
-            <span className="mb-1.5 block text-sm font-medium text-slate-700">Favorite positions</span>
+            <span className="mb-1.5 block text-sm font-medium text-slate-200">Favorite positions</span>
             <div className="flex flex-wrap gap-1.5">
               {POSITION_OPTIONS.map((p) => {
                 const active = favoritePositions.includes(p);
                 return (
                   <button key={p} type="button"
                     onClick={() => setFavoritePositions((prev) => active ? prev.filter((x) => x !== p) : [...prev, p])}
-                    className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${active ? "bg-brand text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                    className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${active ? "bg-brand text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"}`}>
                     {p}
                   </button>
                 );
@@ -560,20 +560,20 @@ export default function Profile() {
             </div>
           </div>
 
-          <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-3">
+          <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-800 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Privacy</p>
             <label className="flex cursor-pointer items-center justify-between gap-3">
-              <span className="text-sm text-slate-700">Show my age on profile</span>
+              <span className="text-sm text-slate-200">Show my age on profile</span>
               <button type="button" onClick={() => setShowAge((v) => !v)}
-                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${showAge ? "bg-brand" : "bg-slate-200"}`}>
-                <span className={`mt-0.5 ml-0.5 inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${showAge ? "translate-x-4" : "translate-x-0"}`} />
+                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${showAge ? "bg-brand" : "bg-slate-700"}`}>
+                <span className={`mt-0.5 ml-0.5 inline-block h-4 w-4 rounded-full bg-slate-900 shadow transition-transform ${showAge ? "translate-x-4" : "translate-x-0"}`} />
               </button>
             </label>
             <label className="flex cursor-pointer items-center justify-between gap-3">
-              <span className="text-sm text-slate-700">Show my gender on profile</span>
+              <span className="text-sm text-slate-200">Show my gender on profile</span>
               <button type="button" onClick={() => setShowGender((v) => !v)}
-                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${showGender ? "bg-brand" : "bg-slate-200"}`}>
-                <span className={`mt-0.5 ml-0.5 inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${showGender ? "translate-x-4" : "translate-x-0"}`} />
+                className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${showGender ? "bg-brand" : "bg-slate-700"}`}>
+                <span className={`mt-0.5 ml-0.5 inline-block h-4 w-4 rounded-full bg-slate-900 shadow transition-transform ${showGender ? "translate-x-4" : "translate-x-0"}`} />
               </button>
             </label>
           </div>
@@ -594,12 +594,12 @@ export default function Profile() {
   return (
     <div>
       {/* Profile card */}
-      <div className="relative mb-4 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+      <div className="relative mb-4 overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 shadow-sm">
 
         {/* Banner */}
         <div className={bannerCls} style={bannerStyle ?? undefined}>
           {bannerPickerOpen && (
-            <div className="pointer-events-none absolute inset-0 border-2 border-dashed border-white/70" />
+            <div className="pointer-events-none absolute inset-0 border-2 border-dashed border-slate-900/70" />
           )}
           <button
             onClick={() => setBannerPickerOpen((v) => !v)}
@@ -621,7 +621,7 @@ export default function Profile() {
         <div className="px-4 pb-5">
           {/* Avatar — centered, overlapping banner (z-10 keeps it above the banner) */}
           <div className="relative z-10 -mt-12 flex justify-center">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-3xl font-bold text-white ring-4 ring-white">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-3xl font-bold text-white ring-4 ring-slate-900">
               {displayAvatar ? (
                 <img src={displayAvatar} alt={user?.name} className="h-full w-full object-cover" />
               ) : initials}
@@ -630,7 +630,7 @@ export default function Profile() {
 
           {/* Name + info — centered */}
           <div className="mt-3 text-center">
-            <p className="text-xl font-bold text-slate-900">{user?.name || "You"}</p>
+            <p className="text-xl font-bold text-white">{user?.name || "You"}</p>
             <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
               <SkillBadge skill={user?.skill ?? "Intermediate"} size="lg" />
             </div>
@@ -657,7 +657,7 @@ export default function Profile() {
 
           {/* Banner picker box */}
           {bannerPickerOpen && (
-            <div className="mt-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+            <div className="mt-3 rounded-2xl border border-slate-800 bg-slate-800 p-4">
               {/* Gradient default swatch + color swatches */}
               <div className="grid grid-cols-6 gap-2.5">
                 {/* Default gradient swatch */}
@@ -665,8 +665,8 @@ export default function Profile() {
                   onClick={() => handleColorSelect("")}
                   className="aspect-square w-full rounded-xl transition active:scale-90"
                   style={{
-                    background: "linear-gradient(135deg, #f4634e, #f97316)",
-                    outline: !bannerColor && !bannerImage ? "3px solid rgba(0,0,0,0.35)" : "none",
+                    background: "linear-gradient(135deg, #0b6ecd, #38bdf8)",
+                    outline: !bannerColor && !bannerImage ? "3px solid rgba(255,255,255,0.55)" : "none",
                     outlineOffset: "2px",
                   }}
                   aria-label="Default gradient"
@@ -678,18 +678,18 @@ export default function Profile() {
                     className="aspect-square w-full rounded-xl transition active:scale-90"
                     style={{
                       backgroundColor: c,
-                      outline: bannerColor === c && !bannerImage ? "3px solid rgba(0,0,0,0.35)" : "none",
+                      outline: bannerColor === c && !bannerImage ? "3px solid rgba(255,255,255,0.55)" : "none",
                       outlineOffset: "2px",
                     }}
                     aria-label={`Set banner color`}
                   />
                 ))}
               </div>
-              <div className="mt-3 border-t border-slate-100 pt-3">
+              <div className="mt-3 border-t border-slate-800 pt-3">
                 <button
                   onClick={() => bannerFileRef.current?.click()}
                   disabled={bannerUploading}
-                  className="w-full rounded-xl border border-dashed border-slate-200 py-3 text-sm text-slate-500 transition hover:border-brand/40 hover:text-brand disabled:opacity-50"
+                  className="w-full rounded-xl border border-dashed border-slate-700 py-3 text-sm text-slate-400 transition hover:border-brand/40 hover:text-brand disabled:opacity-50"
                 >
                   {bannerUploading ? "Uploading…" : "Insert your own image"}
                 </button>
@@ -717,7 +717,7 @@ export default function Profile() {
 
           {/* Bio — only shown when present */}
           {user?.bio && (
-            <p className="mt-4 border-t border-slate-50 pt-4 text-sm leading-relaxed text-slate-600">
+            <p className="mt-4 border-t border-slate-50 pt-4 text-sm leading-relaxed text-slate-300">
               {user.bio}
             </p>
           )}
@@ -747,13 +747,13 @@ export default function Profile() {
 
       {/* Stats cards — outside card, 3-col */}
       <div className="mb-4 grid grid-cols-3 gap-2">
-        <div className="rounded-2xl bg-gradient-to-br from-brand/10 to-orange-100/60 p-3 text-center ring-1 ring-brand/15">
+        <div className="rounded-2xl bg-gradient-to-br from-brand/20 to-sky-500/10 p-3 text-center ring-1 ring-brand/25">
           <p className="text-2xl font-bold text-brand">{stats?.gamesHosted ?? "—"}</p>
-          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">Hosted</p>
+          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-400">Hosted</p>
         </div>
         <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-sky-100/60 p-3 text-center ring-1 ring-sky-200/60">
           <p className="text-2xl font-bold text-sky-600">{stats?.gamesPlayed ?? "—"}</p>
-          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">Joined</p>
+          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-400">Joined</p>
         </div>
         <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 p-3 text-center ring-1 ring-emerald-200/60">
           <p className="text-2xl font-bold text-emerald-600">
@@ -761,7 +761,7 @@ export default function Profile() {
               ? (POSITION_ABBR[user.favoritePositions[0]] ?? user.favoritePositions[0].slice(0, 3).toUpperCase())
               : "—"}
           </p>
-          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">Position</p>
+          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-slate-400">Position</p>
         </div>
       </div>
 

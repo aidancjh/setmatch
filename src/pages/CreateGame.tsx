@@ -17,15 +17,15 @@ export default function CreateGame() {
     <div>
       <button
         onClick={() => navigate(-1)}
-        className="mb-3 text-sm font-medium text-slate-500 hover:text-slate-900"
+        className="mb-3 text-sm font-medium text-slate-400 hover:text-white"
       >
         ← Cancel
       </button>
 
-      <h1 className="mb-1 text-2xl font-bold tracking-tight text-slate-900">
+      <h1 className="mb-1 text-2xl font-bold tracking-tight text-white">
         Post a game
       </h1>
-      <p className="mb-5 text-sm text-slate-500">
+      <p className="mb-5 text-sm text-slate-400">
         You'll automatically take the first slot as host.
       </p>
 

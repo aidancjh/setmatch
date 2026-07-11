@@ -145,7 +145,7 @@ function SourceBarChart({ rows, emptyText }: { rows: WaitlistSourceStat[]; empty
                 />
               ))}
               <div
-                className="absolute inset-y-0 left-0 rounded bg-orange-400"
+                className="absolute inset-y-0 left-0 rounded bg-blue-400"
                 style={{ width: `${Math.max(1, (r.count / axisMax) * 100)}%` }}
               />
             </div>
@@ -275,7 +275,7 @@ export default function Funnel() {
           <TimeSeriesLineChart
             rows={data.signupsByDay}
             emptyText="No signups yet."
-            color="#FB923C"
+            color="#10B981"
             ariaLabel={`Signups per day, ${data.signupsByDay.length} days`}
           />
         </Card>

@@ -17,7 +17,7 @@ function fireConfetti(canvas: HTMLCanvasElement | null) {
   canvas.height = H * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  const colors = ["#f4634e", "#ff9683", "#ffd34e", "#4ec1f4", "#7ee081", "#ffffff"];
+  const colors = ["#0b6ecd", "#6faee8", "#ffd34e", "#4ec1f4", "#7ee081", "#ffffff"];
   const cx = W / 2;
   const cy = H * 0.4;
   const parts = Array.from({ length: 100 }, () => {
@@ -98,13 +98,13 @@ export default function CelebrationHost() {
           className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center"
           aria-hidden
         >
-          <div className="check-pop flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-xl">
+          <div className="check-pop flex h-24 w-24 items-center justify-center rounded-full bg-slate-900 shadow-xl">
             <svg viewBox="0 0 52 52" className="h-14 w-14">
-              <circle cx="26" cy="26" r="24" fill="none" stroke="#f4634e" strokeWidth="3" opacity="0.22" />
+              <circle cx="26" cy="26" r="24" fill="none" stroke="#2e86d9" strokeWidth="3" opacity="0.22" />
               <path
                 className="check-draw"
                 fill="none"
-                stroke="#f4634e"
+                stroke="#2e86d9"
                 strokeWidth="5"
                 strokeLinecap="round"
                 strokeLinejoin="round"

@@ -10,9 +10,9 @@ function VolleyballBall() {
     <svg viewBox="0 0 120 120" width="100%" height="100%" role="img" aria-label="Volleyball" style={{ display: "block" }}>
       <defs>
         <radialGradient id="vbFill" cx="38%" cy="32%" r="72%">
-          <stop offset="0%" stopColor="#ff9683" />
-          <stop offset="55%" stopColor="#f4634e" />
-          <stop offset="100%" stopColor="#d8452f" />
+          <stop offset="0%" stopColor="#6faee8" />
+          <stop offset="55%" stopColor="#0b6ecd" />
+          <stop offset="100%" stopColor="#0959a8" />
         </radialGradient>
         <clipPath id="vbClip">
           <circle cx="60" cy="60" r="54" />
@@ -43,12 +43,12 @@ function VolleyballBall() {
 
 export default function FullScreenLoader() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-7 bg-white">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-7 bg-slate-900">
       <div className="relative" style={{ width: 84, height: 140 }}>
         {/* shadow is painted first so the ball sits on top of it at rest */}
         <div
           className="ball-shadow absolute"
-          style={{ left: 14, bottom: 4, width: 56, height: 11, borderRadius: "50%", background: "#0f172a" }}
+          style={{ left: 14, bottom: 4, width: 56, height: 11, borderRadius: "50%", background: "#000" }}
         />
         <div
           className="ball-bounce absolute"

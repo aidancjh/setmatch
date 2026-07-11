@@ -143,10 +143,10 @@ export default function GameForm({
         )}
       </div>
 
-      <div className="space-y-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+      <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-800 p-3">
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-700">Who's this game for?</span>
+            <span className="text-sm font-medium text-slate-200">Who's this game for?</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {genders.map((g) => (
@@ -155,7 +155,7 @@ export default function GameForm({
                 type="button"
                 onClick={() => set("gender", g)}
                 className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
-                  form.gender === g ? "bg-brand text-white" : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                  form.gender === g ? "bg-brand text-white" : "bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700"
                 }`}
               >
                 {g === "Open" ? "Open to all" : g === "Men" ? "Men's" : g === "Women" ? "Women's" : "Mixed"}
@@ -168,11 +168,11 @@ export default function GameForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Net height</label>
+          <label className="mb-1 block text-sm font-medium text-slate-200">Net height</label>
           <select
             value={form.netHeight}
             onChange={(e) => set("netHeight", e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
+            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
           >
             {netHeightOptions.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -182,11 +182,11 @@ export default function GameForm({
       </div>
 
       {/* Friends mode toggle */}
-      <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+      <div className="rounded-xl border border-slate-800 bg-slate-800 p-3">
         <label className="flex cursor-pointer items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-slate-800">I'm bringing friends</p>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm font-medium text-slate-100">I'm bringing friends</p>
+            <p className="text-xs text-slate-400">
               {friendsMode
                 ? `Bringing ${alreadyHave} · Need ${needMore} more · Total ${alreadyHave + needMore}`
                 : "Set exactly how many you have and how many you need"}
@@ -196,11 +196,11 @@ export default function GameForm({
             type="button"
             onClick={() => setFriendsMode((v) => !v)}
             className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
-              friendsMode ? "bg-brand" : "bg-slate-200"
+              friendsMode ? "bg-brand" : "bg-slate-700"
             }`}
           >
             <span
-              className={`mt-0.5 ml-0.5 inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+              className={`mt-0.5 ml-0.5 inline-block h-5 w-5 rounded-full bg-slate-900 shadow transition-transform ${
                 friendsMode ? "translate-x-5" : "translate-x-0"
               }`}
             />
@@ -210,7 +210,7 @@ export default function GameForm({
         {friendsMode && (
           <div className="mt-3 grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="mb-1 block text-xs font-medium text-slate-600">
+              <span className="mb-1 block text-xs font-medium text-slate-300">
                 You're bringing (inc. yourself)
               </span>
               <input
@@ -223,7 +223,7 @@ export default function GameForm({
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-xs font-medium text-slate-600">
+              <span className="mb-1 block text-xs font-medium text-slate-300">
                 Still need
               </span>
               <input
@@ -297,9 +297,9 @@ export default function GameForm({
         </Field>
       </div>
 
-      <div className="space-y-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+      <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-800 p-3">
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-slate-700">Positions needed</label>
+          <label className="mb-1.5 block text-sm font-medium text-slate-200">Positions needed</label>
           <div className="flex flex-wrap gap-1.5">
             {positions.map((p) => {
               const active = form.positionsNeeded.includes(p);
@@ -316,7 +316,7 @@ export default function GameForm({
                     }
                   }}
                   className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
-                    active ? "bg-brand text-white" : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                    active ? "bg-brand text-white" : "bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700"
                   }`}
                 >
                   {p}
@@ -328,7 +328,7 @@ export default function GameForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Rotation</label>
+          <label className="mb-1 block text-sm font-medium text-slate-200">Rotation</label>
           <div className="flex flex-wrap gap-1.5">
             {rotationTypes.map((r) => (
               <button
@@ -336,7 +336,7 @@ export default function GameForm({
                 type="button"
                 onClick={() => set("rotationType", r)}
                 className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
-                  form.rotationType === r ? "bg-brand text-white" : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                  form.rotationType === r ? "bg-brand text-white" : "bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700"
                 }`}
               >
                 {r}
@@ -374,7 +374,7 @@ export default function GameForm({
               className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
                 form.region === r
                   ? "bg-brand text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  : "bg-slate-800 text-slate-300 hover:bg-slate-700"
               }`}
             >
               {r}
@@ -407,7 +407,7 @@ export default function GameForm({
                 className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
                   repeatWeeks === o.weeks
                     ? "bg-brand text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                 }`}
               >
                 {o.label}
@@ -432,7 +432,7 @@ export default function GameForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+          className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-slate-800"
         >
           Cancel
         </button>
@@ -449,7 +449,7 @@ export default function GameForm({
 }
 
 const inputCls =
-  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400";
+  "w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm outline-none transition focus:border-slate-400";
 
 function Field({
   label,
@@ -460,7 +460,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-slate-700">
+      <span className="mb-1.5 block text-sm font-medium text-slate-200">
         {label}
       </span>
       {children}
@@ -487,7 +487,7 @@ function Segmented({
           className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
             value === o
               ? "bg-brand text-white"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              : "bg-slate-800 text-slate-300 hover:bg-slate-700"
           }`}
         >
           {o}

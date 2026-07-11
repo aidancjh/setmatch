@@ -130,13 +130,13 @@ export default function Auth() {
 
   if (mode === "reset") {
     return (
-      <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-white px-6 py-12">
+      <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-slate-900 px-6 py-12">
         <div className="mb-8 flex flex-col items-center text-center">
           <VolleyballIcon className="h-12 w-12 text-brand" />
-          <span className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900">Coterie</span>
+          <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Coterie</span>
         </div>
-        <h1 className="mb-1 text-xl font-bold text-slate-900">Set a new password</h1>
-        <p className="mb-5 text-sm text-slate-500">Choose something you haven't used before.</p>
+        <h1 className="mb-1 text-xl font-bold text-white">Set a new password</h1>
+        <p className="mb-5 text-sm text-slate-400">Choose something you haven't used before.</p>
         <form onSubmit={handleReset} className="space-y-3">
           <input
             type="password"
@@ -164,17 +164,17 @@ export default function Auth() {
   if (mode === "forgot") {
     if (forgotSent) {
       return (
-        <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-white px-6 py-12">
+        <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-slate-900 px-6 py-12">
           <div className="mb-8 flex flex-col items-center text-center">
             <VolleyballIcon className="h-12 w-12 text-brand" />
-            <span className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900">Coterie</span>
+            <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Coterie</span>
           </div>
-          <div className="flex flex-col items-center rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-sm">
+          <div className="flex flex-col items-center rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center shadow-sm">
             <IconChip size="lg" className="mb-2">
               <MailIcon className="h-6 w-6" />
             </IconChip>
-            <p className="font-semibold text-slate-900">Check your inbox</p>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="font-semibold text-white">Check your inbox</p>
+            <p className="mt-1 text-sm text-slate-400">
               If an account exists for <strong>{email}</strong>, a reset link is on its way.
             </p>
           </div>
@@ -189,13 +189,13 @@ export default function Auth() {
     }
 
     return (
-      <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-white px-6 py-12">
+      <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-slate-900 px-6 py-12">
         <div className="mb-8 flex flex-col items-center text-center">
           <VolleyballIcon className="h-12 w-12 text-brand" />
-          <span className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900">Coterie</span>
+          <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Coterie</span>
         </div>
-        <h1 className="mb-1 text-xl font-bold text-slate-900">Forgot your password?</h1>
-        <p className="mb-5 text-sm text-slate-500">Enter your email and we'll send a reset link.</p>
+        <h1 className="mb-1 text-xl font-bold text-white">Forgot your password?</h1>
+        <p className="mb-5 text-sm text-slate-400">Enter your email and we'll send a reset link.</p>
         <form onSubmit={handleForgot} className="space-y-3">
           <input
             type="email"
@@ -227,18 +227,18 @@ export default function Auth() {
   // ── Main sign-up / sign-in form ────────────────────────────────────────────
 
   return (
-    <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-white px-6 py-12">
+    <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-slate-900 px-6 py-12">
       {/* Brand */}
       <div className="mb-8 flex flex-col items-center text-center">
         <VolleyballIcon className="h-12 w-12 text-brand" />
-        <span className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900">Coterie</span>
+        <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Coterie</span>
         <span className="mt-1 text-sm text-slate-400">Find your players. Fill your games.</span>
       </div>
 
-      <h1 className="mb-1 text-xl font-bold text-slate-900">
+      <h1 className="mb-1 text-xl font-bold text-white">
         {mode === "signup" ? "Create your account" : "Welcome back"}
       </h1>
-      <p className="mb-5 text-sm text-slate-500">
+      <p className="mb-5 text-sm text-slate-400">
         {mode === "signup" ? "Free to join — takes a few seconds." : "Sign in to pick up where you left off."}
       </p>
 
@@ -296,13 +296,13 @@ export default function Auth() {
 
       {/* Google sign-in */}
       <div className="my-4 flex items-center gap-3">
-        <div className="flex-1 border-t border-slate-100" />
+        <div className="flex-1 border-t border-slate-800" />
         <span className="text-xs text-slate-400">or</span>
-        <div className="flex-1 border-t border-slate-100" />
+        <div className="flex-1 border-t border-slate-800" />
       </div>
       <a
         href="/api/auth/google"
-        className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+        className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-slate-700 bg-slate-900 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-800"
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -314,8 +314,8 @@ export default function Auth() {
       </a>
 
       {mode === "login" && (
-        <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50 p-3">
-          <p className="mb-2 text-center text-xs text-slate-500">
+        <div className="mt-5 rounded-xl border border-slate-800 bg-slate-800 p-3">
+          <p className="mb-2 text-center text-xs text-slate-400">
             Just exploring? Sign in with a demo account
           </p>
           <div className="grid grid-cols-2 gap-2">
@@ -325,9 +325,9 @@ export default function Auth() {
                 type="button"
                 disabled={!!demoBusy}
                 onClick={() => demoLogin(d.email)}
-                className="flex flex-col items-start rounded-lg border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-brand hover:bg-rose-50 disabled:opacity-60"
+                className="flex flex-col items-start rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-left transition hover:border-brand hover:bg-rose-50 disabled:opacity-60"
               >
-                <span className="text-sm font-semibold text-slate-800">
+                <span className="text-sm font-semibold text-slate-100">
                   {demoBusy === d.email ? "Signing in…" : d.name}
                 </span>
                 <span className="text-xs text-slate-400">{d.level}</span>
@@ -337,7 +337,7 @@ export default function Auth() {
         </div>
       )}
 
-      <p className="mt-4 text-center text-sm text-slate-500">
+      <p className="mt-4 text-center text-sm text-slate-400">
         {mode === "signup" ? "Already have an account? " : "New to Coterie? "}
         <button
           onClick={() => {
@@ -362,4 +362,4 @@ export default function Auth() {
 }
 
 const inputCls =
-  "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-400";
+  "w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm outline-none transition focus:border-slate-400";

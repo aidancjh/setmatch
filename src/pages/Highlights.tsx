@@ -177,7 +177,7 @@ function CropPhoto({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-center text-xs text-slate-500">Drag to reposition your photo</p>
+      <p className="text-center text-xs text-slate-400">Drag to reposition your photo</p>
 
       {/* Crop frame — 4:5 aspect ratio */}
       <div
@@ -208,11 +208,11 @@ function CropPhoto({
         {/* Rule-of-thirds grid overlay */}
         {imgSize.w > 0 && (
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute inset-x-0 border-t border-white/25" style={{ top: "33.33%" }} />
-            <div className="absolute inset-x-0 border-t border-white/25" style={{ top: "66.66%" }} />
-            <div className="absolute inset-y-0 border-l border-white/25" style={{ left: "33.33%" }} />
-            <div className="absolute inset-y-0 border-l border-white/25" style={{ left: "66.66%" }} />
-            <div className="absolute inset-0 border-2 border-white/40 rounded-2xl" />
+            <div className="absolute inset-x-0 border-t border-slate-900/25" style={{ top: "33.33%" }} />
+            <div className="absolute inset-x-0 border-t border-slate-900/25" style={{ top: "66.66%" }} />
+            <div className="absolute inset-y-0 border-l border-slate-900/25" style={{ left: "33.33%" }} />
+            <div className="absolute inset-y-0 border-l border-slate-900/25" style={{ left: "66.66%" }} />
+            <div className="absolute inset-0 border-2 border-slate-900/40 rounded-2xl" />
           </div>
         )}
       </div>
@@ -221,7 +221,7 @@ function CropPhoto({
         <button
           onClick={onCancel}
           disabled={applying}
-          className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-500 transition-all active:scale-[0.97] disabled:opacity-50"
+          className="flex-1 rounded-xl border border-slate-700 py-3 text-sm font-semibold text-slate-400 transition-all active:scale-[0.97] disabled:opacity-50"
         >
           Back
         </button>
@@ -306,7 +306,7 @@ function TrimVideo({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-center text-xs text-slate-500">Drag handles to trim your clip</p>
+      <p className="text-center text-xs text-slate-400">Drag handles to trim your clip</p>
 
       <div className="overflow-hidden rounded-2xl bg-black" style={{ aspectRatio: "4/5" }}>
         <video
@@ -319,10 +319,10 @@ function TrimVideo({
       </div>
 
       {duration > 0 ? (
-        <div className="space-y-2.5 rounded-2xl bg-slate-50 p-3.5">
+        <div className="space-y-2.5 rounded-2xl bg-slate-800 p-3.5">
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-400">{fmt(start)}</span>
-            <span className="font-semibold text-slate-700">{fmt(clipLen)} selected</span>
+            <span className="font-semibold text-slate-200">{fmt(clipLen)} selected</span>
             <span className="text-slate-400">{fmt(end)}</span>
           </div>
 
@@ -353,7 +353,7 @@ function TrimVideo({
           </button>
         </div>
       ) : (
-        <div className="flex h-16 items-center justify-center rounded-2xl bg-slate-50">
+        <div className="flex h-16 items-center justify-center rounded-2xl bg-slate-800">
           <span className="text-xs text-slate-400">Loading video…</span>
         </div>
       )}
@@ -361,7 +361,7 @@ function TrimVideo({
       <div className="flex gap-2">
         <button
           onClick={onCancel}
-          className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-500 transition-all active:scale-[0.97]"
+          className="flex-1 rounded-xl border border-slate-700 py-3 text-sm font-semibold text-slate-400 transition-all active:scale-[0.97]"
         >
           Back
         </button>
@@ -502,14 +502,14 @@ function UploadModal({
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60"
       onClick={(e) => e.target === e.currentTarget && !uploading && onClose()}
     >
-      <div className="animate-sheet-up mx-auto w-full max-w-md rounded-t-3xl bg-white">
+      <div className="animate-sheet-up mx-auto w-full max-w-md rounded-t-3xl bg-slate-900">
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="h-1 w-10 rounded-full bg-slate-200" />
+          <div className="h-1 w-10 rounded-full bg-slate-700" />
         </div>
 
         <div className="px-4 pb-8 pt-2">
-          <h2 className="mb-4 text-lg font-bold text-slate-900">
+          <h2 className="mb-4 text-lg font-bold text-white">
             {step === "pick" ? "Share a highlight" : step === "crop" ? "Crop photo" : step === "trim" ? "Trim video" : "Add a caption"}
           </h2>
 
@@ -520,7 +520,7 @@ function UploadModal({
                 onClick={() => libraryRef.current?.click()}
                 className="flex items-center gap-3 rounded-2xl border border-brand bg-brand p-4 text-left text-white transition active:scale-[0.98]"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-900/20">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
                     <rect x="3" y="3" width="18" height="18" rx="3" />
                     <circle cx="8.5" cy="8.5" r="1.8" />
@@ -532,27 +532,27 @@ function UploadModal({
 
               <button
                 onClick={() => cameraRef.current?.click()}
-                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-brand/30 hover:bg-brand/5 active:scale-[0.98]"
+                className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-900 p-4 text-left transition hover:border-brand/30 hover:bg-brand/5 active:scale-[0.98]"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                     <circle cx="12" cy="13" r="4" />
                   </svg>
                 </span>
-                <span className="text-[15px] font-bold text-slate-900">Take Photo or Video</span>
+                <span className="text-[15px] font-bold text-white">Take Photo or Video</span>
               </button>
 
               <button
                 onClick={() => filesRef.current?.click()}
-                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-brand/30 hover:bg-brand/5 active:scale-[0.98]"
+                className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-900 p-4 text-left transition hover:border-brand/30 hover:bg-brand/5 active:scale-[0.98]"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
                     <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9L9.6 3.9A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z" />
                   </svg>
                 </span>
-                <span className="text-[15px] font-bold text-slate-900">Browse Files</span>
+                <span className="text-[15px] font-bold text-white">Browse Files</span>
               </button>
             </div>
           )}
@@ -610,18 +610,18 @@ function UploadModal({
                 onChange={(e) => setCaption(e.target.value.slice(0, 300))}
                 placeholder="Add a caption…"
                 rows={2}
-                className="mt-3 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+                className="mt-3 w-full resize-none rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
               />
               <p className="mt-0.5 text-right text-xs text-slate-400">{caption.length}/300</p>
 
               {/* Progress bar */}
               {uploading && (
                 <div className="mt-3">
-                  <div className="mb-1 flex justify-between text-xs text-slate-500">
+                  <div className="mb-1 flex justify-between text-xs text-slate-400">
                     <span>Uploading…</span>
                     <span>{progress}%</span>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
                     <div
                       className="h-full rounded-full bg-brand transition-all duration-300"
                       style={{ width: `${progress}%` }}
@@ -638,7 +638,7 @@ function UploadModal({
                 <button
                   onClick={onClose}
                   disabled={uploading}
-                  className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 transition-all active:scale-[0.97] disabled:opacity-50"
+                  className="flex-1 rounded-xl border border-slate-700 py-3 text-sm font-semibold text-slate-300 transition-all active:scale-[0.97] disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -761,14 +761,14 @@ function CommentSection({
             <li key={c.id} className="flex items-start gap-2">
               <Link
                 to={`/user/${c.userId}`}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-600 transition active:scale-95"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[11px] font-bold text-slate-300 transition active:scale-95"
                 aria-label={`View ${c.userName}'s profile`}
               >
                 {c.userName.charAt(0).toUpperCase()}
               </Link>
               <div className="min-w-0 flex-1">
-                <p className="text-sm leading-snug text-slate-700">
-                  <Link to={`/user/${c.userId}`} className="font-semibold text-slate-900 hover:underline">{c.userName}</Link>{" "}
+                <p className="text-sm leading-snug text-slate-200">
+                  <Link to={`/user/${c.userId}`} className="font-semibold text-white hover:underline">{c.userName}</Link>{" "}
                   {c.body}
                 </p>
                 <p className="mt-0.5 text-[11px] text-slate-400">{relativeTime(c.createdAt)}</p>
@@ -802,7 +802,7 @@ function CommentSection({
           onChange={(e) => setText(e.target.value.slice(0, 500))}
           onKeyDown={(e) => { if (e.key === "Enter") post(); }}
           placeholder="Add a comment…"
-          className="flex-1 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm outline-none focus:border-slate-400"
+          className="flex-1 rounded-full border border-slate-700 bg-slate-900 px-3.5 py-2 text-sm outline-none focus:border-slate-400"
         />
         <button
           onClick={post}
@@ -837,7 +837,7 @@ function HighlightCard({
   const [commentCount, setCommentCount] = useState(hl.commentsCount);
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+    <article className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-sm">
       {/* Media — square keeps the feed compact and uniform */}
       <div className="relative overflow-hidden bg-black" style={{ aspectRatio: "1/1" }}>
         {hl.mediaType === "photo" ? (
@@ -871,7 +871,7 @@ function HighlightCard({
           >
             {hl.userName.charAt(0).toUpperCase()}
           </div>
-          <span className="truncate text-sm font-semibold text-slate-900 hover:underline">{hl.userName}</span>
+          <span className="truncate text-sm font-semibold text-white hover:underline">{hl.userName}</span>
         </Link>
         <span className="ml-auto shrink-0 text-xs text-slate-400">{relativeTime(hl.createdAt)}</span>
       </div>
@@ -879,7 +879,7 @@ function HighlightCard({
       {/* Caption — only shown when present */}
       {hl.caption && (
         <div className="px-3 pb-2 pt-1">
-          <p className="text-sm leading-snug text-slate-700">{hl.caption}</p>
+          <p className="text-sm leading-snug text-slate-200">{hl.caption}</p>
         </div>
       )}
 
@@ -912,7 +912,7 @@ function HighlightCard({
           <div className="ml-auto">
             {confirmDelete ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500">Delete?</span>
+                <span className="text-xs text-slate-400">Delete?</span>
                 <button onClick={() => onDelete(hl.id)} className="text-xs font-semibold text-rose-500 active:scale-90">
                   Yes
                 </button>
@@ -1023,8 +1023,8 @@ export default function Highlights() {
   return (
     <div>
       <div className="mb-4">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Highlights</h1>
-        <p className="text-sm text-slate-500">Sports clips from your community.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-white">Highlights</h1>
+        <p className="text-sm text-slate-400">Sports clips from your community.</p>
       </div>
 
       {loading ? (
@@ -1040,12 +1040,12 @@ export default function Highlights() {
           </button>
         </div>
       ) : highlights.length === 0 ? (
-        <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
+        <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-700 bg-slate-800 py-16 text-center">
           <IconChip size="lg" className="mb-2">
             <ClapperIcon className="h-6 w-6" />
           </IconChip>
-          <p className="font-semibold text-slate-700">No highlights yet</p>
-          <p className="mt-1 text-sm text-slate-500">Be the first to share a sports clip!</p>
+          <p className="font-semibold text-slate-200">No highlights yet</p>
+          <p className="mt-1 text-sm text-slate-400">Be the first to share a sports clip!</p>
           <button
             onClick={() => setShowUpload(true)}
             className="mt-4 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white"
