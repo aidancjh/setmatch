@@ -12,7 +12,7 @@ export default function Privacy() {
       <Link to="/" className="mb-6 flex items-center gap-2">
         <VolleyballIcon className="h-6 w-6 text-brand" />
         <span className="text-lg font-extrabold tracking-tight text-white">
-          Coterie
+          Vybe
         </span>
       </Link>
 
@@ -24,7 +24,7 @@ export default function Privacy() {
           <h2 className="mb-1 font-semibold text-white">What we collect</h2>
           <p>
             When you create an account we store your name, email address, and a
-            securely hashed password. As you use Coterie we store the games you
+            securely hashed password. As you use Vybe we store the games you
             post or join, your skill level and home area, messages you post in
             game chats, any highlight photos you upload, and notifications
             generated for you.
@@ -55,7 +55,7 @@ export default function Privacy() {
           <p>
             Data is stored in a managed PostgreSQL database. We take reasonable
             measures to protect it, including hashed passwords and encrypted
-            connections. We rely on a few service providers to run Coterie —
+            connections. We rely on a few service providers to run Vybe —
             cloud hosting, an image host for uploaded photos, an email provider
             for account messages, and error-monitoring to keep the app stable —
             and we do not sell your data or use it for advertising.
@@ -91,7 +91,7 @@ export default function Privacy() {
         to="/"
         className="mt-8 inline-block text-sm font-semibold text-brand underline"
       >
-        ← Back to Coterie
+        ← Back to Vybe
       </Link>
     </div>
   );

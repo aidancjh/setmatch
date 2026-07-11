@@ -1,4 +1,4 @@
-# Coterie — Store listing (paste-ready)
+# Vybe — Store listing (paste-ready)
 
 Everything you copy into Google Play Console and App Store Connect. Copy verbatim;
 tweak voice to taste. Character limits are noted so nothing gets truncated.
@@ -9,7 +9,7 @@ tweak voice to taste. Character limits are noted so nothing gets truncated.
 
 | Field | Value |
 |-------|-------|
-| App name | **Coterie** |
+| App name | **Vybe** |
 | Bundle / App ID | `com.coterie.app` |
 | Category | **Sports** (secondary: Social) |
 | Content rating | Everyone / 4+ |
@@ -24,7 +24,7 @@ tweak voice to taste. Character limits are noted so nothing gets truncated.
 
 **App title** (≤30 chars) — *26*
 ```
-Coterie: Pickup Volleyball
+Vybe: Pickup Volleyball
 ```
 
 **Short description** (≤80 chars) — *73*
@@ -34,14 +34,14 @@ Find pickup volleyball games near you, fill your roster, never play short.
 
 **Full description** (≤4000 chars)
 ```
-Short a player? Can't find a game? Coterie is the easiest way to organise and
+Short a player? Can't find a game? Vybe is the easiest way to organise and
 join pickup volleyball.
 
 Post a game, set how many spots you need, and let players claim the open slots.
 Browse games happening near you, join with one tap, and coordinate everything in
 one place — no more chasing people across group chats.
 
-WHY COTERIE
+WHY VYBE
 • Never play short — see exactly how many slots are open before you commit.
 • One place for everything — the roster, the chat, the time, the location.
 • Find your level — games are tagged Beginner, Intermediate, Advanced, or All
@@ -62,9 +62,9 @@ WHAT YOU CAN DO
 HOW IT WORKS
 1. Create your account and set your skill level.
 2. Browse games near you — or post your own and set the slots.
-3. Join, chat, play. Coterie keeps your group sorted.
+3. Join, chat, play. Vybe keeps your group sorted.
 
-Coterie is free to use. Find your players, fill your games.
+Vybe is free to use. Find your players, fill your games.
 ```
 
 ---
@@ -73,7 +73,7 @@ Coterie is free to use. Find your players, fill your games.
 
 **App name** (≤30 chars) — *26*
 ```
-Coterie: Pickup Volleyball
+Vybe: Pickup Volleyball
 ```
 
 **Subtitle** (≤30 chars) — *29*

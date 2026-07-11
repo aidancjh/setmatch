@@ -1,6 +1,6 @@
-# Coterie — find your players, fill your games
+# Vybe — find your players, fill your games
 
-Coterie is a pickup-volleyball app: post a game, set how many slots you need, and
+Vybe is a pickup-volleyball app: post a game, set how many slots you need, and
 let players find and claim the open spots. Browse games, join with one tap, chat
 per game, get in-app notifications, follow player profiles, and add games to your
 calendar.
@@ -20,7 +20,7 @@ npm install
 npm run dev                # API :4000 + web :5173
 ```
 (On this machine Node is at `C:\Program Files\nodejs`; if `npm` isn't found run
-`$env:Path = "$env:ProgramFiles\nodejs;$env:Path"`, or double-click `Start Coterie.bat`.)
+`$env:Path = "$env:ProgramFiles\nodejs;$env:Path"`, or double-click `Start Vybe.bat`.)
 
 Demo accounts: any `*@demo.test` with password `volleyball`.
 

@@ -1,4 +1,4 @@
-# Coterie — App Store & Google Play distribution
+# Vybe — App Store & Google Play distribution
 
 **Honest status:** the actual *publishing* steps can't be fully automated — they
 require **your paid developer accounts**, and iOS specifically requires a **Mac**.
@@ -22,7 +22,7 @@ talks to the live API over HTTPS, so it works as-is inside the wrapper.
 ```bash
 npm i -D @capacitor/cli
 npm i @capacitor/core @capacitor/android @capacitor/ios
-npx cap init Coterie com.coterie.app --web-dir=dist
+npx cap init Vybe com.coterie.app --web-dir=dist
 npm run build && npx cap add android && npx cap add ios
 ```
 Each time you change the app: `npm run build && npx cap sync`.
@@ -71,7 +71,7 @@ Each time you change the app: `npm run build && npx cap sync`.
 - [ ] **Keystore** (Android) / signing certs (iOS) — create & back up
 
 ### Draft store description
-> **Coterie — find your players, fill your games.**
+> **Vybe — find your players, fill your games.**
 > Never play short again. Post a pickup volleyball game, set how many slots you
 > need, and let players claim the open spots. Browse games near you, join with one
 > tap, chat with your group, get notified when spots fill, and add games to your

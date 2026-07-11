@@ -1,6 +1,6 @@
-# Coterie → App Store: phased Claude Code prompts
+# Vybe → App Store: phased Claude Code prompts
 
-This is your step-by-step kit for getting **Coterie** from "live web app" to
+This is your step-by-step kit for getting **Vybe** from "live web app" to
 **submitted on the Apple App Store and Google Play**. The app is already
 feature-complete and runs as a polished PWA — the work below is hardening,
 testing, and wrapping the existing web build with **Capacitor** (no rewrite).
@@ -36,7 +36,7 @@ You're on **Windows**, so Android (Phase 5) is fully local. iOS (Phase 6) needs 
 
 ## Phase 0 — Baseline verification & issue inventory
 
-> You are working in the Coterie repo (React 18 + TypeScript + Vite frontend in
+> You are working in the Vybe repo (React 18 + TypeScript + Vite frontend in
 > `src/`, Express + PostgreSQL backend in `server/`, deployed on Railway). Read
 > `CLAUDE.md` first for architecture and conventions.
 >
@@ -154,7 +154,7 @@ You're on **Windows**, so Android (Phase 5) is fully local. iOS (Phase 6) needs 
 >    the screens show realistic data (run `POST /api/admin/seed-past-data` as an
 >    admin first if more content helps).
 > 2. **Play feature graphic:** generate a 1024×500 PNG in the brand coral
->    (`#f4634e`) with the Coterie name/tagline. Save to `store-assets/`.
+>    (`#f4634e`) with the Vybe name/tagline. Save to `store-assets/`.
 > 3. **Listing copy:** finalize a short description (≤80 chars), a full description,
 >    keywords, and a support URL/email. Start from the draft in `STORE.md`. Save to
 >    `store-assets/listing.md`.
@@ -182,7 +182,7 @@ You're on **Windows**, so Android (Phase 5) is fully local. iOS (Phase 6) needs 
 > me (Play account, keystore, uploads).
 >
 > 1. Install: `npm i -D @capacitor/cli` and `npm i @capacitor/core @capacitor/android`.
-> 2. Init: `npx cap init Coterie com.coterie.app --web-dir=dist`. Commit the
+> 2. Init: `npx cap init Vybe com.coterie.app --web-dir=dist`. Commit the
 >    generated `capacitor.config.ts`.
 > 3. **Bundled vs. live URL:** default to **bundled assets** (`npm run build` then
 >    `npx cap sync`) — it's the safer choice for store review per `STORE.md`. Add a

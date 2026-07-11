@@ -11,12 +11,12 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
-        name: "Coterie — Find your players",
-        short_name: "Coterie",
+        name: "Vybe — Find your players",
+        short_name: "Vybe",
         description:
-          "Coterie helps you find players and fill your volleyball games. Post a game, set your slots, and fill the open spots.",
-        theme_color: "#0f172a",
-        background_color: "#0f172a",
+          "Vybe helps you find players and fill your volleyball games. Post a game, set your slots, and fill the open spots.",
+        theme_color: "#000000",
+        background_color: "#000000",
         display: "standalone",
         orientation: "portrait",
         start_url: "/",

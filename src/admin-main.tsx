@@ -28,7 +28,7 @@ function AdminLoginForm() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-      <h1 className="text-xl font-bold text-slate-900">Coterie Admin</h1>
+      <h1 className="text-xl font-bold text-slate-900">Vybe Admin</h1>
       <p className="max-w-xs text-sm text-slate-500">Enter the admin password to continue.</p>
       <form onSubmit={handleSubmit} className="flex w-full max-w-xs flex-col gap-3">
         <input

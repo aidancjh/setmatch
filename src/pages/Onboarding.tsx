@@ -84,7 +84,7 @@ export default function Onboarding() {
         showGender,
       });
     } catch { /* best-effort */ }
-    localStorage.setItem("coterie.welcomed", "1");
+    localStorage.setItem("vybe.welcomed", "1");
     navigate("/", { replace: true });
   }
 
@@ -175,7 +175,7 @@ export default function Onboarding() {
       <div className="mb-7 flex flex-col items-center text-center">
         <VolleyballIcon className="h-10 w-10 text-brand" />
         <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-white">
-          Welcome to Coterie!
+          Welcome to Vybe!
         </h1>
         <p className="mt-1.5 text-sm text-slate-400">
           What's your volleyball level? We'll use this to show you the right games.
@@ -235,7 +235,7 @@ export default function Onboarding() {
           {selected ? `I'm ${selected} — continue` : "Pick your level to continue"}
         </button>
         <button
-          onClick={() => { localStorage.setItem("coterie.welcomed", "1"); navigate("/", { replace: true }); }}
+          onClick={() => { localStorage.setItem("vybe.welcomed", "1"); navigate("/", { replace: true }); }}
           className="mt-3 w-full text-center text-sm text-slate-400 hover:text-slate-300"
         >
           Skip for now

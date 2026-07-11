@@ -1,14 +1,14 @@
-# What the biggest social/activity apps did — and what Coterie should copy
+# What the biggest social/activity apps did — and what Vybe should copy
 
 Research date: 2026-06-30. Reference for future feature work (features themselves
 are deferred; this doc captures the "how and what they did" so we can adapt the
 applicable parts later). Sources listed at the bottom.
 
 The four most relevant giants for a social, location-based, recurring-activity
-app like Coterie: **Strava** (social fitness), **Meetup** (organized real-world
+app like Vybe: **Strava** (social fitness), **Meetup** (organized real-world
 events), **Duolingo** (habit/retention via gamification), and the sports-org
 incumbents (**TeamSnap/Spond**). Below: what each did, *why* it worked, and the
-concrete, replicable tactic for Coterie.
+concrete, replicable tactic for Vybe.
 
 ---
 
@@ -33,8 +33,8 @@ concrete, replicable tactic for Coterie.
 problem; the social layer creates the retention + viral flywheel. Positive-only
 social reactions removed the main reason social feeds turn toxic.
 
-**Copy into Coterie**
-- Coterie already has the "tool" (find/host games) and reviews. The missing
+**Copy into Vybe**
+- Vybe already has the "tool" (find/host games) and reviews. The missing
   flywheel pieces: **Kudos-style positive-only reactions** on highlights/games,
   **Clubs** (a real volleyball crew gets a persistent home + recurring games),
   and **leaderboards/segments analog** (most games played at a venue, most
@@ -65,8 +65,8 @@ The organizer is the high-leverage user. Make hosting easy and hosts create the
 supply that everyone else consumes. Social proof (reviews) + recommendations
 convert browsers into RSVPs.
 
-**Copy into Coterie**
-- Coterie has join + waitlist + host reviews already; Phase 4 adds host roster
+**Copy into Vybe**
+- Vybe has join + waitlist + host reviews already; Phase 4 adds host roster
   management + recurring series + reminders — this *is* the Meetup organizer
   playbook. Next: **real-time check-in / attendance**, **recommended games**
   (rank by location + skill + timing), and **custom RSVP questions** (e.g.
@@ -99,8 +99,8 @@ Retention compounds. Each return makes the next return more likely. Gamification
 works only when it reinforces the core behavior (copying a mechanic blindly fails
 — "why does this work there, will it translate?").
 
-**Copy into Coterie**
-- Core behavior for Coterie = **play a game** (and secondarily, host one).
+**Copy into Vybe**
+- Core behavior for Vybe = **play a game** (and secondarily, host one).
 - **Streaks**: "weeks in a row you played." Forgiveness: a freeze if you had no
   game available near you.
 - **Notifications done right**: Phase 4 reminders are the foundation; add a
@@ -120,8 +120,8 @@ Roster management, availability tracking ("who's coming"), scheduling, group +
 push + SMS messaging, lineups, photo sharing, stats, and payment/invoicing — all
 in one place. 24M+ users.
 
-**Copy into Coterie**
-Coterie + Phase 4 already cover roster, scheduling, messaging, reminders. The
+**Copy into Vybe**
+Vybe + Phase 4 already cover roster, scheduling, messaging, reminders. The
 incumbent gaps to consider later: **availability tracking** (a recurring crew
 marks who's in for the next session before a game is even created) and the
 deliberately-deferred **payments** (court fees split among players).
@@ -143,7 +143,7 @@ deliberately-deferred **payments** (court fees split among players).
 
 ---
 
-## Recommended sequencing for Coterie (when features resume)
+## Recommended sequencing for Vybe (when features resume)
 
 Cheapest-to-build, highest-retention first:
 1. **Gamification/retention layer** — streaks, games-played stats, badges,

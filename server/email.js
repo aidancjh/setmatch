@@ -6,8 +6,8 @@ import * as Sentry from "@sentry/node";
 // Sender address for transactional email. Defaults to Resend's shared sandbox
 // domain (works for testing but is spam-prone and rate-limited). Once you've
 // verified your own domain in Resend, set MAIL_FROM, e.g.
-//   MAIL_FROM="Coterie <hello@coterie.com.de>"
-export const MAIL_FROM = process.env.MAIL_FROM || "Coterie <onboarding@resend.dev>";
+//   MAIL_FROM="Vybe <hello@coterie.com.de>"
+export const MAIL_FROM = process.env.MAIL_FROM || "Vybe <onboarding@resend.dev>";
 
 export function esc(s) {
   return String(s)
@@ -48,12 +48,12 @@ export async function sendPasswordResetEmail(user, resetLink) {
     body: JSON.stringify({
       from: MAIL_FROM,
       to: [user.email],
-      subject: "Reset your Coterie password",
+      subject: "Reset your Vybe password",
       html: `<p>Hi ${esc(user.name)},</p>
              <p>You requested a password reset.</p>
              <p><a href="${resetLink}" style="background:#E8734A;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;font-family:sans-serif;">Reset password</a></p>
              <p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>
-             <p>— The Coterie team</p>`,
+             <p>— The Vybe team</p>`,
     }),
   });
 }
@@ -102,7 +102,7 @@ export function sendJoinConfirmationEmail({ user, game, appUrl, calLink }) {
     `<div style="padding:0 32px 24px;">`,
     `<a href="${appUrl}/game/${game.id}" style="display:block;border:1.5px solid #e5e7eb;color:#374151;text-decoration:none;text-align:center;padding:13px;border-radius:12px;font-size:14px;font-weight:500;">View Game Details</a>`,
     `</div>`,
-    `<p style="text-align:center;padding:0 0 20px;margin:0;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#d1d5db;">COTERIE</p>`,
+    `<p style="text-align:center;padding:0 0 20px;margin:0;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#d1d5db;">VYBE</p>`,
     `</div></body></html>`,
   ].join("");
   console.log(`[email] sending join confirmation to ${user.email} for "${game.title}"`);

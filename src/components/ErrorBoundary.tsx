@@ -12,7 +12,7 @@ import { VolleyballIcon } from "./icons";
  * cooldown in sessionStorage stops a broken deploy from reload-looping.
  */
 
-const RELOAD_KEY = "coterie:last-chunk-reload";
+const RELOAD_KEY = "vybe:last-chunk-reload";
 const RELOAD_COOLDOWN_MS = 10_000;
 
 function isChunkLoadError(error: unknown): boolean {
@@ -89,7 +89,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           onClick={this.handleReload}
           className="rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white transition active:scale-95"
         >
-          Reload Coterie
+          Reload Vybe
         </button>
       </div>
     );

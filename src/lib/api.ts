@@ -1,5 +1,5 @@
 /**
- * Tiny fetch wrapper for the Coterie API.
+ * Tiny fetch wrapper for the Vybe API.
  * - Prefixes /api (Vite proxies this to the Express server in dev).
  * - Attaches the JWT from localStorage when present.
  * - Times out slow requests, and retries safe (GET) requests on transient

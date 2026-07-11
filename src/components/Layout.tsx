@@ -158,7 +158,7 @@ export default function Layout() {
           We'll be right back
         </h1>
         <p className="text-sm text-slate-400">
-          Coterie is down for a quick bit of maintenance. Please check back shortly —
+          Vybe is down for a quick bit of maintenance. Please check back shortly —
           thanks for your patience!
         </p>
       </div>
@@ -189,7 +189,7 @@ export default function Layout() {
         >
           <VolleyballIcon className="h-6 w-6 text-brand" />
           <span className="text-lg font-extrabold tracking-tight text-white">
-            Coterie
+            Vybe
           </span>
         </button>
 

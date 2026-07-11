@@ -133,7 +133,7 @@ export default function Auth() {
       <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-slate-900 px-6 py-12">
         <div className="mb-8 flex flex-col items-center text-center">
           <VolleyballIcon className="h-12 w-12 text-brand" />
-          <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Coterie</span>
+          <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Vybe</span>
         </div>
         <h1 className="mb-1 text-xl font-bold text-white">Set a new password</h1>
         <p className="mb-5 text-sm text-slate-400">Choose something you haven't used before.</p>
@@ -167,7 +167,7 @@ export default function Auth() {
         <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-slate-900 px-6 py-12">
           <div className="mb-8 flex flex-col items-center text-center">
             <VolleyballIcon className="h-12 w-12 text-brand" />
-            <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Coterie</span>
+            <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Vybe</span>
           </div>
           <div className="flex flex-col items-center rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center shadow-sm">
             <IconChip size="lg" className="mb-2">
@@ -192,7 +192,7 @@ export default function Auth() {
       <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-slate-900 px-6 py-12">
         <div className="mb-8 flex flex-col items-center text-center">
           <VolleyballIcon className="h-12 w-12 text-brand" />
-          <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Coterie</span>
+          <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Vybe</span>
         </div>
         <h1 className="mb-1 text-xl font-bold text-white">Forgot your password?</h1>
         <p className="mb-5 text-sm text-slate-400">Enter your email and we'll send a reset link.</p>
@@ -231,7 +231,7 @@ export default function Auth() {
       {/* Brand */}
       <div className="mb-8 flex flex-col items-center text-center">
         <VolleyballIcon className="h-12 w-12 text-brand" />
-        <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Coterie</span>
+        <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Vybe</span>
         <span className="mt-1 text-sm text-slate-400">Find your players. Fill your games.</span>
       </div>
 
@@ -338,7 +338,7 @@ export default function Auth() {
       )}
 
       <p className="mt-4 text-center text-sm text-slate-400">
-        {mode === "signup" ? "Already have an account? " : "New to Coterie? "}
+        {mode === "signup" ? "Already have an account? " : "New to Vybe? "}
         <button
           onClick={() => {
             setMode(mode === "signup" ? "login" : "signup");

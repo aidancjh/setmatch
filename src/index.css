@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Brand theme — Coterie. Sapphire Sky blue is the single signature color, used
+/* Brand theme — Vybe. Sapphire Sky blue is the single signature color, used
    for the logo, primary actions, active states, and links. Change these two
    values to re-skin the whole app. */
 @theme {
@@ -31,7 +31,7 @@ body {
 /* Consumer app dark theme. The class lives on <body> in index.html only —
    admin.html omits it, so the shared stylesheet keeps the admin app light. */
 body.app-dark {
-  background: #020617;
+  background: #000000;
   color: #f1f5f9;
   color-scheme: dark;
 }

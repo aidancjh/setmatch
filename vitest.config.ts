@@ -25,7 +25,7 @@ export default defineConfig({
       // throwaway Postgres and set RUN_DB_TESTS=1.
       DATABASE_URL:
         process.env.DATABASE_URL ||
-        "postgresql://test:test@127.0.0.1:5432/coterie_test_unused",
+        "postgresql://test:test@127.0.0.1:5432/vybe_test_unused",
       APP_URL: "http://localhost:5173",
     },
   },

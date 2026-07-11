@@ -54,7 +54,7 @@ const og = Buffer.from(`
       <path d="M 130 75 C 40 45, -75 -25, -130 -75"/>
     </g>
   </g>
-  <text x="370" y="290" fill="#ffffff" font-family="Arial, sans-serif" font-size="92" font-weight="bold">Coterie</text>
+  <text x="370" y="290" fill="#ffffff" font-family="Arial, sans-serif" font-size="92" font-weight="bold">Vybe</text>
   <text x="372" y="358" fill="#f4634e" font-family="Arial, sans-serif" font-size="38">Find your players. Fill your games.</text>
 </svg>`);
 await sharp(og).png().toFile(join(pub, "og-image.png"));

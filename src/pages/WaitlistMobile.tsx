@@ -27,7 +27,7 @@ const PLAYERS = [
 const FAQS = [
   {
     q: "Can I join if I'm a total beginner?",
-    a: "Absolutely. Coterie is for players of every standard — even if you've never touched a volleyball before. We want to give everyone a chance to get on court and improve.",
+    a: "Absolutely. Vybe is for players of every standard — even if you've never touched a volleyball before. We want to give everyone a chance to get on court and improve.",
   },
   {
     q: "Can I host my own game, or only join others?",
@@ -35,7 +35,7 @@ const FAQS = [
   },
   {
     q: "Is there an app, or just this website?",
-    a: "Coterie is a mobile app — this website is only for the waitlist. Join now and we'll let you know the moment the app is ready.",
+    a: "Vybe is a mobile app — this website is only for the waitlist. Join now and we'll let you know the moment the app is ready.",
   },
 ];
 
@@ -280,7 +280,7 @@ export default function WaitlistMobile() {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div className="wl-logo-dot" />
               <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", color: "#FFF" }}>
-                coterie
+                vybe
               </span>
             </div>
             <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", color: "#7A8899" }}>

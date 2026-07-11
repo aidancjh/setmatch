@@ -475,7 +475,7 @@ Expected: FAIL — `Cannot find module '../server/adminAuth.js'`
 import jwt from "jsonwebtoken";
 import { findUserById } from "./repo.js";
 
-const DEV_SECRET = "coterie-admin-dev-secret-change-me";
+const DEV_SECRET = "vybe-admin-dev-secret-change-me";
 const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || DEV_SECRET;
 
 if (process.env.NODE_ENV === "production" && ADMIN_JWT_SECRET === DEV_SECRET) {
@@ -1182,7 +1182,7 @@ async function start() {
   // owns schema migrations. This service only ever reads/writes an
   // already-initialized database.
   app.listen(PORT, () => {
-    console.log(`[admin-api] Coterie Admin listening on http://localhost:${PORT}`);
+    console.log(`[admin-api] Vybe Admin listening on http://localhost:${PORT}`);
   });
 }
 
@@ -1252,7 +1252,7 @@ git commit -m "feat: standalone admin Express service (own auth, own OAuth callb
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Coterie Admin</title>
+    <title>Vybe Admin</title>
   </head>
   <body>
     <div id="root"></div>
@@ -1598,7 +1598,7 @@ function AdminGate() {
   if (!user) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-        <h1 className="text-xl font-bold text-slate-900">Coterie Admin</h1>
+        <h1 className="text-xl font-bold text-slate-900">Vybe Admin</h1>
         <p className="max-w-xs text-sm text-slate-500">Sign in with your admin Google account.</p>
         <a
           href="/api/auth/google"
@@ -1938,5 +1938,5 @@ These cannot be done by an agent — no Railway/DNS/Google Cloud/PostHog dashboa
 2. Set env vars on that service: `DATABASE_URL` (copy from the main service), `DB_POOL_MAX=5`, `ADMIN_EMAILS` (copy), `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` (copy), `ADMIN_JWT_SECRET` (freshly generated, `openssl rand -hex 32`), `APP_URL=https://admin.coterie.com.de`, `POSTHOG_PROJECT_ID=494538`, `POSTHOG_PERSONAL_API_KEY` (the key created earlier).
 3. Add the custom domain `admin.coterie.com.de` to that service in Railway; add the CNAME Railway gives you to wherever coterie.com.de's DNS is managed.
 4. In Google Cloud Console, add `https://admin.coterie.com.de/api/auth/google/callback` to the existing OAuth client's authorized redirect URIs.
-5. On the existing "coterie" (consumer) Railway service, add `VITE_POSTHOG_KEY` (the public Project token) as a build-time env var, then redeploy so the Waitlist page picks it up.
+5. On the existing "vybe" (consumer) Railway service, add `VITE_POSTHOG_KEY` (the public Project token) as a build-time env var, then redeploy so the Waitlist page picks it up.
 6. Visit `admin.coterie.com.de`, sign in with the admin Google account, confirm the dashboard and the new Funnel tab load real data.

@@ -163,7 +163,7 @@ export default function GameForm({
             ))}
           </div>
           <p className="mt-1.5 text-[11px] text-slate-400">
-            Skill grades on Coterie are based on men's competition standards.
+            Skill grades on Vybe are based on men's competition standards.
           </p>
         </div>
 

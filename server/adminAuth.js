@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { findUserById } from "./repo.js";
 
-const DEV_SECRET = "coterie-admin-dev-secret-change-me";
+const DEV_SECRET = "vybe-admin-dev-secret-change-me";
 const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || DEV_SECRET;
 
 if (process.env.NODE_ENV === "production" && ADMIN_JWT_SECRET === DEV_SECRET) {

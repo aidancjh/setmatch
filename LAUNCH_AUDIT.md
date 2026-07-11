@@ -1,4 +1,4 @@
-# Launch audit — Coterie (Phase 0)
+# Launch audit — Vybe (Phase 0)
 
 Date: 2026-06-22 · Branch: `app-store-prep`
 

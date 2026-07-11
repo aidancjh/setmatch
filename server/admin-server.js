@@ -102,7 +102,7 @@ async function start() {
   // owns schema migrations. This service only ever reads/writes an
   // already-initialized database.
   app.listen(PORT, () => {
-    console.log(`[admin-api] Coterie Admin listening on http://localhost:${PORT}`);
+    console.log(`[admin-api] Vybe Admin listening on http://localhost:${PORT}`);
   });
 }
 

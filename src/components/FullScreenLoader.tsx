@@ -59,7 +59,7 @@ export default function FullScreenLoader() {
           </div>
         </div>
       </div>
-      <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand">Coterie</p>
+      <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand">Vybe</p>
     </div>
   );
 }

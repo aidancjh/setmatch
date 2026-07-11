@@ -1,6 +1,6 @@
-# Coterie — Operations Runbook
+# Vybe — Operations Runbook
 
-Practical guide for running Coterie in production (Railway + PostgreSQL).
+Practical guide for running Vybe in production (Railway + PostgreSQL).
 
 ---
 
@@ -66,7 +66,7 @@ Railway Postgres includes automated backups on paid plans — check
 found in Postgres → Variables → `DATABASE_PUBLIC_URL`):
 
 ```bash
-pg_dump "postgresql://USER:PASS@HOST:PORT/DB" > coterie-backup-YYYYMMDD.sql
+pg_dump "postgresql://USER:PASS@HOST:PORT/DB" > vybe-backup-YYYYMMDD.sql
 ```
 
 Run this before any risky change. Store the file somewhere safe (not the repo).
@@ -77,7 +77,7 @@ Run this before any risky change. Store the file somewhere safe (not the repo).
 2. Restore the dump:
 
    ```bash
-   psql "postgresql://USER:PASS@HOST:PORT/DB" < coterie-backup-YYYYMMDD.sql
+   psql "postgresql://USER:PASS@HOST:PORT/DB" < vybe-backup-YYYYMMDD.sql
    ```
 
 3. Point the app's `DATABASE_URL` at the restored database and redeploy.

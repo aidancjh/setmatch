@@ -1,4 +1,4 @@
-# Sharing Coterie with testers
+# Sharing Vybe with testers
 
 The app is live at **https://coterie.com.de** — no install, login, or app-store approval needed. Just send the link.
 
@@ -6,7 +6,7 @@ The app is live at **https://coterie.com.de** — no install, login, or app-stor
 
 ## Message to copy-paste to testers
 
-> Hey! I'd love your help testing my volleyball app, **Coterie** 🏐
+> Hey! I'd love your help testing my volleyball app, **Vybe** 🏐
 >
 > 👉 **https://coterie.com.de**
 >
@@ -41,4 +41,4 @@ The app is live at **https://coterie.com.de** — no install, login, or app-stor
 
 ## When you're ready for the real app stores
 
-This link is for testing only. Getting Coterie into the Apple App Store / Google Play needs the native wrapper steps in **APP_STORE_PROMPTS.md** (Phases 4–6).
+This link is for testing only. Getting Vybe into the Apple App Store / Google Play needs the native wrapper steps in **APP_STORE_PROMPTS.md** (Phases 4–6).
