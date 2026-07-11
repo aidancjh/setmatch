@@ -8,7 +8,7 @@ import { VolleyballIcon } from "../components/icons";
  */
 export default function Privacy() {
   return (
-    <div className="mx-auto max-w-md bg-slate-900 px-6 py-10">
+    <div className="mx-auto max-w-md bg-black px-6 py-10">
       <Link to="/" className="mb-6 flex items-center gap-2">
         <VolleyballIcon className="h-6 w-6 text-brand" />
         <span className="text-lg font-extrabold tracking-tight text-white">

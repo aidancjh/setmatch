@@ -90,7 +90,7 @@ export default function Onboarding() {
 
   if (step === 2) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-900 px-5 py-10">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-black px-5 py-10">
         <div className="mb-7 flex flex-col items-center text-center">
           <VolleyballIcon className="h-10 w-10 text-brand" />
           <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-white">
@@ -170,7 +170,7 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-900 px-5 py-10">
+    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-black px-5 py-10">
       {/* Header */}
       <div className="mb-7 flex flex-col items-center text-center">
         <VolleyballIcon className="h-10 w-10 text-brand" />

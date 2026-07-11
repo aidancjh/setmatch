@@ -174,12 +174,12 @@ export default function Layout() {
 
   return (
     <div
-      className="mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-slate-900 shadow-sm"
+      className="mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-black shadow-sm"
       style={{ height: "100dvh" }}
     >
       {/* Top bar — logo left, notifications right */}
       <header
-        className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-slate-900/90 px-4 py-3 backdrop-blur"
+        className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-black/90 px-4 py-3 backdrop-blur"
         style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
       >
         <button
@@ -255,7 +255,7 @@ export default function Layout() {
           positioning mis-renders on short pages in iOS standalone PWAs). */}
       <nav
         aria-label="Main navigation"
-        className="z-10 shrink-0 border-t border-slate-800 bg-slate-900/95 backdrop-blur"
+        className="z-10 shrink-0 border-t border-slate-800 bg-black/95 backdrop-blur"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="relative flex items-end">

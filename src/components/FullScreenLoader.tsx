@@ -43,7 +43,7 @@ function VolleyballBall() {
 
 export default function FullScreenLoader() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-7 bg-slate-900">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-7 bg-black">
       <div className="relative" style={{ width: 84, height: 140 }}>
         {/* shadow is painted first so the ball sits on top of it at rest */}
         <div

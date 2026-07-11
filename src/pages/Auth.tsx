@@ -130,7 +130,7 @@ export default function Auth() {
 
   if (mode === "reset") {
     return (
-      <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-slate-900 px-6 py-12">
+      <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-black px-6 py-12">
         <div className="mb-8 flex flex-col items-center text-center">
           <VolleyballIcon className="h-12 w-12 text-brand" />
           <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Vybe</span>
@@ -164,7 +164,7 @@ export default function Auth() {
   if (mode === "forgot") {
     if (forgotSent) {
       return (
-        <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-slate-900 px-6 py-12">
+        <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-black px-6 py-12">
           <div className="mb-8 flex flex-col items-center text-center">
             <VolleyballIcon className="h-12 w-12 text-brand" />
             <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Vybe</span>
@@ -189,7 +189,7 @@ export default function Auth() {
     }
 
     return (
-      <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-slate-900 px-6 py-12">
+      <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-black px-6 py-12">
         <div className="mb-8 flex flex-col items-center text-center">
           <VolleyballIcon className="h-12 w-12 text-brand" />
           <span className="mt-3 text-2xl font-extrabold tracking-tight text-white">Vybe</span>
@@ -227,7 +227,7 @@ export default function Auth() {
   // ── Main sign-up / sign-in form ────────────────────────────────────────────
 
   return (
-    <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-slate-900 px-6 py-12">
+    <div className="mx-auto flex min-h-full max-w-md flex-col justify-center bg-black px-6 py-12">
       {/* Brand */}
       <div className="mb-8 flex flex-col items-center text-center">
         <VolleyballIcon className="h-12 w-12 text-brand" />
