@@ -51,14 +51,14 @@ export default function MyGames() {
 
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-bold tracking-tight text-slate-900">
+      <h1 className="mb-1 text-2xl font-bold tracking-tight text-white">
         My games
       </h1>
-      <p className="mb-4 text-sm text-slate-500">
+      <p className="mb-4 text-sm text-slate-400">
         Games you're hosting, joined, or waitlisted for.
       </p>
 
-      <div className="relative mb-4 flex rounded-xl bg-slate-100 p-1">
+      <div className="relative mb-4 flex rounded-xl bg-slate-800 p-1">
         {/* Sliding pill */}
         <div
           className="pointer-events-none absolute inset-y-1 rounded-lg bg-brand shadow-sm"
@@ -74,7 +74,7 @@ export default function MyGames() {
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`relative z-10 flex-1 rounded-lg py-1.5 text-sm font-medium transition-colors duration-150 ${
-              tab === t.key ? "text-white" : "text-slate-500"
+              tab === t.key ? "text-white" : "text-slate-400"
             }`}
           >
             {t.label}
@@ -98,8 +98,8 @@ export default function MyGames() {
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-center">
-          <p className="text-sm text-slate-500">
+        <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-800 py-12 text-center">
+          <p className="text-sm text-slate-400">
             {tab === "hosting"
               ? "You're not hosting any games yet."
               : tab === "past"
@@ -123,7 +123,7 @@ export default function MyGames() {
                 {canReview && (
                   <button
                     onClick={() => setReviewGame(g)}
-                    className="absolute right-3 top-3 z-10 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-orange-600 active:scale-95"
+                    className="absolute right-3 top-3 z-10 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-dark active:scale-95"
                   >
                     Review
                   </button>

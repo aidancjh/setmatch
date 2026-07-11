@@ -99,19 +99,19 @@ export default function ChatRoom() {
       <div className="mb-3 flex items-center gap-2">
         <button
           onClick={() => navigate("/chats")}
-          className="-ml-1 rounded-lg p-1 text-slate-500 transition active:scale-90"
+          className="-ml-1 rounded-lg p-1 text-slate-400 transition active:scale-90"
           aria-label="Back to chats"
         >
           ←
         </button>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-bold leading-tight text-slate-900">
+          <h1 className="truncate text-lg font-bold leading-tight text-white">
             {game ? game.title : "Chat"}
           </h1>
           {game && (
             <button
               onClick={() => navigate(`/game/${game.id}`)}
-              className="text-xs text-slate-400 hover:text-slate-600"
+              className="text-xs text-slate-400 hover:text-slate-300"
             >
               {formatDate(game.date)} · {game.players.length} in this chat · view game →
             </button>
@@ -120,10 +120,10 @@ export default function ChatRoom() {
       </div>
 
       {accessDenied ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
+        <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-800 py-16 text-center">
           <p className="mb-2 text-3xl">🔒</p>
-          <p className="font-semibold text-slate-700">You're not in this game</p>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="font-semibold text-slate-200">You're not in this game</p>
+          <p className="mt-1 text-sm text-slate-400">
             Join the game to see and post in its chat.
           </p>
           {game && (
@@ -140,7 +140,7 @@ export default function ChatRoom() {
           {/* Messages */}
           <div
             ref={scrollRef}
-            className="flex-1 space-y-3 overflow-y-auto rounded-2xl border border-slate-100 bg-slate-50/60 p-3"
+            className="flex-1 space-y-3 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-800/60 p-3"
           >
             {messages === null ? (
               <p className="py-10 text-center text-xs text-slate-400">Loading…</p>
@@ -159,7 +159,7 @@ export default function ChatRoom() {
                     className={`flex flex-col ${mine ? "items-end" : "items-start"}`}
                   >
                     {showName && (
-                      <span className="mb-0.5 ml-1 text-[11px] font-semibold text-slate-500">
+                      <span className="mb-0.5 ml-1 text-[11px] font-semibold text-slate-400">
                         {m.userName}
                       </span>
                     )}
@@ -167,7 +167,7 @@ export default function ChatRoom() {
                       className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm leading-snug ${
                         mine
                           ? "rounded-br-sm bg-brand text-white"
-                          : "rounded-bl-sm bg-white text-slate-800 shadow-sm"
+                          : "rounded-bl-sm bg-slate-900 text-slate-100 shadow-sm"
                       }`}
                     >
                       <p className="whitespace-pre-wrap break-words">{m.body}</p>
@@ -196,7 +196,7 @@ export default function ChatRoom() {
           {/* Composer */}
           <form
             onSubmit={handleSend}
-            className="mt-3 flex items-end gap-2 border-t border-slate-100 pt-3"
+            className="mt-3 flex items-end gap-2 border-t border-slate-800 pt-3"
           >
             <textarea
               value={draft}
@@ -209,7 +209,7 @@ export default function ChatRoom() {
               }}
               rows={1}
               placeholder="Message your group…"
-              className="max-h-28 min-h-[2.75rem] flex-1 resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+              className="max-h-28 min-h-[2.75rem] flex-1 resize-none rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
             />
             <button
               type="submit"

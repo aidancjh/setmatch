@@ -8,20 +8,20 @@ import { VolleyballIcon } from "../components/icons";
  */
 export default function Privacy() {
   return (
-    <div className="mx-auto max-w-md bg-white px-6 py-10">
+    <div className="mx-auto max-w-md bg-slate-900 px-6 py-10">
       <Link to="/" className="mb-6 flex items-center gap-2">
         <VolleyballIcon className="h-6 w-6 text-brand" />
-        <span className="text-lg font-extrabold tracking-tight text-slate-900">
+        <span className="text-lg font-extrabold tracking-tight text-white">
           Coterie
         </span>
       </Link>
 
-      <h1 className="mb-1 text-2xl font-bold text-slate-900">Privacy Policy</h1>
+      <h1 className="mb-1 text-2xl font-bold text-white">Privacy Policy</h1>
       <p className="mb-6 text-sm text-slate-400">Last updated: June 2026</p>
 
-      <div className="space-y-5 text-sm leading-relaxed text-slate-600">
+      <div className="space-y-5 text-sm leading-relaxed text-slate-300">
         <section>
-          <h2 className="mb-1 font-semibold text-slate-900">What we collect</h2>
+          <h2 className="mb-1 font-semibold text-white">What we collect</h2>
           <p>
             When you create an account we store your name, email address, and a
             securely hashed password. As you use Coterie we store the games you
@@ -32,7 +32,7 @@ export default function Privacy() {
         </section>
 
         <section>
-          <h2 className="mb-1 font-semibold text-slate-900">How we use it</h2>
+          <h2 className="mb-1 font-semibold text-white">How we use it</h2>
           <p>
             Your information is used solely to run the app — showing games,
             letting players find and join each other, sending in-app
@@ -42,7 +42,7 @@ export default function Privacy() {
         </section>
 
         <section>
-          <h2 className="mb-1 font-semibold text-slate-900">What others see</h2>
+          <h2 className="mb-1 font-semibold text-white">What others see</h2>
           <p>
             Your display name and skill level are visible to other signed-in
             members on game rosters, profiles, and chat. Your email address and
@@ -51,7 +51,7 @@ export default function Privacy() {
         </section>
 
         <section>
-          <h2 className="mb-1 font-semibold text-slate-900">Data storage</h2>
+          <h2 className="mb-1 font-semibold text-white">Data storage</h2>
           <p>
             Data is stored in a managed PostgreSQL database. We take reasonable
             measures to protect it, including hashed passwords and encrypted
@@ -63,7 +63,7 @@ export default function Privacy() {
         </section>
 
         <section>
-          <h2 className="mb-1 font-semibold text-slate-900">Your choices</h2>
+          <h2 className="mb-1 font-semibold text-white">Your choices</h2>
           <p>
             You can edit your profile at any time. You can permanently delete
             your account and all associated data yourself from Settings → Delete
@@ -73,7 +73,7 @@ export default function Privacy() {
         </section>
 
         <section>
-          <h2 className="mb-1 font-semibold text-slate-900">Contact</h2>
+          <h2 className="mb-1 font-semibold text-white">Contact</h2>
           <p>
             Questions about your privacy? Email{" "}
             <a

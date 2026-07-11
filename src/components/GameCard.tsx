@@ -31,7 +31,7 @@ export default function GameCard({
   return (
     <Link
       to={`/game/${game.id}`}
-      className="block overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:border-slate-200 hover:shadow"
+      className="block overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-sm transition hover:border-slate-700 hover:shadow"
     >
       <div className="flex">
         {/* Date sidebar */}
@@ -50,7 +50,7 @@ export default function GameCard({
           {/* Title + type */}
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="truncate text-sm font-semibold leading-tight text-slate-900">
+              <h3 className="truncate text-sm font-semibold leading-tight text-white">
                 {game.title}
               </h3>
               {youAreIn && (
@@ -61,13 +61,13 @@ export default function GameCard({
           </div>
 
           {/* Time */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          <div className="flex items-center gap-1.5 text-xs text-slate-400">
             <ClockIcon className="size-3.5 shrink-0 text-slate-400" />
             {formatTimeRange(game.time, game.endTime)}
           </div>
 
           {/* Location */}
-          <div className="flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
+          <div className="flex min-w-0 items-center gap-1.5 text-xs text-slate-400">
             <MapPinIcon className="size-3.5 shrink-0 text-slate-400" />
             <span className="truncate">{game.location}</span>
             <span className="shrink-0 text-slate-400">· {game.area}</span>
@@ -75,7 +75,7 @@ export default function GameCard({
 
           {/* Fill bar + spots */}
           <div className="mt-0.5 flex items-center gap-2">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-800">
               <div
                 className={`h-full rounded-full transition-all ${
                   left === 0

@@ -23,7 +23,7 @@ function Stars({
           aria-label={`${n} star${n > 1 ? "s" : ""}`}
           className="text-3xl transition-transform active:scale-110"
         >
-          <span className={(hover || value) >= n ? "text-amber-400" : "text-slate-200"}>
+          <span className={(hover || value) >= n ? "text-amber-400" : "text-slate-600"}>
             ★
           </span>
         </button>
@@ -71,14 +71,14 @@ export default function ReviewModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
       onClick={(e) => { if (e.target === e.currentTarget) onDone(); }}
     >
-      <div className="animate-pop-in w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      <div className="animate-pop-in w-full max-w-md rounded-2xl bg-slate-900 p-6 shadow-xl">
         {/* Header */}
         <div className="mb-5 text-center">
           <p className="text-xs font-semibold uppercase tracking-wide text-brand">
             How was it?
           </p>
-          <h2 className="mt-1 text-lg font-bold text-slate-900">{game.title}</h2>
-          <p className="text-sm text-slate-500">
+          <h2 className="mt-1 text-lg font-bold text-white">{game.title}</h2>
+          <p className="text-sm text-slate-400">
             {formatDate(game.date)} · {formatTime(game.time)} · hosted by {game.hostName}
           </p>
         </div>
@@ -97,7 +97,7 @@ export default function ReviewModal({
           onChange={(e) => setComment(e.target.value.slice(0, 500))}
           placeholder="Leave a comment for the host… (required)"
           rows={3}
-          className="mt-3 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+          className="mt-3 w-full resize-none rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
         />
         <p className="mt-0.5 text-right text-xs text-slate-400">{comment.length}/500</p>
 
@@ -111,7 +111,7 @@ export default function ReviewModal({
         <div className="mt-4 flex gap-2">
           <button
             onClick={onDone}
-            className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-500 transition-all duration-150 hover:bg-slate-50 active:scale-[0.97]"
+            className="flex-1 rounded-xl border border-slate-700 py-3 text-sm font-semibold text-slate-400 transition-all duration-150 hover:bg-slate-800 active:scale-[0.97]"
           >
             Cancel
           </button>

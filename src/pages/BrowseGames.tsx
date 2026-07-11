@@ -189,17 +189,17 @@ export default function BrowseGames() {
   return (
     <div>
       <div className="mb-4">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-bold tracking-tight text-white">
           Find a game
         </h1>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-400">
           Open volleyball games near you that still need players.
         </p>
       </div>
 
       {/* Search + Filters button */}
       <div className="mb-4 flex items-center gap-2">
-        <div className="flex flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+        <div className="flex flex-1 items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2">
           <span className="text-slate-400" aria-hidden>🔍</span>
           <input
             value={search}
@@ -215,7 +215,7 @@ export default function BrowseGames() {
           <FilterIcon className="h-4 w-4" />
           Filters
           {activeCount > 0 && (
-            <span className="ml-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[11px] font-bold text-brand">
+            <span className="ml-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-900 px-1 text-[11px] font-bold text-brand">
               {activeCount}
             </span>
           )}
@@ -245,8 +245,8 @@ export default function BrowseGames() {
           </button>
         </div>
       ) : visible.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-center">
-          <p className="text-sm text-slate-500">No games match your filters.</p>
+        <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-800 py-12 text-center">
+          <p className="text-sm text-slate-400">No games match your filters.</p>
           {activeCount > 0 ? (
             <button
               onClick={() => setFilters(DEFAULT_FILTERS)}
@@ -313,23 +313,23 @@ function FilterModal({
     <Modal
       onClose={onClose}
       backdropClassName="bg-black/50"
-      panelClassName="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-xl animate-pop-in"
+      panelClassName="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-slate-900 shadow-xl animate-pop-in"
       labelledBy="filters-modal-title"
     >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-          <p id="filters-modal-title" className="text-base font-bold text-slate-900">Filters</p>
+        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+          <p id="filters-modal-title" className="text-base font-bold text-white">Filters</p>
           <button
             onClick={onClose}
             aria-label="Close filters"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 active:scale-90"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-800 active:scale-90"
           >
             ✕
           </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 divide-y divide-slate-100 overflow-y-auto">
+        <div className="flex-1 divide-y divide-slate-800 overflow-y-auto">
           {/* Section 1 — Game details */}
           <div className="px-4 py-4">
             <div className="grid grid-cols-2 gap-x-4 gap-y-4">
@@ -352,7 +352,7 @@ function FilterModal({
             <div>
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Game time</p>
-                <span className="text-xs font-semibold text-slate-700">{timeLabel}</span>
+                <span className="text-xs font-semibold text-slate-200">{timeLabel}</span>
               </div>
               <DualRangeSlider
                 value1={f.minTime}
@@ -370,7 +370,7 @@ function FilterModal({
             <div>
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Open spots</p>
-                <span className="text-xs font-semibold text-slate-700">
+                <span className="text-xs font-semibold text-slate-200">
                   {f.minOpenSpots === 0 ? "Any" : `${f.minOpenSpots}+ open`}
                 </span>
               </div>
@@ -397,10 +397,10 @@ function FilterModal({
         </div>
 
         {/* Footer */}
-        <div className="flex gap-2 border-t border-slate-100 px-4 py-3">
+        <div className="flex gap-2 border-t border-slate-800 px-4 py-3">
           <button
             onClick={() => setFilters(DEFAULT_FILTERS)}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 active:scale-95"
+            className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 active:scale-95"
           >
             Reset
           </button>
@@ -490,7 +490,7 @@ function Chip({
     <button
       onClick={onClick}
       className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-150 active:scale-95 ${
-        active ? "bg-brand text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+        active ? "bg-brand text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
       }`}
     >
       {children}

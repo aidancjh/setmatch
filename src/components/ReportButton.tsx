@@ -61,27 +61,27 @@ export default function ReportButton({
             if (e.target === e.currentTarget) setOpen(false);
           }}
         >
-          <div className="animate-sheet-up w-full max-w-md rounded-t-3xl bg-white px-4 pb-8 pt-3">
+          <div className="animate-sheet-up w-full max-w-md rounded-t-3xl bg-slate-900 px-4 pb-8 pt-3">
             <div className="mb-3 flex justify-center">
-              <div className="h-1 w-10 rounded-full bg-slate-200" />
+              <div className="h-1 w-10 rounded-full bg-slate-700" />
             </div>
             {done ? (
               <div className="py-8 text-center">
                 <p className="mb-1 text-2xl">✓</p>
-                <p className="font-semibold text-slate-800">Thanks for the report</p>
-                <p className="text-sm text-slate-500">Our team will take a look.</p>
+                <p className="font-semibold text-slate-100">Thanks for the report</p>
+                <p className="text-sm text-slate-400">Our team will take a look.</p>
               </div>
             ) : (
               <>
-                <p className="mb-1 text-base font-bold text-slate-900">Report this content</p>
-                <p className="mb-3 text-sm text-slate-500">Why are you reporting it?</p>
+                <p className="mb-1 text-base font-bold text-white">Report this content</p>
+                <p className="mb-3 text-sm text-slate-400">Why are you reporting it?</p>
                 <div className="space-y-2">
                   {REASONS.map((r) => (
                     <button
                       key={r}
                       disabled={busy}
                       onClick={() => submit(r)}
-                      className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-left text-sm font-medium text-slate-800 transition hover:border-rose-200 hover:bg-rose-50 active:scale-[0.98] disabled:opacity-50"
+                      className="w-full rounded-xl border border-slate-800 bg-slate-800 px-4 py-3 text-left text-sm font-medium text-slate-100 transition hover:border-rose-200 hover:bg-rose-50 active:scale-[0.98] disabled:opacity-50"
                     >
                       {r}
                     </button>
@@ -89,7 +89,7 @@ export default function ReportButton({
                 </div>
                 <button
                   onClick={() => setOpen(false)}
-                  className="mt-3 w-full rounded-xl py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100"
+                  className="mt-3 w-full rounded-xl py-3 text-sm font-semibold text-slate-400 transition hover:bg-slate-800"
                 >
                   Cancel
                 </button>

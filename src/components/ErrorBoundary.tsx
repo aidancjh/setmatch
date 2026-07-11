@@ -80,8 +80,8 @@ export default class ErrorBoundary extends Component<Props, State> {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
         <div className="text-5xl">🏐</div>
-        <h1 className="text-xl font-bold text-slate-900">Something went wrong</h1>
-        <p className="max-w-xs text-sm text-slate-500">
+        <h1 className="text-xl font-bold text-white">Something went wrong</h1>
+        <p className="max-w-xs text-sm text-slate-400">
           The app hit an unexpected error. Reloading almost always fixes it.
         </p>
         <button

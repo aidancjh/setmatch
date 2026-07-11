@@ -57,13 +57,13 @@ function PostSheet({ onClose }: { onClose: () => void }) {
       />
 
       {/* Sheet */}
-      <div className="animate-sheet-up relative mx-auto w-full max-w-md rounded-t-3xl bg-white pb-10 pt-3 shadow-xl">
+      <div className="animate-sheet-up relative mx-auto w-full max-w-md rounded-t-3xl bg-slate-900 pb-10 pt-3 shadow-xl">
         {/* Handle */}
         <div className="mb-4 flex justify-center">
-          <div className="h-1 w-10 rounded-full bg-slate-200" />
+          <div className="h-1 w-10 rounded-full bg-slate-700" />
         </div>
 
-        <p className="mb-4 px-5 text-base font-bold text-slate-900">
+        <p className="mb-4 px-5 text-base font-bold text-white">
           What do you want to post?
         </p>
 
@@ -72,12 +72,12 @@ function PostSheet({ onClose }: { onClose: () => void }) {
             <button
               key={o.label}
               onClick={o.action}
-              className="flex w-full items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-left transition hover:border-brand/30 hover:bg-brand/5 active:scale-[0.98]"
+              className="flex w-full items-center gap-4 rounded-2xl border border-slate-800 bg-slate-800 px-4 py-4 text-left transition hover:border-brand/30 hover:bg-brand/5 active:scale-[0.98]"
             >
               <span className="text-2xl">{o.icon}</span>
               <div>
-                <p className="font-semibold text-slate-900">{o.label}</p>
-                <p className="text-sm text-slate-500">{o.sub}</p>
+                <p className="font-semibold text-white">{o.label}</p>
+                <p className="text-sm text-slate-400">{o.sub}</p>
               </div>
             </button>
           ))}
@@ -85,7 +85,7 @@ function PostSheet({ onClose }: { onClose: () => void }) {
 
         <button
           onClick={onClose}
-          className="mx-4 mt-3 w-[calc(100%-2rem)] rounded-xl py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100"
+          className="mx-4 mt-3 w-[calc(100%-2rem)] rounded-xl py-3 text-sm font-semibold text-slate-400 transition hover:bg-slate-800"
         >
           Cancel
         </button>
@@ -150,10 +150,10 @@ export default function Layout() {
         style={{ height: "100dvh" }}
       >
         <VolleyballIcon className="h-12 w-12 text-brand" />
-        <h1 className="text-xl font-extrabold tracking-tight text-slate-900">
+        <h1 className="text-xl font-extrabold tracking-tight text-white">
           We'll be right back
         </h1>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-400">
           Coterie is down for a quick bit of maintenance. Please check back shortly —
           thanks for your patience!
         </p>
@@ -170,12 +170,12 @@ export default function Layout() {
 
   return (
     <div
-      className="mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-white shadow-sm"
+      className="mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-slate-900 shadow-sm"
       style={{ height: "100dvh" }}
     >
       {/* Top bar — logo left, notifications right */}
       <header
-        className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/90 px-4 py-3 backdrop-blur"
+        className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-slate-900/90 px-4 py-3 backdrop-blur"
         style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
       >
         <button
@@ -184,7 +184,7 @@ export default function Layout() {
           aria-label="Go to home"
         >
           <VolleyballIcon className="h-6 w-6 text-brand" />
-          <span className="text-lg font-extrabold tracking-tight text-slate-900">
+          <span className="text-lg font-extrabold tracking-tight text-white">
             Coterie
           </span>
         </button>
@@ -192,7 +192,7 @@ export default function Layout() {
         <div className="flex items-center gap-0.5">
           <button
             onClick={() => navigate("/chats")}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 active:scale-90"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-800 active:scale-90"
             aria-label="Chats"
           >
             <ChatIcon className="h-5 w-5" />
@@ -200,7 +200,7 @@ export default function Layout() {
           <NotificationBell />
           <button
             onClick={() => navigate("/settings")}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 hover:bg-slate-800"
             aria-label="Settings"
           >
             <SettingsIcon className="h-5 w-5" />
@@ -209,7 +209,7 @@ export default function Layout() {
       </header>
 
       {config.maintenanceMode && isAdmin && (
-        <div className="bg-amber-500 px-4 py-1.5 text-center text-xs font-semibold text-white">
+        <div className="bg-sky-600 px-4 py-1.5 text-center text-xs font-semibold text-white">
           Maintenance mode is ON — only admins can use the app
         </div>
       )}
@@ -226,9 +226,9 @@ export default function Layout() {
               opacity: refreshing ? 1 : Math.min(pull / 70, 1),
             }}
           >
-            <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow">
+            <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 shadow">
               <div
-                className={`h-4 w-4 rounded-full border-2 border-slate-300 border-t-brand ${
+                className={`h-4 w-4 rounded-full border-2 border-slate-600 border-t-brand ${
                   refreshing ? "animate-spin" : ""
                 }`}
                 style={refreshing ? undefined : { transform: `rotate(${pull * 3}deg)` }}
@@ -251,7 +251,7 @@ export default function Layout() {
           positioning mis-renders on short pages in iOS standalone PWAs). */}
       <nav
         aria-label="Main navigation"
-        className="z-10 shrink-0 border-t border-slate-100 bg-white/95 backdrop-blur"
+        className="z-10 shrink-0 border-t border-slate-800 bg-slate-900/95 backdrop-blur"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="relative flex items-end">

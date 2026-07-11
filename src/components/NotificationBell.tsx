@@ -87,7 +87,7 @@ export default function NotificationBell() {
     <div className="relative">
       <button
         onClick={toggle}
-        className="relative flex h-9 w-9 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100"
+        className="relative flex h-9 w-9 items-center justify-center rounded-full text-slate-200 transition hover:bg-slate-800"
         aria-label="Notifications"
       >
         <BellIcon className="h-5 w-5" />
@@ -102,7 +102,7 @@ export default function NotificationBell() {
         <>
           {/* click-away backdrop */}
           <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-30 mt-2 max-h-[70vh] w-72 overflow-y-auto rounded-2xl border border-slate-100 bg-white p-2 shadow-lg">
+          <div className="absolute right-0 z-30 mt-2 max-h-[70vh] w-72 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-2 shadow-lg">
             <div className="flex items-center justify-between px-2 py-1.5">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Notifications
@@ -130,11 +130,11 @@ export default function NotificationBell() {
                       disabled={!n.gameId}
                       className={`flex w-full gap-2 rounded-lg px-2 py-2 text-left text-sm transition ${
                         n.read ? "" : "bg-brand/5"
-                      } ${n.gameId ? "hover:bg-slate-50" : "cursor-default"}`}
+                      } ${n.gameId ? "hover:bg-slate-800" : "cursor-default"}`}
                     >
                       <span aria-hidden>{ICON[n.type] ?? "🔔"}</span>
                       <span className="min-w-0 flex-1">
-                        <span className="block text-slate-700">{n.message}</span>
+                        <span className="block text-slate-200">{n.message}</span>
                         <span className="text-xs text-slate-400">
                           {timeAgo(n.createdAt)}
                         </span>
@@ -150,7 +150,7 @@ export default function NotificationBell() {
                 setOpen(false);
                 navigate("/notifications");
               }}
-              className="mt-1 w-full rounded-lg px-2 py-2 text-center text-xs font-semibold text-brand transition hover:bg-slate-50"
+              className="mt-1 w-full rounded-lg px-2 py-2 text-center text-xs font-semibold text-brand transition hover:bg-slate-800"
             >
               See all notifications
             </button>
