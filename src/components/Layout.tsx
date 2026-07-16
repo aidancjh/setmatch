@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
 import CelebrationHost from "./CelebrationHost";
@@ -145,13 +145,19 @@ export default function Layout() {
 
   const isAdmin = user?.role === "admin";
 
+  // The post sheet is part of the persistent app shell (it wraps the Outlet),
+  // so it survives tab switches — close it whenever the route changes.
+  useEffect(() => {
+    setShowPost(false);
+  }, [pathname]);
+
   // Maintenance mode: non-admins see a friendly screen; admins keep working
   // (with a banner) so they can turn it back off.
   if (config.maintenanceMode && !isAdmin) {
     return (
       <div
         className="mx-auto flex max-w-md flex-col items-center justify-center gap-4 px-8 text-center"
-        style={{ height: "100dvh" }}
+        style={{ height: "100svh" }}
       >
         <VolleyballIcon className="h-12 w-12 text-brand" />
         <h1 className="text-xl font-extrabold tracking-tight text-white">
@@ -175,7 +181,7 @@ export default function Layout() {
   return (
     <div
       className="mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-black shadow-sm"
-      style={{ height: "100dvh" }}
+      style={{ height: "100svh" }}
     >
       {/* Top bar — logo left, notifications right */}
       <header

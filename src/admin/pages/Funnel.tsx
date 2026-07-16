@@ -110,7 +110,12 @@ function TimeSeriesLineChart({
         </circle>
       ))}
       {rows.map((r, i) => {
-        if (i % labelEvery !== 0 && i !== rows.length - 1) return null;
+        const lastIdx = rows.length - 1;
+        const isRegular = i % labelEvery === 0;
+        const isLast = i === lastIdx;
+        if (!isRegular && !isLast) return null;
+        // Skip a regular tick that would crowd the final label.
+        if (isRegular && !isLast && lastIdx - i < labelEvery) return null;
         return (
           <text key={r.date} x={xOf(i)} y={h - 6} fontSize="9" textAnchor="middle" fill="#94a3b8">
             {r.date.slice(5)}

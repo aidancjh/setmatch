@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { AppNotification } from "../types";
 import {
   getNotifications,
@@ -38,10 +38,17 @@ const ICON: Record<string, React.ComponentType<{ className?: string }>> = {
 export default function NotificationBell() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [items, setItems] = useState<AppNotification[]>([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
   const activeRef = useRef(true);
+
+  // The bell lives in the persistent app shell, so it survives tab switches —
+  // close the panel whenever the route changes instead of leaving it stuck open.
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   const load = useCallback(() => {
     getNotifications()
