@@ -19,6 +19,16 @@ import {
   VolleyballIcon,
 } from "./icons";
 
+// Which bottom-tab slot a route belongs to, or -1 if it's not one of the
+// four tab roots (e.g. a game detail page pushed on top of Browse/My Games).
+function tabSlotFor(pathname: string): number {
+  if (pathname === "/") return 0;
+  if (pathname.startsWith("/highlights")) return 1;
+  if (pathname.startsWith("/my-games")) return 3;
+  if (pathname.startsWith("/profile")) return 4;
+  return -1;
+}
+
 const leftTabs = [
   { to: "/", label: "Browse", Icon: SearchIcon, end: true },
   { to: "/highlights", label: "Highlights", Icon: VideoIcon, end: false },
@@ -140,6 +150,10 @@ export default function Layout() {
   const { user } = useAuth();
   const config = useAppConfig();
   const [showPost, setShowPost] = useState(false);
+  // Sub-pages pushed from a tab (game detail, edit, chat, settings...) aren't
+  // tab roots themselves — keep whichever tab we came from lit instead of
+  // going dark, so the "you are here" pill doesn't disappear on drill-in.
+  const [activeSlot, setActiveSlot] = useState(() => tabSlotFor(pathname));
   const mainRef = useRef<HTMLElement>(null);
   const { pull, refreshing } = usePullToRefresh(mainRef, refreshAll);
 
@@ -149,6 +163,11 @@ export default function Layout() {
   // so it survives tab switches — close it whenever the route changes.
   useEffect(() => {
     setShowPost(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const slot = tabSlotFor(pathname);
+    if (slot !== -1) setActiveSlot(slot);
   }, [pathname]);
 
   // Maintenance mode: non-admins see a friendly screen; admins keep working
@@ -170,13 +189,6 @@ export default function Layout() {
       </div>
     );
   }
-
-  const activeSlot =
-    pathname === "/" ? 0 :
-    pathname.startsWith("/highlights") ? 1 :
-    pathname.startsWith("/my-games") ? 3 :
-    pathname.startsWith("/profile") ? 4 :
-    -1;
 
   return (
     <div
