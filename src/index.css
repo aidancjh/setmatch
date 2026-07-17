@@ -56,6 +56,37 @@ body.app-dark .single-range input[type="range"]::-moz-range-thumb {
   border-color: #0f172a;
 }
 
+/* Dark-app color normalization. A number of surfaces were styled with Tailwind's
+   LIGHT utilities — pale-pink error boxes (bg-rose-50 / text-rose-600 /
+   border-rose-200) and near-white dividers (border-slate-50) — which read as
+   unfinished on this all-dark UI. Remap just those utilities to dark-appropriate
+   tints. Scoped to body.app-dark, so the light admin app (admin.html has no
+   app-dark class) is untouched, and destructive controls (bg-rose-500) are left
+   as-is. Mirrors the existing body.app-dark slider overrides above. */
+body.app-dark .bg-rose-50,
+body.app-dark .hover\:bg-rose-50:hover {
+  background-color: rgba(244, 63, 94, 0.12);
+}
+body.app-dark .text-rose-600 {
+  color: #fda4af;
+}
+body.app-dark .border-rose-200,
+body.app-dark .hover\:border-rose-200:hover {
+  border-color: rgba(244, 63, 94, 0.35);
+}
+body.app-dark .border-slate-50 {
+  border-color: #1e293b; /* match the app's standard slate-800 divider */
+}
+
+/* Visible keyboard focus indicator (WCAG 2.4.7). Only shows for keyboard/AT
+   navigation — pointer users never see it — so it adds no visual noise to the
+   touch experience while making the app navigable without a mouse. */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 /* Eliminate 300ms tap delay and flash on all interactive elements */
 button, a, [role="button"] {
   touch-action: manipulation;

@@ -2,9 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- No maximum-scale: blocking pinch-zoom fails WCAG 1.4.4 (Resize Text).
+         viewport-fit=cover keeps the app edge-to-edge under the notch/home bar. -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <title>Vybe — Find your players. Fill your games.</title>
     <meta
