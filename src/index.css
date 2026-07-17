@@ -87,6 +87,19 @@ body.app-dark .border-slate-50 {
   border-radius: 4px;
 }
 
+/* Hide the native number-input spinner arrows. They're tiny and desktop-only,
+   so the custom −/+ steppers (see GameForm) are the real control on every
+   device; the field itself stays typeable. */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* Eliminate 300ms tap delay and flash on all interactive elements */
 button, a, [role="button"] {
   touch-action: manipulation;

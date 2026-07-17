@@ -61,9 +61,19 @@ export default function GameForm({
 }) {
   const [form, setForm] = useState<NewGameInput>(initial);
   const [repeatWeeks, setRepeatWeeks] = useState(1);
-  const [friendsMode, setFriendsMode] = useState(false);
-  const [alreadyHave, setAlreadyHave] = useState(1); // including yourself
-  const [needMore, setNeedMore] = useState(11);
+  // The roster is expressed as two numbers the host thinks in:
+  //   playersHave — people already locked in, INCLUDING the host (always ≥ 1)
+  //   playersNeed — how many more open spots to fill
+  // Total capacity = have + need. We derive these from the game's
+  // totalSlots/preFilled so editing preserves them, and map back on submit
+  // (totalSlots = have + need, preFilled = have − 1 since the host fills one
+  // real slot themselves).
+  const initialHave = Math.max(1, (initial.preFilled ?? 0) + 1);
+  const [playersHave, setPlayersHave] = useState(initialHave);
+  const [playersNeed, setPlayersNeed] = useState(
+    Math.max(0, (initial.totalSlots ?? 2) - initialHave)
+  );
+  const totalPlayers = playersHave + playersNeed;
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const today = todayISO();
@@ -83,15 +93,23 @@ export default function GameForm({
       );
       return;
     }
-    if (form.totalSlots < 2 || form.totalSlots > 50) {
-      setError("Total slots should be between 2 and 50.");
+    if (playersHave < 1) {
+      setError("You count as one player, so 'players you have' must be at least 1.");
+      return;
+    }
+    if (playersNeed < 1) {
+      setError("Set at least 1 player needed — that's who others can join as.");
+      return;
+    }
+    if (totalPlayers < 2 || totalPlayers > 50) {
+      setError("Total players must be between 2 and 50.");
       return;
     }
     setError("");
     setBusy(true);
     try {
-      const totalSlots = friendsMode ? alreadyHave + needMore : form.totalSlots;
-      const preFilled = friendsMode ? Math.max(0, alreadyHave - 1) : 0; // host occupies 1 slot
+      const totalSlots = totalPlayers;
+      const preFilled = Math.max(0, playersHave - 1); // host occupies 1 real slot
       await onSubmit(
         {
           ...form,
@@ -121,27 +139,13 @@ export default function GameForm({
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Type">
-          <Segmented
-            options={types}
-            value={form.type}
-            onChange={(v) => set("type", v as GameType)}
-          />
-        </Field>
-        {!friendsMode && (
-          <Field label="Total slots">
-            <input
-              type="number"
-              min={2}
-              max={50}
-              value={form.totalSlots}
-              onChange={(e) => set("totalSlots", Number(e.target.value))}
-              className={inputCls}
-            />
-          </Field>
-        )}
-      </div>
+      <Field label="Type">
+        <Segmented
+          options={types}
+          value={form.type}
+          onChange={(v) => set("type", v as GameType)}
+        />
+      </Field>
 
       <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-800 p-3">
         <div>
@@ -181,61 +185,42 @@ export default function GameForm({
         </div>
       </div>
 
-      {/* Friends mode toggle */}
-      <div className="rounded-xl border border-slate-800 bg-slate-800 p-3">
-        <label className="flex cursor-pointer items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-slate-100">I'm bringing friends</p>
-            <p className="text-xs text-slate-400">
-              {friendsMode
-                ? `Bringing ${alreadyHave} · Need ${needMore} more · Total ${alreadyHave + needMore}`
-                : "Set exactly how many you have and how many you need"}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setFriendsMode((v) => !v)}
-            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
-              friendsMode ? "bg-brand" : "bg-slate-700"
+      {/* Players — how many you already have (incl. you) and how many you need.
+          Total capacity is calculated from the two. Steppers work on mobile,
+          where native number-input arrows don't appear. */}
+      <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-800 p-3">
+        <div className="grid grid-cols-2 gap-3">
+          <Stepper
+            label="Players you have"
+            hint="Including yourself"
+            value={playersHave}
+            min={1}
+            max={49}
+            onChange={setPlayersHave}
+          />
+          <Stepper
+            label="Players you need"
+            hint="Open spots to fill"
+            value={playersNeed}
+            min={1}
+            max={49}
+            onChange={setPlayersNeed}
+          />
+        </div>
+        <div className="flex items-center justify-between rounded-xl bg-slate-900 px-3.5 py-2.5">
+          <span className="text-sm font-medium text-slate-300">Total players</span>
+          <span
+            className={`text-lg font-extrabold tabular-nums ${
+              totalPlayers > 50 ? "text-rose-400" : "text-white"
             }`}
           >
-            <span
-              className={`mt-0.5 ml-0.5 inline-block h-5 w-5 rounded-full bg-slate-900 shadow transition-transform ${
-                friendsMode ? "translate-x-5" : "translate-x-0"
-              }`}
-            />
-          </button>
-        </label>
-
-        {friendsMode && (
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-slate-300">
-                You're bringing (inc. yourself)
-              </span>
-              <input
-                type="number"
-                min={1}
-                max={49}
-                value={alreadyHave}
-                onChange={(e) => setAlreadyHave(Math.max(1, Number(e.target.value)))}
-                className={inputCls}
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-slate-300">
-                Still need
-              </span>
-              <input
-                type="number"
-                min={1}
-                max={49}
-                value={needMore}
-                onChange={(e) => setNeedMore(Math.max(1, Number(e.target.value)))}
-                className={inputCls}
-              />
-            </label>
-          </div>
+            {totalPlayers}
+          </span>
+        </div>
+        {totalPlayers > 50 && (
+          <p className="text-[11px] font-medium text-rose-400">
+            That's more than 50 players — lower one of the numbers.
+          </p>
         )}
       </div>
 
@@ -493,6 +478,72 @@ function Segmented({
           {o}
         </button>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Number stepper with big −/+ touch targets. The native number-input spinner
+ * only appears on desktop (and is tiny), so on mobile these buttons are the
+ * way to change the value; the center field still accepts direct typing and
+ * opens a numeric keypad (inputMode="numeric").
+ */
+function Stepper({
+  label,
+  hint,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (v: number) => void;
+}) {
+  const clamp = (n: number) => Math.max(min, Math.min(max, n));
+  const btn =
+    "flex h-11 w-11 shrink-0 select-none items-center justify-center rounded-xl border border-slate-700 bg-slate-900 text-xl font-bold text-slate-100 transition hover:bg-slate-800 active:scale-90 disabled:opacity-40 disabled:active:scale-100";
+  return (
+    <div>
+      <span className="mb-1.5 block text-sm font-medium text-slate-200">{label}</span>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          aria-label={`Decrease ${label.toLowerCase()}`}
+          onClick={() => onChange(clamp(value - 1))}
+          disabled={value <= min}
+          className={btn}
+        >
+          −
+        </button>
+        <input
+          type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          min={min}
+          max={max}
+          value={value}
+          onChange={(e) => {
+            const n = parseInt(e.target.value, 10);
+            onChange(Number.isNaN(n) ? min : clamp(n));
+          }}
+          aria-label={label}
+          className="no-spinner w-full min-w-0 rounded-xl border border-slate-700 bg-slate-900 px-1 py-2.5 text-center text-base font-bold text-white outline-none transition focus:border-slate-400"
+        />
+        <button
+          type="button"
+          aria-label={`Increase ${label.toLowerCase()}`}
+          onClick={() => onChange(clamp(value + 1))}
+          disabled={value >= max}
+          className={btn}
+        >
+          +
+        </button>
+      </div>
+      {hint && <p className="mt-1 text-[11px] text-slate-400">{hint}</p>}
     </div>
   );
 }
