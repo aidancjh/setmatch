@@ -21,7 +21,7 @@ There are three accounts, all free to start: **GitHub** (code + backup),
    In the project folder, run (in PowerShell), replacing `YOUR-USERNAME`:
 
    ```powershell
-   cd "C:\Users\ebonwhale\OneDrive\Documents\Volleyball-Claude"
+   cd "path\to\Volleyball-Claude"
    git remote add origin https://github.com/YOUR-USERNAME/setmatch.git
    git push -u origin main
    ```
@@ -52,10 +52,19 @@ There are three accounts, all free to start: **GitHub** (code + backup),
    | Name | Value |
    |---|---|
    | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` *(type it exactly — Railway links it to the database)* |
-   | `JWT_SECRET` | `Ln_0qPbf1inrdeNw2Kb1g0RnGGBmQmBL5JygWigeLXMPdX0Sl7L7LN4CMVLf2xc3` |
+   | `JWT_SECRET` | *generate your own — see below* |
+   | `NODE_ENV` | `production` |
    | `DATABASE_SSL` | `false` |
 
    (`PORT` is set automatically by Railway — don't add it.)
+
+   Generate a strong `JWT_SECRET` locally and paste the output straight into
+   Railway's Variables — **never** write the value into this file or any file in
+   the repo:
+
+   ```powershell
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
 
 6. Railway redeploys automatically after you save variables. Wait for the
    deploy to go green.
@@ -84,9 +93,14 @@ Railway sees the push and redeploys in ~1–2 minutes.
 ---
 
 ## Notes
-- The `JWT_SECRET` above is a one-time random value generated for your
-  deployment. Keep it private (it's what keeps logins secure). It's already in
-  this file, which is private to your repo — that's fine.
+- **Never put secrets in the repo.** `JWT_SECRET`, `ADMIN_JWT_SECRET`,
+  `CLOUDINARY_API_SECRET`, `RESEND_API_KEY`, `GOOGLE_CLIENT_SECRET`, etc. live
+  **only** in Railway's Variables tab — not in this file, not in any committed
+  file, not even in a private repo (a private repo can be forked, shared, or
+  leaked, and the value would sit in git history forever). Generate each secret,
+  paste it directly into Railway, and if one ever lands in a file or a chat,
+  rotate it. In production, `NODE_ENV=production` makes the server refuse to
+  boot on a missing or placeholder secret, so a misconfiguration fails safe.
 - Your **local** app (the `Start SetMatch.bat` workflow) still uses your **local**
   Postgres and is completely separate from the live one — experiment freely.
 - Free Railway has trial credits; after that it's a few dollars/month for
