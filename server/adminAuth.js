@@ -9,16 +9,23 @@ import { findUserById } from "./repo.js";
 const DEV_SECRET = "vybe-admin-dev-secret-change-me";
 const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || DEV_SECRET;
 
+// Secrets that are public knowledge — the in-source dev fallback and the
+// placeholder committed in .env.admin.example. Neither may protect the admin
+// service, so both are rejected the same as a missing secret.
+const WEAK_SECRETS = new Set([DEV_SECRET, "replace-with-a-generated-secret"]);
+
 // Fail CLOSED unless explicitly in local dev / test — see the matching rationale
 // in server/auth.js. NODE_ENV isn't guaranteed to be "production" at runtime, so
-// a `=== "production"` gate would let the admin service boot on the hardcoded
-// DEV_SECRET when NODE_ENV is unset, making every admin token forgeable.
+// a `=== "production"` gate would let the admin service boot on a public secret
+// when NODE_ENV is unset, making every admin token forgeable.
 const IS_DEV_OR_TEST =
   process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
-if (!IS_DEV_OR_TEST && (!process.env.ADMIN_JWT_SECRET || ADMIN_JWT_SECRET === DEV_SECRET)) {
+if (!IS_DEV_OR_TEST && (!process.env.ADMIN_JWT_SECRET || WEAK_SECRETS.has(ADMIN_JWT_SECRET))) {
   console.error(
-    "[adminAuth] FATAL: ADMIN_JWT_SECRET must be set to a strong, non-default value before deploying. " +
-      "Set it in the admin service's environment variables (or export NODE_ENV=development for local dev)."
+    "[adminAuth] FATAL: ADMIN_JWT_SECRET is missing or set to a known placeholder/dev value. " +
+      "Set it to a strong, unique value before deploying — generate one with " +
+      "`node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"` " +
+      "(or export NODE_ENV=development for local dev)."
   );
   process.exit(1);
 }
