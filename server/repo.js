@@ -1133,15 +1133,18 @@ export async function listComments(gameId, viewerId = null) {
     params.push(viewerId);
     blockClause = ` AND c.user_id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = $${params.length})`;
   }
+  // Cap to the most recent comments (newest-first for the LIMIT, then flipped
+  // back to chronological) so a heavily-commented game can't load unbounded.
   const { rows } = await query(
     `SELECT c.id, c.user_id, c.body, c.created_at, u.name AS user_name
        FROM game_comments c
        JOIN users u ON u.id = c.user_id
       WHERE c.game_id = $1${blockClause}
-      ORDER BY c.created_at ASC`,
+      ORDER BY c.created_at DESC
+      LIMIT 200`,
     params
   );
-  return rows.map((r) => ({
+  return rows.reverse().map((r) => ({
     id: r.id,
     userId: r.user_id,
     userName: r.user_name,
@@ -1194,15 +1197,20 @@ export async function canAccessChat(gameId, userId) {
 }
 
 export async function listMessages(gameId) {
+  // Cap to the most recent messages so a long-running group chat can't load an
+  // unbounded history on every open/poll. Fetch newest-first for the LIMIT
+  // (index-friendly), then flip back to chronological order for the UI. The
+  // newest message stays last, so the client's "mark seen" marker is unchanged.
   const { rows } = await query(
     `SELECT m.id, m.user_id, m.body, m.created_at, u.name AS user_name
        FROM messages m
        JOIN users u ON u.id = m.user_id
       WHERE m.game_id = $1
-      ORDER BY m.created_at ASC`,
+      ORDER BY m.created_at DESC
+      LIMIT 200`,
     [gameId]
   );
-  return rows.map((r) => ({
+  return rows.reverse().map((r) => ({
     id: r.id,
     userId: r.user_id,
     userName: r.user_name,

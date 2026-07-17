@@ -420,6 +420,20 @@ export async function initSchema() {
     );
     CREATE INDEX IF NOT EXISTS idx_blocks_blocker ON blocks(blocker_id);
   `);
+
+  // Scaling: index the foreign-key columns that get queried on their own.
+  // Postgres does NOT auto-index FK columns, and a composite PK can't serve a
+  // lookup on its non-leading column — so these were causing sequential scans
+  // that worsen as the tables grow (game_members is the largest table).
+  //   game_members(user_id) — "my games", "my chats", profile played-count,
+  //                           pending-reviews, admin user list.
+  //   games(host_id)        — profile hosted-count, cancel-series.
+  await pool.query(
+    "CREATE INDEX IF NOT EXISTS idx_members_user ON game_members(user_id)"
+  );
+  await pool.query(
+    "CREATE INDEX IF NOT EXISTS idx_games_host ON games(host_id)"
+  );
 }
 
 export function uid(prefix = "id") {
