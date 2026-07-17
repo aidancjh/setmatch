@@ -94,6 +94,39 @@ export function verifyToken(token) {
   }
 }
 
+/**
+ * Like verifyToken, but also confirms the account isn't suspended and the
+ * token hasn't been revoked (token_version), same as requireAuth's status
+ * check. Used by routes that personalize public reads based on who's signed
+ * in (e.g. hiding a blocked user's comments) — a suspended/revoked token
+ * should be treated as "not signed in" there, not surfaced as an error, since
+ * the route itself must still succeed for anonymous visitors.
+ *
+ * Never throws: any lookup failure (bad token, DB hiccup) resolves to null so
+ * a public route degrades to "anonymous" instead of breaking.
+ */
+export async function verifyActiveToken(token) {
+  let payload;
+  try {
+    payload = jwt.verify(token, JWT_SECRET);
+  } catch {
+    return null;
+  }
+  try {
+    const { rows } = await query(
+      "SELECT suspended, token_version FROM users WHERE id = $1",
+      [payload.sub]
+    );
+    const u = rows[0];
+    if (!u || u.suspended) return null;
+    if ((payload.tv ?? 0) !== (u.token_version ?? 0)) return null;
+    return payload.sub;
+  } catch (e) {
+    console.error("[auth] verifyActiveToken status check failed:", e);
+    return null;
+  }
+}
+
 /** Optional auth: sets req.userId if a valid token is present, else null. */
 export function optionalAuth(req, _res, next) {
   const header = req.headers.authorization || "";
