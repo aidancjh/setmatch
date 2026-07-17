@@ -115,7 +115,14 @@ export const gameInputSchema = z.object({
 export function isCloudinaryUrl(url) {
   try {
     const u = new URL(url);
-    return u.protocol === "https:" && u.hostname === "res.cloudinary.com";
+    if (u.protocol !== "https:" || u.hostname !== "res.cloudinary.com") return false;
+    // When the account's cloud name is configured, require the asset path to
+    // belong to it. A bare hostname check accepts ANY Cloudinary account's URL,
+    // so a user could store links to media we can't moderate or delete. The
+    // env var is optional so this stays backward-compatible if it's unset.
+    const cloud = process.env.CLOUDINARY_CLOUD_NAME;
+    if (cloud && !u.pathname.startsWith(`/${cloud}/`)) return false;
+    return true;
   } catch {
     return false;
   }
@@ -151,7 +158,13 @@ export const profileUpdateSchema = z.object({
       "Banner image must be uploaded via Cloudinary."
     )
     .optional(),
-  birthdate: z.any().optional(),
+  birthdate: z
+    .any()
+    .refine(
+      (v) => v == null || v === "" || /^\d{4}-\d{2}-\d{2}$/.test(String(v)),
+      "Invalid birthdate format (expected YYYY-MM-DD)."
+    )
+    .optional(),
   userGender: z
     .any()
     .refine((v) => v === undefined || USER_GENDERS.includes(String(v)), "Invalid gender option.")

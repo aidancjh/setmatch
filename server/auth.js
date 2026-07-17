@@ -10,9 +10,18 @@ const JWT_SECRET = process.env.JWT_SECRET || DEV_SECRET;
 // attacks that could reveal which email addresses are registered.
 export const TIMING_HASH = bcrypt.hashSync("__timing_sentinel__", 10);
 
-if (process.env.NODE_ENV === "production" && JWT_SECRET === DEV_SECRET) {
+// Fail CLOSED unless we're explicitly in local dev or the test suite. Railway
+// (and most hosts) do not guarantee NODE_ENV="production" at runtime, so gating
+// this check on `=== "production"` would silently boot on the hardcoded, source-
+// controlled DEV_SECRET when NODE_ENV is unset — letting anyone forge tokens for
+// any user. Requiring an explicit "development"/"test" opt-out means a
+// misconfigured deploy refuses to start instead of running insecurely.
+const IS_DEV_OR_TEST =
+  process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
+if (!IS_DEV_OR_TEST && (!process.env.JWT_SECRET || JWT_SECRET === DEV_SECRET)) {
   console.error(
-    "[auth] FATAL: JWT_SECRET is not set. Set it in Railway environment variables before deploying."
+    "[auth] FATAL: JWT_SECRET must be set to a strong, non-default value before deploying. " +
+      "Set it in your host's environment variables (or export NODE_ENV=development for local dev)."
   );
   process.exit(1);
 }

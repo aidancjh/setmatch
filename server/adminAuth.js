@@ -9,9 +9,16 @@ import { findUserById } from "./repo.js";
 const DEV_SECRET = "vybe-admin-dev-secret-change-me";
 const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || DEV_SECRET;
 
-if (process.env.NODE_ENV === "production" && ADMIN_JWT_SECRET === DEV_SECRET) {
+// Fail CLOSED unless explicitly in local dev / test — see the matching rationale
+// in server/auth.js. NODE_ENV isn't guaranteed to be "production" at runtime, so
+// a `=== "production"` gate would let the admin service boot on the hardcoded
+// DEV_SECRET when NODE_ENV is unset, making every admin token forgeable.
+const IS_DEV_OR_TEST =
+  process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
+if (!IS_DEV_OR_TEST && (!process.env.ADMIN_JWT_SECRET || ADMIN_JWT_SECRET === DEV_SECRET)) {
   console.error(
-    "[adminAuth] FATAL: ADMIN_JWT_SECRET is not set. Set it in the admin service's Railway environment variables before deploying."
+    "[adminAuth] FATAL: ADMIN_JWT_SECRET must be set to a strong, non-default value before deploying. " +
+      "Set it in the admin service's environment variables (or export NODE_ENV=development for local dev)."
   );
   process.exit(1);
 }
@@ -22,9 +29,9 @@ if (process.env.NODE_ENV === "production" && ADMIN_JWT_SECRET === DEV_SECRET) {
 // password never touches source control or the database.
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || null;
 
-if (process.env.NODE_ENV === "production" && !ADMIN_PASSWORD_HASH) {
+if (!IS_DEV_OR_TEST && !ADMIN_PASSWORD_HASH) {
   console.error(
-    "[adminAuth] FATAL: ADMIN_PASSWORD_HASH is not set. Set it in the admin service's Railway environment variables before deploying."
+    "[adminAuth] FATAL: ADMIN_PASSWORD_HASH is not set. Set it in the admin service's environment variables before deploying."
   );
   process.exit(1);
 }
