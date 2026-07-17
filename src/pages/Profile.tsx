@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getUserHighlights } from "../services/gamesService";
 import { api } from "../lib/api";
+import { getUploadSignature } from "../lib/cloudinaryUpload";
 import type { Highlight, SkillLevel } from "../types";
 import { SkillBadge, RatingHero, RatingEmpty } from "../components/Badges";
 import {
@@ -328,7 +329,6 @@ export default function Profile() {
 
   const fileRef = useRef<HTMLInputElement>(null);
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
   useEffect(() => {
     if (user?.id) {
@@ -359,15 +359,18 @@ export default function Profile() {
     if (bannerFileRef.current) bannerFileRef.current.value = "";
   };
 
-  // Crop confirmed → upload to Cloudinary → save
+  // Crop confirmed → upload to Cloudinary (signed) → save
   const handleBannerCropDone = async (file: File) => {
     setBannerCropSrc("");
     setBannerPickerOpen(false);
     setBannerUploading(true);
     try {
+      const { signature, timestamp, apiKey } = await getUploadSignature();
       const fd = new FormData();
       fd.append("file", file);
-      fd.append("upload_preset", uploadPreset);
+      fd.append("api_key", apiKey);
+      fd.append("timestamp", String(timestamp));
+      fd.append("signature", signature);
       const res = await fetch(
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
         { method: "POST", body: fd }
@@ -385,12 +388,15 @@ export default function Profile() {
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !cloudName || !uploadPreset) return;
+    if (!file || !cloudName) return;
     setUploading(true);
     try {
+      const { signature, timestamp, apiKey } = await getUploadSignature();
       const fd = new FormData();
       fd.append("file", file);
-      fd.append("upload_preset", uploadPreset);
+      fd.append("api_key", apiKey);
+      fd.append("timestamp", String(timestamp));
+      fd.append("signature", signature);
       const res = await fetch(
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
         { method: "POST", body: fd }

@@ -19,7 +19,8 @@ Practical guide for running Vybe in production (Railway + PostgreSQL).
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | enables "Sign in with Google" | optional |
 | `SENTRY_DSN` | backend error reporting | optional |
 | `VITE_SENTRY_DSN` | frontend error reporting (safe to expose) | optional |
-| `VITE_CLOUDINARY_CLOUD_NAME` / `VITE_CLOUDINARY_UPLOAD_PRESET` | avatar + highlight uploads | optional |
+| `VITE_CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | avatar + banner + highlight uploads (signed — see `POST /api/uploads/sign`) | optional |
+| `CLOUDINARY_CLOUD_NAME` | scopes which Cloudinary URLs the API accepts to your own account | optional |
 
 > **Before a public / app-store launch:** set `SEED_DEMO=false` so the production
 > database has no publicly-known demo credentials or fake content. (Existing demo

@@ -4,6 +4,7 @@ import { useAuth } from "../auth/AuthContext";
 import { api } from "../lib/api";
 import { readCache, writeCache } from "../lib/cache";
 import { celebrate } from "../lib/celebrate";
+import { getUploadSignature } from "../lib/cloudinaryUpload";
 import type { Highlight, HighlightComment } from "../types";
 
 const HL_CACHE_KEY = "highlights";
@@ -12,13 +13,12 @@ import { HighlightCardSkeleton } from "../components/Skeleton";
 import ReportButton from "../components/ReportButton";
 
 // ---------------------------------------------------------------------------
-// Cloudinary unsigned upload
+// Cloudinary signed upload
 // ---------------------------------------------------------------------------
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined;
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
 
 function cloudinaryConfigured() {
-  return Boolean(CLOUD_NAME && UPLOAD_PRESET);
+  return Boolean(CLOUD_NAME);
 }
 
 // Accepted media. Checked by MIME type first, then by file extension as a
@@ -47,15 +47,18 @@ function getMediaType(file: File): "video" | "photo" {
   return detectMediaType(file) ?? "video";
 }
 
-function uploadToCloudinary(
+async function uploadToCloudinary(
   file: File,
   onProgress: (pct: number) => void
 ): Promise<{ videoUrl: string; thumbUrl: string; mediaType: "video" | "photo" }> {
   const mediaType = getMediaType(file);
+  const { signature, timestamp, apiKey } = await getUploadSignature();
   return new Promise((resolve, reject) => {
     const form = new FormData();
     form.append("file", file);
-    form.append("upload_preset", UPLOAD_PRESET!);
+    form.append("api_key", apiKey);
+    form.append("timestamp", String(timestamp));
+    form.append("signature", signature);
     const endpoint = mediaType === "photo" ? "image" : "video";
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${endpoint}/upload`);
@@ -464,7 +467,7 @@ function UploadModal({
   async function handleShare() {
     if (!file) return;
     if (!cloudinaryConfigured()) {
-      setError("Media upload is not configured. Contact the admin to set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET.");
+      setError("Media upload is not configured. Contact the admin to set VITE_CLOUDINARY_CLOUD_NAME (and the server's CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET).");
       return;
     }
     setUploading(true);

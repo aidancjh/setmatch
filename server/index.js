@@ -449,6 +449,37 @@ app.get(
   })
 );
 
+// --- Cloudinary uploads (signed) ------------------------------------------
+// Signed uploads replace the old unsigned upload_preset flow: the preset's
+// name lives in the client bundle, so anyone could extract it and upload
+// arbitrary files to this Cloudinary account directly, bypassing the app
+// entirely (storage/bandwidth cost abuse). A signature is single-request and
+// requires CLOUDINARY_API_SECRET, which never leaves the server — only an
+// authenticated user can obtain one, and each is scoped to one timestamp.
+
+app.post(
+  "/api/uploads/sign",
+  requireAuth,
+  h(async (req, res) => {
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+    if (!apiKey || !apiSecret)
+      return res.status(503).json({ error: "Uploads are not configured." });
+
+    const timestamp = Math.floor(Date.now() / 1000);
+    // Cloudinary's signing algorithm: sign every upload parameter EXCEPT
+    // file/cloud_name/resource_type/api_key, sorted alphabetically as
+    // "key=value&key2=value2", with the api_secret appended (no separator),
+    // then SHA-1 hex digest. `timestamp` is the only parameter we send.
+    const signature = crypto
+      .createHash("sha1")
+      .update(`timestamp=${timestamp}${apiSecret}`)
+      .digest("hex");
+
+    res.json({ signature, timestamp, apiKey });
+  })
+);
+
 // --- Email debug (authenticated) -----------------------------------------
 
 app.get(
