@@ -148,14 +148,19 @@ app.get("/api/config", async (_req, res) => {
   }
 });
 
-// Health check for uptime monitors — verifies the DB is reachable.
+// Build identifier so we can tell exactly which commit is live. Railway sets
+// RAILWAY_GIT_COMMIT_SHA automatically on every deploy; falls back to "dev".
+const BUILD_SHA = (process.env.RAILWAY_GIT_COMMIT_SHA || "dev").slice(0, 7);
+
+// Health check for uptime monitors — verifies the DB is reachable. Also returns
+// the running build's commit so a deploy can be confirmed live from outside.
 app.get("/healthz", async (_req, res) => {
   try {
     await query("SELECT 1");
-    res.json({ status: "ok" });
+    res.json({ status: "ok", version: BUILD_SHA });
   } catch (err) {
     console.error("[health] db check failed:", err);
-    res.status(503).json({ status: "db_unavailable" });
+    res.status(503).json({ status: "db_unavailable", version: BUILD_SHA });
   }
 });
 
