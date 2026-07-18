@@ -6,6 +6,7 @@ import { useProfile } from "../hooks/useProfile";
 import { isInGame } from "../services/gamesService";
 import GameCard from "../components/GameCard";
 import { SkillBadge, RatingHero, RatingEmpty } from "../components/Badges";
+import { Spinner } from "../components/Skeleton";
 
 const POSITION_ABBR: Record<string, string> = {
   "Setter": "SET",
@@ -55,7 +56,7 @@ export default function UserProfile() {
   };
 
   if (profile === undefined) {
-    return <p className="py-10 text-center text-sm text-slate-400">Loading…</p>;
+    return <Spinner />;
   }
   if (profile === null) {
     return (

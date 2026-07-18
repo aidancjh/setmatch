@@ -2,6 +2,25 @@ function Pulse({ className }: { className?: string }) {
   return <div className={`animate-pulse rounded-md bg-slate-800 ${className ?? ""}`} />;
 }
 
+/**
+ * Small branded inline loader for full-page data fetches. Matches the app's
+ * pull-to-refresh spinner (brand-topped ring) so every "loading" moment looks
+ * the same instead of the bare "Loading…" text some pages used. Announces
+ * itself to assistive tech via role="status".
+ */
+export function Spinner({ label = "Loading" }: { label?: string }) {
+  return (
+    <div
+      className="flex flex-col items-center justify-center py-16"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-brand" />
+      <span className="sr-only">{label}</span>
+    </div>
+  );
+}
+
 export function GameCardSkeleton() {
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-sm">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import type { Game } from "../types";
+import { Spinner } from "../components/Skeleton";
 import {
   cancelSeries,
   deleteGame,
@@ -82,7 +83,7 @@ export default function GameDetail() {
   }, [game?.id, me.id]);
 
   if (game === undefined) {
-    return <p className="py-10 text-center text-sm text-slate-400">Loading…</p>;
+    return <Spinner />;
   }
   if (game === null) {
     return (

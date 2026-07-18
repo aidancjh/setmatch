@@ -4,6 +4,7 @@ import type { Game, NewGameInput } from "../types";
 import { getGame, updateGame } from "../services/gamesService";
 import { useAuth } from "../auth/AuthContext";
 import GameForm from "../components/GameForm";
+import { Spinner } from "../components/Skeleton";
 
 export default function EditGame() {
   const { id = "" } = useParams();
@@ -16,7 +17,7 @@ export default function EditGame() {
   }, [id]);
 
   if (game === undefined) {
-    return <p className="py-10 text-center text-sm text-slate-400">Loading…</p>;
+    return <Spinner />;
   }
   if (game === null) {
     return (

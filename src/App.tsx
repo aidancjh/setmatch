@@ -5,6 +5,7 @@ import Auth from "./pages/Auth";
 import Privacy from "./pages/Privacy";
 import Waitlist from "./pages/Waitlist";
 import RequireAuth from "./auth/RequireAuth";
+import NotFound from "./components/NotFound";
 import { GameCardSkeleton } from "./components/Skeleton";
 
 // Lazy-load all authenticated pages so the initial bundle is smaller.
@@ -71,7 +72,7 @@ export default function App() {
         <Route path="/my-games" element={<Suspense fallback={<PageFallback />}><MyGames /></Suspense>} />
         <Route path="/profile" element={<Suspense fallback={<PageFallback />}><Profile /></Suspense>} />
         <Route path="/settings" element={<Suspense fallback={<PageFallback />}><Settings /></Suspense>} />
-        <Route path="*" element={<Suspense fallback={<PageFallback />}><BrowseGames /></Suspense>} />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   );

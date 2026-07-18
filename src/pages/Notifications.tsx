@@ -7,6 +7,7 @@ import {
   markNotificationsRead,
 } from "../services/gamesService";
 import { timeAgo } from "../lib/format";
+import { Spinner } from "../components/Skeleton";
 import {
   BellIcon,
   ChatIcon,
@@ -80,7 +81,7 @@ export default function Notifications() {
       </div>
 
       {items === null ? (
-        <p className="py-10 text-center text-sm text-slate-400">Loading…</p>
+        <Spinner />
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-700 bg-slate-800 py-12 text-center">
           <IconChip size="lg">

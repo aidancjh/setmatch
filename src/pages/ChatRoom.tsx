@@ -6,6 +6,7 @@ import { useAuth } from "../auth/AuthContext";
 import { formatDate, timeAgo } from "../lib/format";
 import { markChatSeen } from "../lib/chatSeen";
 import { IconChip, LockIcon } from "../components/icons";
+import { Spinner } from "../components/Skeleton";
 
 const POLL_MS = 4000;
 
@@ -146,7 +147,7 @@ export default function ChatRoom() {
             className="flex-1 space-y-3 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-800/60 p-3"
           >
             {messages === null ? (
-              <p className="py-10 text-center text-xs text-slate-400">Loading…</p>
+              <Spinner />
             ) : messages.length === 0 ? (
               <p className="py-10 text-center text-xs text-slate-400">
                 No messages yet — start the conversation.
