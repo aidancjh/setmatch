@@ -58,6 +58,15 @@ export function CalendarIcon({ className }: IconProps) {
   );
 }
 
+export function BagIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M6 8h12l-1 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8Z" />
+      <path d="M9 8V6.5a3 3 0 0 1 6 0V8" />
+    </svg>
+  );
+}
+
 export function UserIcon({ className }: IconProps) {
   return (
     <svg className={className} {...base}>

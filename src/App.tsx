@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import Auth from "./pages/Auth";
 import Privacy from "./pages/Privacy";
@@ -13,7 +13,8 @@ const BrowseGames = lazy(() => import("./pages/BrowseGames"));
 const GameDetail  = lazy(() => import("./pages/GameDetail"));
 const CreateGame  = lazy(() => import("./pages/CreateGame"));
 const EditGame    = lazy(() => import("./pages/EditGame"));
-const MyGames     = lazy(() => import("./pages/MyGames"));
+const Marketplace = lazy(() => import("./pages/Marketplace"));
+const MarketplaceItem = lazy(() => import("./pages/MarketplaceItem"));
 const Profile     = lazy(() => import("./pages/Profile"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Highlights  = lazy(() => import("./pages/Highlights"));
@@ -69,7 +70,10 @@ export default function App() {
         <Route path="/user/:id" element={<Suspense fallback={<PageFallback />}><UserProfile /></Suspense>} />
         <Route path="/game/:id/edit" element={<Suspense fallback={<PageFallback />}><EditGame /></Suspense>} />
         <Route path="/create" element={<Suspense fallback={<PageFallback />}><CreateGame /></Suspense>} />
-        <Route path="/my-games" element={<Suspense fallback={<PageFallback />}><MyGames /></Suspense>} />
+        <Route path="/marketplace" element={<Suspense fallback={<PageFallback />}><Marketplace /></Suspense>} />
+        <Route path="/marketplace/:id" element={<Suspense fallback={<PageFallback />}><MarketplaceItem /></Suspense>} />
+        {/* My Games merged into Browse's pill switcher — keep the old path working */}
+        <Route path="/my-games" element={<Navigate to="/?view=upcoming" replace />} />
         <Route path="/profile" element={<Suspense fallback={<PageFallback />}><Profile /></Suspense>} />
         <Route path="/settings" element={<Suspense fallback={<PageFallback />}><Settings /></Suspense>} />
         <Route path="*" element={<NotFound />} />

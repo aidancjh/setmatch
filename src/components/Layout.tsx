@@ -7,6 +7,7 @@ import { useAppConfig } from "../hooks/useAppConfig";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { refreshAll } from "../services/gamesService";
 import {
+  BagIcon,
   CalendarIcon,
   ChatIcon,
   ClapperIcon,
@@ -24,7 +25,7 @@ import {
 function tabSlotFor(pathname: string): number {
   if (pathname === "/") return 0;
   if (pathname.startsWith("/highlights")) return 1;
-  if (pathname.startsWith("/my-games")) return 3;
+  if (pathname.startsWith("/marketplace")) return 3;
   if (pathname.startsWith("/profile")) return 4;
   return -1;
 }
@@ -34,7 +35,7 @@ const leftTabs = [
   { to: "/highlights", label: "Highlights", Icon: VideoIcon, end: false },
 ];
 const rightTabs = [
-  { to: "/my-games", label: "My Games", Icon: CalendarIcon, end: false },
+  { to: "/marketplace", label: "Market", Icon: BagIcon, end: false },
   { to: "/profile", label: "Profile", Icon: UserIcon, end: false },
 ];
 

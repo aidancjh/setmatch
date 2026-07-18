@@ -188,7 +188,7 @@ export default function GameDetail() {
     setDeleting(true);
     try {
       await deleteGame(game.id);
-      navigate("/my-games");
+      navigate("/?view=upcoming");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not delete game.");
       setDeleteModal(false);
@@ -202,7 +202,7 @@ export default function GameDetail() {
     setCancelingSeries(true);
     try {
       await cancelSeries(game.id);
-      navigate("/my-games");
+      navigate("/?view=upcoming");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not cancel the series.");
       setSeriesModal(false);
