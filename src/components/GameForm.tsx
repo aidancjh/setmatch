@@ -11,9 +11,7 @@ const netHeightOptions = [
   { value: "Recreational (2.35m)", label: "Recreational (2.35m)" },
   { value: "Venue Standard", label: "Venue standard" },
 ];
-const positions = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist", "Any"];
-const rotationTypes = ["Standard", "No Rotation", "King of the Court", "Round Robin"];
-const regions = ["North", "South", "East", "West"];
+const positions = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Any"];
 
 export const blankGame: NewGameInput = {
   title: "",
@@ -40,27 +38,18 @@ export const blankGame: NewGameInput = {
  * validation, and styling live in one place. The parent supplies the initial
  * values, the submit-button label, and what happens on submit.
  */
-const repeatOptions = [
-  { label: "One-time", weeks: 1 },
-  { label: "Weekly ×4", weeks: 4 },
-  { label: "Weekly ×8", weeks: 8 },
-];
-
 export default function GameForm({
   initial,
   submitLabel,
   onSubmit,
   onCancel,
-  allowRepeat = false,
 }: {
   initial: NewGameInput;
   submitLabel: string;
-  onSubmit: (input: NewGameInput, repeatWeeks: number) => Promise<void>;
+  onSubmit: (input: NewGameInput) => Promise<void>;
   onCancel: () => void;
-  allowRepeat?: boolean;
 }) {
   const [form, setForm] = useState<NewGameInput>(initial);
-  const [repeatWeeks, setRepeatWeeks] = useState(1);
   // The roster is expressed as two numbers the host thinks in:
   //   playersHave — people already locked in, INCLUDING the host (always ≥ 1)
   //   playersNeed — how many more open spots to fill
@@ -110,18 +99,15 @@ export default function GameForm({
     try {
       const totalSlots = totalPlayers;
       const preFilled = Math.max(0, playersHave - 1); // host occupies 1 real slot
-      await onSubmit(
-        {
-          ...form,
-          title: form.title.trim(),
-          location: form.location.trim(),
-          area: form.area.trim() || form.location.trim(),
-          notes: form.notes.trim(),
-          totalSlots,
-          preFilled,
-        },
-        repeatWeeks
-      );
+      await onSubmit({
+        ...form,
+        title: form.title.trim(),
+        location: form.location.trim(),
+        area: form.area.trim() || form.location.trim(),
+        notes: form.notes.trim(),
+        totalSlots,
+        preFilled,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setBusy(false);
@@ -269,7 +255,7 @@ export default function GameForm({
             type="time"
             value={form.time}
             onChange={(e) => set("time", e.target.value)}
-            className={inputCls}
+            className={`${inputCls} min-w-0`}
           />
         </Field>
         <Field label="End time (optional)">
@@ -277,7 +263,7 @@ export default function GameForm({
             type="time"
             value={form.endTime}
             onChange={(e) => set("endTime", e.target.value)}
-            className={inputCls}
+            className={`${inputCls} min-w-0`}
           />
         </Field>
       </div>
@@ -311,24 +297,6 @@ export default function GameForm({
           </div>
           <p className="mt-1.5 text-[11px] text-slate-400">Leave blank if any position is welcome.</p>
         </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-200">Rotation</label>
-          <div className="flex flex-wrap gap-1.5">
-            {rotationTypes.map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => set("rotationType", r)}
-                className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
-                  form.rotationType === r ? "bg-brand text-white" : "bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700"
-                }`}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
       <Field label="Venue / location">
@@ -349,28 +317,6 @@ export default function GameForm({
         />
       </Field>
 
-      <Field label="Region">
-        <div className="flex flex-wrap gap-1.5">
-          {regions.map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => set("region", form.region === r ? "" : r)}
-              className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
-                form.region === r
-                  ? "bg-brand text-white"
-                  : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-              }`}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-        <p className="mt-1.5 text-[11px] text-slate-400">
-          Helps players filter games by part of the island.
-        </p>
-      </Field>
-
       <Field label="Notes (optional)">
         <textarea
           value={form.notes}
@@ -380,32 +326,6 @@ export default function GameForm({
           className={`${inputCls} resize-none`}
         />
       </Field>
-
-      {allowRepeat && (
-        <Field label="Repeat">
-          <div className="flex flex-wrap gap-1.5">
-            {repeatOptions.map((o) => (
-              <button
-                key={o.weeks}
-                type="button"
-                onClick={() => setRepeatWeeks(o.weeks)}
-                className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
-                  repeatWeeks === o.weeks
-                    ? "bg-brand text-white"
-                    : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                }`}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-          {repeatWeeks > 1 && (
-            <p className="mt-1.5 text-xs text-slate-400">
-              Creates {repeatWeeks} games, one a week starting on the date above.
-            </p>
-          )}
-        </Field>
-      )}
 
       {error && (
         <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">

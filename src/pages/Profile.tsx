@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getUserHighlights } from "../services/gamesService";
 import { api } from "../lib/api";
 import { getUploadSignature } from "../lib/cloudinaryUpload";
 import type { Highlight, SkillLevel } from "../types";
+import HighlightUploadModal from "../components/HighlightUploadModal";
 import { SkillBadge, RatingHero, RatingEmpty } from "../components/Badges";
 import {
   CameraIcon,
@@ -194,10 +195,10 @@ function BannerCropper({
 
 function HighlightGrid({
   highlights,
-  onNavigate,
+  onAdd,
 }: {
   highlights: Highlight[];
-  onNavigate: () => void;
+  onAdd: () => void;
 }) {
   const [playing, setPlaying] = useState<Highlight | null>(null);
 
@@ -211,7 +212,7 @@ function HighlightGrid({
           </IconChip>
           <p className="mt-1 text-sm text-slate-400">No highlights yet</p>
           <button
-            onClick={onNavigate}
+            onClick={onAdd}
             className="mt-3 rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-white"
           >
             Share your first clip
@@ -227,7 +228,7 @@ function HighlightGrid({
         <p className="text-sm font-semibold text-white">
           My Highlights <span className="font-normal text-slate-400">({highlights.length})</span>
         </p>
-        <button onClick={onNavigate} className="text-xs font-semibold text-brand">
+        <button onClick={onAdd} className="text-xs font-semibold text-brand">
           + Add
         </button>
       </div>
@@ -299,10 +300,21 @@ function HighlightGrid({
 export default function Profile() {
   const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [editing, setEditing] = useState(false);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [showUpload, setShowUpload] = useState(false);
   const [stats, setStats] = useState<{ gamesHosted: number; gamesPlayed: number } | null>(null);
+
+  // Opened from the "+" post sheet (navigates to /profile?upload=1) — auto-open
+  // the highlight upload sheet, then strip the param so a refresh won't re-open.
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("upload") === "1") {
+      setShowUpload(true);
+      navigate("/profile", { replace: true });
+    }
+  }, [location.search, navigate]);
 
   // Banner customization
   const [bannerColor, setBannerColor] = useState(user?.bannerColor || "");
@@ -771,11 +783,19 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Highlights feed */}
+      {/* Highlights — the user's own clips, posted from here */}
       <HighlightGrid
         highlights={highlights}
-        onNavigate={() => navigate("/highlights?upload=1")}
+        onAdd={() => setShowUpload(true)}
       />
+
+      {/* Highlight upload sheet */}
+      {showUpload && (
+        <HighlightUploadModal
+          onClose={() => setShowUpload(false)}
+          onUploaded={(hl) => setHighlights((prev) => [hl, ...prev])}
+        />
+      )}
 
       {/* Banner image cropper modal */}
       {bannerCropSrc && (

@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import NotificationBell from "./NotificationBell";
 import CelebrationHost from "./CelebrationHost";
 import { useAuth } from "../auth/AuthContext";
 import { useAppConfig } from "../hooks/useAppConfig";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { refreshAll } from "../services/gamesService";
 import {
+  ArrowUpIcon,
   BagIcon,
+  BellIcon,
   CalendarIcon,
   ChatIcon,
   ClapperIcon,
@@ -16,7 +17,6 @@ import {
   SearchIcon,
   SettingsIcon,
   UserIcon,
-  VideoIcon,
   VolleyballIcon,
 } from "./icons";
 
@@ -24,18 +24,18 @@ import {
 // four tab roots (e.g. a game detail page pushed on top of Browse/My Games).
 function tabSlotFor(pathname: string): number {
   if (pathname === "/") return 0;
-  if (pathname.startsWith("/highlights")) return 1;
-  if (pathname.startsWith("/marketplace")) return 3;
+  if (pathname.startsWith("/marketplace")) return 1;
+  if (pathname.startsWith("/notifications")) return 3;
   if (pathname.startsWith("/profile")) return 4;
   return -1;
 }
 
 const leftTabs = [
   { to: "/", label: "Browse", Icon: SearchIcon, end: true },
-  { to: "/highlights", label: "Highlights", Icon: VideoIcon, end: false },
+  { to: "/marketplace", label: "Market", Icon: BagIcon, end: false },
 ];
 const rightTabs = [
-  { to: "/marketplace", label: "Market", Icon: BagIcon, end: false },
+  { to: "/notifications", label: "Alerts", Icon: BellIcon, end: false },
   { to: "/profile", label: "Profile", Icon: UserIcon, end: false },
 ];
 
@@ -56,8 +56,8 @@ function PostSheet({ onClose }: { onClose: () => void }) {
     {
       Icon: ClapperIcon,
       label: "Share a highlight",
-      sub: "Upload a sports clip for everyone to see",
-      action: () => { navigate("/highlights?upload=1"); onClose(); },
+      sub: "Post a sports clip to your profile",
+      action: () => { navigate("/profile?upload=1"); onClose(); },
     },
   ];
 
@@ -158,6 +158,24 @@ export default function Layout() {
   const mainRef = useRef<HTMLElement>(null);
   const { pull, refreshing } = usePullToRefresh(mainRef, refreshAll);
 
+  // "Back to top" button — only shown once the scroll region is meaningfully
+  // scrolled, so pages too short to scroll never surface it. Because <main> is
+  // the app's single scroll container, this covers every list (Browse, Market,
+  // Highlights, …) with one implementation.
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const onScroll = () => setShowScrollTop(el.scrollTop > 400);
+    onScroll();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+  // Reset visibility on navigation — each page starts at the top.
+  useEffect(() => {
+    setShowScrollTop(false);
+  }, [pathname]);
+
   const isAdmin = user?.role === "admin";
 
   // The post sheet is part of the persistent app shell (it wraps the Outlet),
@@ -193,10 +211,10 @@ export default function Layout() {
 
   return (
     <div
-      className="mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-black shadow-sm"
+      className="relative mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-black shadow-sm"
       style={{ height: "100svh" }}
     >
-      {/* Top bar — logo left, notifications right */}
+      {/* Top bar — logo left, quick actions right */}
       <header
         className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-black/90 px-4 py-3 backdrop-blur"
         style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
@@ -220,7 +238,6 @@ export default function Layout() {
           >
             <ChatIcon className="h-5 w-5" />
           </button>
-          <NotificationBell />
           <button
             onClick={() => navigate("/settings")}
             className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 hover:bg-slate-800"
@@ -268,6 +285,21 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      {/* Back-to-top — floats above the nav, only once the page is scrolled. */}
+      <button
+        onClick={() =>
+          mainRef.current?.scrollTo({ top: 0, behavior: "smooth" })
+        }
+        aria-label="Scroll to top"
+        className={`absolute bottom-24 right-4 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-slate-700 bg-slate-900/90 text-white shadow-lg backdrop-blur transition-all duration-200 hover:bg-slate-800 active:scale-90 ${
+          showScrollTop
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-2 opacity-0"
+        }`}
+      >
+        <ArrowUpIcon className="h-5 w-5" />
+      </button>
 
       {/* Bottom tab bar with raised center "+" — in normal flow as the last
           flex child so it sits flush at the bottom on every page (fixed

@@ -484,16 +484,26 @@ export default function AdminApp() {
                       View game
                     </a>
                   )}
-                  {r.targetType === "highlight" && (
-                    <a
-                      href={consumerUrl("/highlights")}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200"
-                    >
-                      View highlights
-                    </a>
-                  )}
+                  {r.targetType === "highlight" && (() => {
+                    // The consumer highlights feed was removed, so link straight
+                    // to the reported clip's media (loaded in the Highlights list
+                    // above). If it's already gone, say so instead of dead-linking.
+                    const hl = highlights.find((h) => h.id === r.targetId);
+                    return hl ? (
+                      <a
+                        href={hl.videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                      >
+                        View clip
+                      </a>
+                    ) : (
+                      <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-400">
+                        Clip unavailable
+                      </span>
+                    );
+                  })()}
                   <button
                     onClick={() => deleteReported(r)}
                     className="rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-100"

@@ -17,7 +17,6 @@ const Marketplace = lazy(() => import("./pages/Marketplace"));
 const MarketplaceItem = lazy(() => import("./pages/MarketplaceItem"));
 const Profile     = lazy(() => import("./pages/Profile"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
-const Highlights  = lazy(() => import("./pages/Highlights"));
 const Settings    = lazy(() => import("./pages/Settings"));
 const Onboarding  = lazy(() => import("./pages/Onboarding"));
 const Chats       = lazy(() => import("./pages/Chats"));
@@ -62,7 +61,9 @@ export default function App() {
         }
       >
         <Route path="/" element={<Suspense fallback={<PageFallback />}><BrowseGames /></Suspense>} />
-        <Route path="/highlights" element={<Suspense fallback={<PageFallback />}><Highlights /></Suspense>} />
+        {/* Highlights feed removed — users post their own clips from their profile.
+            Redirect any stray links (old bookmarks, admin moderation) to the profile. */}
+        <Route path="/highlights" element={<Navigate to="/profile" replace />} />
         <Route path="/chats" element={<Suspense fallback={<PageFallback />}><Chats /></Suspense>} />
         <Route path="/notifications" element={<Suspense fallback={<PageFallback />}><Notifications /></Suspense>} />
         <Route path="/chats/:id" element={<Suspense fallback={<PageFallback />}><ChatRoom /></Suspense>} />
