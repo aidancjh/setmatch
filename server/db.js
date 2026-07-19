@@ -3,6 +3,7 @@
 // the host in production). Set DATABASE_SSL=true for managed databases that
 // require TLS (most cloud Postgres do; local Postgres does not).
 import pg from "pg";
+import * as Sentry from "@sentry/node";
 
 const { Pool } = pg;
 
@@ -23,6 +24,36 @@ export const pool = new Pool({
   connectionString,
   ssl: process.env.DATABASE_SSL === "true" ? { rejectUnauthorized: false } : false,
   max: poolMax,
+  // Hardening against the managed DB / its proxy silently dropping connections:
+  //  - keepAlive sends TCP keepalive probes so idle sockets stay alive and dead
+  //    ones are detected quickly, instead of surfacing only on the next query.
+  //  - idleTimeoutMillis retires idle clients ourselves (30s) so the pool tends
+  //    to discard a connection before the backend/proxy's own idle timeout can
+  //    kill it out from under us.
+  //  - connectionTimeoutMillis fails a stuck connect after 10s rather than
+  //    letting a request hang indefinitely when the DB is unreachable.
+  keepAlive: true,
+  idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 10_000,
+});
+
+// CRITICAL: a pooled client can emit 'error' while sitting *idle* — a backend
+// restart, failover, network partition, or the host's proxy closing an idle
+// connection all trigger it. pg surfaces that through the pool's 'error' event,
+// and Node's EventEmitter re-throws any 'error' with no listener as an
+// uncaughtException. That is exactly the fatal "Connection terminated
+// unexpectedly" crash Sentry reported: with no handler here, one dropped idle
+// connection took the whole process down. The pool automatically removes the
+// dead client and opens a fresh one on the next query, so recovery just means
+// logging it and NOT letting it propagate.
+pool.on("error", (err) => {
+  console.error("[db] idle client error (pool recovered automatically):", err.message);
+  // Report as a warning, not a fatal — it's an expected, self-healing transient
+  // now that it's handled, but we still want visibility if it starts spiking.
+  Sentry.captureException(err, {
+    level: "warning",
+    tags: { source: "pg-pool-idle-client" },
+  });
 });
 
 /** Run a parameterized query and return the pg result. */
