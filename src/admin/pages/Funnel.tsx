@@ -70,6 +70,37 @@ function evenLabelIndices(n: number, maxLabels = 6): number[] {
   return Array.from(idx).sort((a, b) => a - b);
 }
 
+// One stage of a drop-off funnel: a label, its count/share of the top stage,
+// and a bar sized to that share so the shrinkage is visible at a glance.
+function FunnelStage({
+  label,
+  count,
+  pct,
+  barColor,
+}: {
+  label: string;
+  count: number;
+  pct: number;
+  barColor: string;
+}) {
+  return (
+    <div>
+      <div className="mb-1 flex items-baseline justify-between gap-2">
+        <span className="text-xs font-medium text-slate-600">{label}</span>
+        <span className="shrink-0 text-xs tabular-nums text-slate-500">
+          {count.toLocaleString()} · {pct}%
+        </span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+        <div
+          className={`h-full rounded-full ${barColor}`}
+          style={{ width: `${Math.max(2, Math.min(100, pct))}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // A titled box. Every section is one of these so the tab reads as a stack of
 // cards rather than loose blocks running together.
 function Card({ title, children }: { title: string; children: ReactNode }) {
@@ -241,6 +272,25 @@ export default function Funnel() {
     { label: "Conversion", value: `${data.submittedRate}%` },
   ];
 
+  // Drop-off funnel: visits → started the waitlist form → actually submitted.
+  // `started`/`startedRate` already come back from the API but were never
+  // rendered — they're exactly what turns a single "27% conversion" number
+  // into an actionable "most people who leave, leave before opening the form"
+  // (vs. abandoning partway through it). Both depend on PostHog visit/start
+  // data, so skip it when that's unavailable (posthogError / zero visits)
+  // rather than show a misleading all-zero funnel.
+  const showDropoff = !data.posthogError && data.visits > 0;
+  const startedPct = data.startedRate;
+  const submittedPctOfVisits = data.submittedRate;
+  const submittedPctOfStarted =
+    data.started > 0 ? Math.min(100, Math.round((data.submittedDb / data.started) * 100)) : null;
+  const dropBeforeStarting = Math.max(0, 100 - startedPct);
+  const dropAfterStarting = submittedPctOfStarted !== null ? Math.max(0, 100 - submittedPctOfStarted) : null;
+  const biggestDrop =
+    dropAfterStarting !== null && dropAfterStarting > dropBeforeStarting
+      ? { pct: dropAfterStarting, where: "after starting the form but before finishing it" }
+      : { pct: dropBeforeStarting, where: "before ever opening the form" };
+
   return (
     <div className="space-y-4 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -274,15 +324,15 @@ export default function Funnel() {
       )}
 
       {/* 1, 2 & 3. Pageviews / signups over time plus the conversion-rate
-          summary, in one row on desktop. The two charts are scaled down to
-          ~70% of the width they used to fill edge-to-edge (7fr + 7fr out of
-          20fr), and the conversion card sits in the space that frees up on
-          the right instead of its own full-width row below. Pageviews are
+          summary, in one row on desktop. The two charts are scaled down from
+          filling the row edge-to-edge (was 7fr/7fr/6fr — 35/35/30%), and the
+          conversion card is a bit wider still (6fr/6fr/7fr — 31.6/31.6/36.8%)
+          now that it also holds the drop-off funnel below. Pageviews are
           scoped to "since launch" (server/posthog.js LAUNCH_DATE) — the
           pre-launch dev/QA traffic isn't meaningful to show next to real
           traffic. Signups stay all-time since those are real people already
           on the list. */}
-      <div className="grid gap-4 md:grid-cols-[7fr_7fr_6fr]">
+      <div className="grid gap-4 md:grid-cols-[6fr_6fr_7fr]">
         <Card title="Pageviews over time (since launch)">
           <TimeSeriesLineChart
             rows={data.visitsByDay}
@@ -315,6 +365,35 @@ export default function Funnel() {
             PostHog also recorded {data.submittedPosthog} client-side submit events since launch
             (informational — the signup count above is the source of truth from our own database).
           </p>
+
+          {/* Where visitors drop off — visits → started the form → actually
+              submitted. Skipped when PostHog visit data isn't available since
+              a start/visit-based funnel is meaningless without it. */}
+          {showDropoff && (
+            <div className="space-y-3 border-t border-slate-100 pt-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                Where visitors drop off
+              </p>
+              <FunnelStage label="Visited" count={data.visits} pct={100} barColor="bg-blue-400" />
+              <FunnelStage
+                label="Started the form"
+                count={data.started}
+                pct={startedPct}
+                barColor="bg-amber-400"
+              />
+              <FunnelStage
+                label="Signed up"
+                count={data.submittedDb}
+                pct={submittedPctOfVisits}
+                barColor="bg-emerald-400"
+              />
+              {biggestDrop.pct > 0 && (
+                <p className="rounded-lg bg-rose-50 px-2.5 py-2 text-[11px] leading-snug text-rose-700">
+                  Biggest drop-off: <strong>{biggestDrop.pct}%</strong> leave {biggestDrop.where}.
+                </p>
+              )}
+            </div>
+          )}
         </Card>
       </div>
 
