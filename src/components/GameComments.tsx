@@ -5,6 +5,7 @@ import { addComment, deleteComment, getComments } from "../services/gamesService
 import { useAuth } from "../auth/AuthContext";
 import { timeAgo } from "../lib/format";
 import ReportButton from "./ReportButton";
+import ErrorModal from "./ErrorModal";
 import { StarIcon, XIcon } from "./icons";
 
 /**
@@ -138,9 +139,7 @@ export default function GameComments({
         </ul>
       )}
 
-      {error && (
-        <p className="mt-2 text-xs text-rose-600">{error}</p>
-      )}
+      {error && <ErrorModal message={error} onClose={() => setError("")} />}
 
       {/* Composer */}
       <form onSubmit={handlePost} className="mt-3 flex items-end gap-2 border-t border-slate-800 pt-3">

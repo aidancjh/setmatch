@@ -39,17 +39,35 @@ const SOURCE_LABELS: Record<string, string> = {
   test: "Test (excluded)",
 };
 
-// "Nice" integer axis ticks from 0 up to at least max (~4 steps of 1/2/5×10ⁿ).
-// Guarantees whole-number increments so count axes never show fractions.
-function niceTicks(max: number): number[] {
+// "Nice" integer axis ticks from 0 up to at least max (~`targetSteps` steps of
+// 1/2/5×10ⁿ). Guarantees whole-number increments so count axes never show
+// fractions. Pass a larger targetSteps for a denser, finer-grained axis.
+function niceTicks(max: number, targetSteps = 4): number[] {
   const m = Math.max(1, max);
-  const rawStep = m / 4;
+  const rawStep = m / targetSteps;
   const pow = Math.pow(10, Math.floor(Math.log10(rawStep)));
   const step = Math.max(1, Math.round([1, 2, 5, 10].map((x) => x * pow).find((s) => s >= rawStep) ?? 10 * pow));
   const ticks: number[] = [];
   for (let v = 0; v <= m; v += step) ticks.push(v);
   if (ticks[ticks.length - 1] < m) ticks.push(ticks[ticks.length - 1] + step);
   return ticks;
+}
+
+// Picks up to `maxLabels` point indices out of `n`, spread as evenly as
+// integer rounding allows (always including the first and last point). Using
+// index % step to pick labels forces the last point in regardless of where it
+// falls, so whenever (n - 1) isn't a multiple of the step the final gap ends
+// up bigger or smaller than the rest — e.g. daily data landing on 5-day gaps
+// except one 9-day jump at the end. Evenly interpolating the indices avoids
+// that for any n, so this holds for whatever date range future data has.
+function evenLabelIndices(n: number, maxLabels = 6): number[] {
+  if (n <= 0) return [];
+  if (n <= maxLabels) return Array.from({ length: n }, (_, i) => i);
+  const idx = new Set<number>();
+  for (let i = 0; i < maxLabels; i++) {
+    idx.add(Math.round((i * (n - 1)) / (maxLabels - 1)));
+  }
+  return Array.from(idx).sort((a, b) => a - b);
 }
 
 // A titled box. Every section is one of these so the tab reads as a stack of
@@ -70,11 +88,14 @@ function TimeSeriesLineChart({
   emptyText,
   color,
   ariaLabel,
+  tickSteps = 4,
 }: {
   rows: WaitlistDayStat[];
   emptyText: string;
   color: string;
   ariaLabel: string;
+  /** Number of y-axis gridline steps — pass a larger value for a denser axis. */
+  tickSteps?: number;
 }) {
   if (rows.length === 0) return <p className="text-xs text-slate-400">{emptyText}</p>;
 
@@ -84,14 +105,14 @@ function TimeSeriesLineChart({
   const plotRight = w - 8;
   const plotTop = 12;
   const plotBottom = h - 22;
-  const ticks = niceTicks(Math.max(...rows.map((r) => r.count)));
+  const ticks = niceTicks(Math.max(...rows.map((r) => r.count)), tickSteps);
   const axisMax = ticks[ticks.length - 1];
   const stepX = rows.length > 1 ? (plotRight - plotLeft) / (rows.length - 1) : 0;
   const xOf = (i: number) => (rows.length > 1 ? plotLeft + i * stepX : (plotLeft + plotRight) / 2);
   const yOf = (v: number) => plotTop + (plotBottom - plotTop) * (1 - v / axisMax);
   const linePoints = rows.map((r, i) => `${xOf(i)},${yOf(r.count)}`).join(" ");
   const areaPoints = `${xOf(0)},${plotBottom} ${linePoints} ${xOf(rows.length - 1)},${plotBottom}`;
-  const labelEvery = Math.max(1, Math.ceil(rows.length / 6));
+  const labelIndices = evenLabelIndices(rows.length, 6);
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label={ariaLabel}>
@@ -109,19 +130,11 @@ function TimeSeriesLineChart({
           <title>{`${r.date}: ${r.count}`}</title>
         </circle>
       ))}
-      {rows.map((r, i) => {
-        const lastIdx = rows.length - 1;
-        const isRegular = i % labelEvery === 0;
-        const isLast = i === lastIdx;
-        if (!isRegular && !isLast) return null;
-        // Skip a regular tick that would crowd the final label.
-        if (isRegular && !isLast && lastIdx - i < labelEvery) return null;
-        return (
-          <text key={r.date} x={xOf(i)} y={h - 6} fontSize="9" textAnchor="middle" fill="#94a3b8">
-            {r.date.slice(5)}
-          </text>
-        );
-      })}
+      {labelIndices.map((i) => (
+        <text key={rows[i].date} x={xOf(i)} y={h - 6} fontSize="9" textAnchor="middle" fill="#94a3b8">
+          {rows[i].date.slice(5)}
+        </text>
+      ))}
     </svg>
   );
 }
@@ -260,19 +273,23 @@ export default function Funnel() {
         </p>
       )}
 
-      {/* 1 & 3. Pageviews / signups over time, side by side so each chart gets
-          a squarer aspect ratio instead of stretching full-width. Pageviews
-          are scoped to "since launch" (server/posthog.js LAUNCH_DATE) — the
+      {/* 1, 2 & 3. Pageviews / signups over time plus the conversion-rate
+          summary, in one row on desktop. The two charts are scaled down to
+          ~70% of the width they used to fill edge-to-edge (7fr + 7fr out of
+          20fr), and the conversion card sits in the space that frees up on
+          the right instead of its own full-width row below. Pageviews are
+          scoped to "since launch" (server/posthog.js LAUNCH_DATE) — the
           pre-launch dev/QA traffic isn't meaningful to show next to real
           traffic. Signups stay all-time since those are real people already
           on the list. */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-[7fr_7fr_6fr]">
         <Card title="Pageviews over time (since launch)">
           <TimeSeriesLineChart
             rows={data.visitsByDay}
             emptyText="No visits recorded yet."
             color="#3B82F6"
             ariaLabel={`Page views per day, ${data.visitsByDay.length} days`}
+            tickSteps={8}
           />
         </Card>
 
@@ -284,23 +301,22 @@ export default function Funnel() {
             ariaLabel={`Signups per day, ${data.signupsByDay.length} days`}
           />
         </Card>
-      </div>
 
-      {/* 2. Conversion rate — visits, signups, and the % between them. */}
-      <Card title="Conversion rate">
-        <div className="flex flex-wrap gap-2">
-          {conversionStats.map((s) => (
-            <div key={s.label} className="rounded-lg bg-slate-50 px-3 py-1.5">
-              <p className="text-[10px] text-slate-500">{s.label}</p>
-              <p className="text-base font-semibold text-slate-900">{s.value}</p>
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-slate-400">
-          PostHog also recorded {data.submittedPosthog} client-side submit events since launch
-          (informational — the signup count above is the source of truth from our own database).
-        </p>
-      </Card>
+        <Card title="Conversion rate">
+          <div className="flex flex-wrap gap-2">
+            {conversionStats.map((s) => (
+              <div key={s.label} className="rounded-lg bg-slate-50 px-3 py-1.5">
+                <p className="text-[10px] text-slate-500">{s.label}</p>
+                <p className="text-base font-semibold text-slate-900">{s.value}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400">
+            PostHog also recorded {data.submittedPosthog} client-side submit events since launch
+            (informational — the signup count above is the source of truth from our own database).
+          </p>
+        </Card>
+      </div>
 
       {/* 4. Signups by source — our own DB (exact, immune to ad blockers). */}
       <Card title="Signups by source (all time)">

@@ -25,6 +25,7 @@ import Modal from "../components/Modal";
 import { api } from "../lib/api";
 import { celebrate } from "../lib/celebrate";
 import ReportButton from "../components/ReportButton";
+import ErrorModal from "../components/ErrorModal";
 import {
   ArrowUpIcon,
   CalendarIcon,
@@ -694,11 +695,7 @@ export default function GameDetail() {
           {shareMsg}
         </p>
       )}
-      {error && (
-        <p className="mb-2 rounded-lg bg-rose-50 px-3 py-2 text-center text-sm text-rose-600">
-          {error}
-        </p>
-      )}
+      {error && <ErrorModal message={error} onClose={() => setError("")} />}
 
       {/* Primary action */}
       <div className="space-y-2">

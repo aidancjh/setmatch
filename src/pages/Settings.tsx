@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -11,6 +11,7 @@ import {
 import { setToken } from "../lib/api";
 import { feedbackEnabled, setFeedbackEnabled, playSound } from "../lib/feedback";
 import { CheckIcon, IconChip } from "../components/icons";
+import ErrorModal from "../components/ErrorModal";
 
 // ---------------------------------------------------------------------------
 // FAQ data
@@ -185,10 +186,18 @@ function FeedbackForm({ type, label, onDone }: { type: "feedback" | "bug"; label
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+  const [bodyInvalid, setBodyInvalid] = useState(false);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   async function handleSend() {
-    if (!body.trim()) { setError("Please write a message."); return; }
-    setBusy(true); setError("");
+    if (!body.trim()) {
+      setError("Please write a message.");
+      setBodyInvalid(true);
+      bodyRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      bodyRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    setBusy(true); setError(""); setBodyInvalid(false);
     try {
       await submitFeedback(type, subject, body);
       setDone(true);
@@ -219,13 +228,19 @@ function FeedbackForm({ type, label, onDone }: { type: "feedback" | "bug"; label
         className="w-full rounded-xl border border-slate-700 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
       />
       <textarea
+        ref={bodyRef}
         value={body}
-        onChange={(e) => setBody(e.target.value.slice(0, 2000))}
+        onChange={(e) => {
+          setBody(e.target.value.slice(0, 2000));
+          if (bodyInvalid) setBodyInvalid(false);
+        }}
         placeholder="Describe in detail…"
         rows={4}
-        className="w-full resize-none rounded-xl border border-slate-700 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+        className={`w-full resize-none rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-slate-400 ${
+          bodyInvalid ? "border-rose-500" : "border-slate-700"
+        }`}
       />
-      {error && <p className="text-sm text-rose-600">{error}</p>}
+      {error && <ErrorModal message={error} onClose={() => setError("")} />}
       <div className="flex gap-2">
         <button onClick={onDone} className="flex-1 rounded-xl border border-slate-700 py-2.5 text-sm font-semibold text-slate-400">Cancel</button>
         <button onClick={handleSend} disabled={busy} className="flex-1 rounded-xl bg-brand py-2.5 text-sm font-semibold text-white disabled:opacity-50">
@@ -255,6 +270,8 @@ export default function Settings() {
   }
   const [deleteError, setDeleteError] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
+  const [deletePasswordInvalid, setDeletePasswordInvalid] = useState(false);
+  const deletePasswordRef = useRef<HTMLInputElement>(null);
 
   function handleSignOut() {
     logout();
@@ -270,7 +287,14 @@ export default function Settings() {
       logout();
       navigate("/auth");
     } catch (e) {
-      setDeleteError(e instanceof Error ? e.message : "Could not delete account.");
+      const msg = e instanceof Error ? e.message : "Could not delete account.";
+      setDeleteError(msg);
+      // The server's rejection is almost always a wrong/blank password —
+      // point the user straight at that field when the message says so.
+      if (/password/i.test(msg)) {
+        setDeletePasswordInvalid(true);
+        deletePasswordRef.current?.focus({ preventScroll: true });
+      }
       setDeleting(false);
     }
   }
@@ -358,16 +382,26 @@ export default function Settings() {
               This permanently deletes your profile, games, highlights, and reviews. There is no undo.
             </p>
             <input
+              ref={deletePasswordRef}
               type="password"
               value={deletePassword}
-              onChange={(e) => setDeletePassword(e.target.value)}
+              onChange={(e) => {
+                setDeletePassword(e.target.value);
+                if (deletePasswordInvalid) setDeletePasswordInvalid(false);
+              }}
               placeholder="Enter your password to confirm"
               autoComplete="current-password"
-              className="mb-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm outline-none transition focus:border-slate-400"
+              className={`mb-2 w-full rounded-xl border bg-slate-900 px-4 py-2.5 text-sm outline-none transition focus:border-slate-400 ${
+                deletePasswordInvalid ? "border-rose-500" : "border-slate-700"
+              }`}
             />
             <p className="mb-3 text-xs text-slate-400">Signed in with Google? Leave this blank.</p>
             {deleteError && (
-              <p className="mb-3 text-sm text-rose-600">{deleteError}</p>
+              <ErrorModal
+                message={deleteError}
+                onClose={() => setDeleteError("")}
+                title="Couldn't delete your account"
+              />
             )}
             <div className="flex gap-2">
               <button

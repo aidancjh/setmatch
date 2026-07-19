@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Game } from "../types";
 import { spotsLeft } from "../services/gamesService";
-import { formatTimeRange } from "../lib/format";
+import { formatTimeRange, isPast } from "../lib/format";
 import { SkillBadge, SpotsBadge, TypeBadge } from "./Badges";
 import { ClockIcon, MapPinIcon } from "./icons";
 
@@ -27,6 +27,9 @@ export default function GameCard({
     ((game.players.length + (game.preFilled ?? 0)) / game.totalSlots) * 100
   );
   const { dow, day, mon } = parseDateParts(game.date);
+  // "You're in" reads oddly in present tense once the game already happened —
+  // only show it for games that haven't started/ended yet.
+  const showYouAreIn = youAreIn && !isPast(game.date);
 
   return (
     <Link
@@ -53,7 +56,7 @@ export default function GameCard({
               <h3 className="truncate text-sm font-semibold leading-tight text-white">
                 {game.title}
               </h3>
-              {youAreIn && (
+              {showYouAreIn && (
                 <span className="text-[11px] font-medium text-emerald-600">● You're in</span>
               )}
             </div>

@@ -7,6 +7,7 @@ import { formatDate, timeAgo } from "../lib/format";
 import { markChatSeen } from "../lib/chatSeen";
 import { IconChip, LockIcon } from "../components/icons";
 import { Spinner } from "../components/Skeleton";
+import ErrorModal from "../components/ErrorModal";
 
 const POLL_MS = 4000;
 
@@ -195,7 +196,7 @@ export default function ChatRoom() {
             <div ref={bottomRef} />
           </div>
 
-          {error && <p className="mt-2 text-xs text-rose-600">{error}</p>}
+          {error && <ErrorModal message={error} onClose={() => setError("")} />}
 
           {/* Composer */}
           <form

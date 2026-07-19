@@ -80,21 +80,29 @@ export default function Notifications() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight text-white">
-            Notifications
-          </h1>
-          {unreadCount > 0 && (
-            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-brand px-1.5 text-xs font-bold text-white">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          )}
+      {/* Same h1 + subtitle block every top-level page uses (Browse, Marketplace,
+          Chats) so the header sits at the same height when swiping between
+          tabs — this page was previously missing the subtitle line. */}
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-white">
+              Notifications
+            </h1>
+            {unreadCount > 0 && (
+              <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-brand px-1.5 text-xs font-bold text-white">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-slate-400">
+            Updates on games you've joined or hosted.
+          </p>
         </div>
         {unreadCount > 0 && (
           <button
             onClick={markAll}
-            className="shrink-0 rounded-full border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:bg-slate-800 active:scale-95"
+            className="mt-0.5 shrink-0 rounded-full border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:bg-slate-800 active:scale-95"
           >
             Mark all read
           </button>

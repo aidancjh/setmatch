@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { api, setToken } from "../lib/api";
 import type { User } from "../types";
 import { IconChip, MailIcon, VolleyballIcon } from "../components/icons";
+import ErrorModal from "../components/ErrorModal";
 
 type Mode = "signup" | "login" | "forgot" | "reset";
 
@@ -43,6 +44,21 @@ export default function Auth() {
   const [busy, setBusy] = useState(false);
   const [demoBusy, setDemoBusy] = useState<string | null>(null);
 
+  // Which field to red-outline + scroll/focus for a client-side validation
+  // failure. Only one auth form is ever mounted at a time, so one flag is
+  // enough even though "password" is used by both the main and reset forms.
+  const [invalidField, setInvalidField] = useState<"email" | "password" | "newPassword" | null>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const newPasswordRef = useRef<HTMLInputElement>(null);
+
+  function focusInvalid(field: "email" | "password" | "newPassword") {
+    setInvalidField(field);
+    const ref = field === "email" ? emailRef : field === "password" ? passwordRef : newPasswordRef;
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    ref.current?.focus({ preventScroll: true });
+  }
+
   // Google OAuth: token returned in URL → store and go home
   useEffect(() => {
     if (urlToken) {
@@ -59,8 +75,10 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setInvalidField(null);
     if (mode === "signup" && password.length < 10) {
       setError("Password must be at least 10 characters.");
+      focusInvalid("password");
       return;
     }
     setBusy(true);
@@ -94,9 +112,14 @@ export default function Auth() {
 
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) { setError("Enter your email address."); return; }
+    if (!email.trim()) {
+      setError("Enter your email address.");
+      focusInvalid("email");
+      return;
+    }
     setBusy(true);
     setError("");
+    setInvalidField(null);
     try {
       await api.post("/auth/forgot-password", { email: email.trim() });
       setForgotSent(true);
@@ -109,9 +132,14 @@ export default function Auth() {
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 10) { setError("Password must be at least 10 characters."); return; }
+    if (newPassword.length < 10) {
+      setError("Password must be at least 10 characters.");
+      focusInvalid("newPassword");
+      return;
+    }
     setBusy(true);
     setError("");
+    setInvalidField(null);
     try {
       const r = await api.post<{ token: string; user: User }>("/auth/reset-password", {
         token: urlReset,
@@ -139,14 +167,18 @@ export default function Auth() {
         <p className="mb-5 text-sm text-slate-400">Choose something you haven't used before.</p>
         <form onSubmit={handleReset} className="space-y-3">
           <input
+            ref={newPasswordRef}
             type="password"
             value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
+            onChange={(e) => {
+              setNewPassword(e.target.value);
+              if (invalidField === "newPassword") setInvalidField(null);
+            }}
             placeholder="New password (min 10 characters)"
-            className={inputCls}
+            className={fieldCls(invalidField === "newPassword")}
             autoComplete="new-password"
           />
-          {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>}
+          {error && <ErrorModal message={error} onClose={() => setError("")} />}
           <button
             type="submit"
             disabled={busy}
@@ -179,7 +211,7 @@ export default function Auth() {
             </p>
           </div>
           <button
-            onClick={() => { setMode("login"); setForgotSent(false); }}
+            onClick={() => { setMode("login"); setForgotSent(false); setInvalidField(null); }}
             className="mt-4 text-center text-sm font-semibold text-brand"
           >
             Back to sign in
@@ -198,14 +230,18 @@ export default function Auth() {
         <p className="mb-5 text-sm text-slate-400">Enter your email and we'll send a reset link.</p>
         <form onSubmit={handleForgot} className="space-y-3">
           <input
+            ref={emailRef}
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (invalidField === "email") setInvalidField(null);
+            }}
             placeholder="Email"
-            className={inputCls}
+            className={fieldCls(invalidField === "email")}
             autoComplete="email"
           />
-          {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>}
+          {error && <ErrorModal message={error} onClose={() => setError("")} />}
           <button
             type="submit"
             disabled={busy}
@@ -215,7 +251,7 @@ export default function Auth() {
           </button>
         </form>
         <button
-          onClick={() => { setMode("login"); setError(""); }}
+          onClick={() => { setMode("login"); setError(""); setInvalidField(null); }}
           className="mt-4 text-center text-sm font-semibold text-brand"
         >
           Back to sign in
@@ -261,11 +297,15 @@ export default function Auth() {
           autoComplete="email"
         />
         <input
+          ref={passwordRef}
           type="password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            if (invalidField === "password") setInvalidField(null);
+          }}
           placeholder={mode === "signup" ? "Password (min 10 characters)" : "Password"}
-          className={inputCls}
+          className={fieldCls(invalidField === "password")}
           autoComplete={mode === "signup" ? "new-password" : "current-password"}
         />
 
@@ -273,7 +313,7 @@ export default function Auth() {
           <div className="text-right">
             <button
               type="button"
-              onClick={() => { setMode("forgot"); setError(""); }}
+              onClick={() => { setMode("forgot"); setError(""); setInvalidField(null); }}
               className="text-xs font-medium text-slate-400 hover:text-brand"
             >
               Forgot password?
@@ -281,9 +321,7 @@ export default function Auth() {
           </div>
         )}
 
-        {error && (
-          <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>
-        )}
+        {error && <ErrorModal message={error} onClose={() => setError("")} />}
 
         <button
           type="submit"
@@ -343,6 +381,7 @@ export default function Auth() {
           onClick={() => {
             setMode(mode === "signup" ? "login" : "signup");
             setError("");
+            setInvalidField(null);
           }}
           className="font-semibold text-brand underline"
         >
@@ -363,3 +402,10 @@ export default function Auth() {
 
 const inputCls =
   "w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm outline-none transition focus:border-slate-400";
+
+// Same as inputCls, but red-bordered when the field failed validation.
+function fieldCls(invalid: boolean): string {
+  return `w-full rounded-xl border ${
+    invalid ? "border-rose-500" : "border-slate-700"
+  } bg-slate-900 px-4 py-3 text-sm outline-none transition focus:border-slate-400`;
+}

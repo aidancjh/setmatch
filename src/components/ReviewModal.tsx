@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Game } from "../types";
 import { submitReview } from "../services/gamesService";
 import { formatDate, formatTime } from "../lib/format";
+import ErrorModal from "./ErrorModal";
 
 function Stars({
   value,
@@ -45,18 +46,36 @@ export default function ReviewModal({
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [invalidField, setInvalidField] = useState<"rating" | "comment" | null>(null);
+  const starsRef = useRef<HTMLDivElement>(null);
+  const commentRef = useRef<HTMLTextAreaElement>(null);
+
+  function focusInvalid(field: "rating" | "comment") {
+    setInvalidField(field);
+    const ref = field === "rating" ? starsRef : commentRef;
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    ref.current?.focus({ preventScroll: true });
+  }
+
+  function handleRatingChange(v: number) {
+    setRating(v);
+    if (invalidField === "rating") setInvalidField(null);
+  }
 
   async function handleSubmit() {
     if (rating === 0) {
       setError("Please tap a star to rate the game.");
+      focusInvalid("rating");
       return;
     }
     if (!comment.trim()) {
       setError("Please leave a comment before submitting.");
+      focusInvalid("comment");
       return;
     }
     setBusy(true);
     setError("");
+    setInvalidField(null);
     try {
       await submitReview(game.id, rating, comment.trim());
       onDone();
@@ -84,8 +103,14 @@ export default function ReviewModal({
         </div>
 
         {/* Star rating */}
-        <div className="mb-2 flex flex-col items-center gap-2">
-          <Stars value={rating} onChange={setRating} />
+        <div
+          ref={starsRef}
+          tabIndex={-1}
+          className={`mb-2 flex flex-col items-center gap-2 rounded-xl p-1 outline-none ${
+            invalidField === "rating" ? "ring-2 ring-rose-500" : ""
+          }`}
+        >
+          <Stars value={rating} onChange={handleRatingChange} />
           <p className="h-5 text-sm font-semibold text-amber-500">
             {rating > 0 ? ratingLabel[rating] : "Tap to rate"}
           </p>
@@ -93,19 +118,21 @@ export default function ReviewModal({
 
         {/* Comment */}
         <textarea
+          ref={commentRef}
           value={comment}
-          onChange={(e) => setComment(e.target.value.slice(0, 500))}
+          onChange={(e) => {
+            setComment(e.target.value.slice(0, 500));
+            if (invalidField === "comment") setInvalidField(null);
+          }}
           placeholder="Leave a comment for the host… (required)"
           rows={3}
-          className="mt-3 w-full resize-none rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
+          className={`mt-3 w-full resize-none rounded-xl border bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-slate-400 ${
+            invalidField === "comment" ? "border-rose-500" : "border-slate-700"
+          }`}
         />
         <p className="mt-0.5 text-right text-xs text-slate-400">{comment.length}/500</p>
 
-        {error && (
-          <p className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">
-            {error}
-          </p>
-        )}
+        {error && <ErrorModal message={error} onClose={() => setError("")} />}
 
         {/* Actions */}
         <div className="mt-4 flex gap-2">

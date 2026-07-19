@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { GameGender, GameType, NewGameInput, SkillLevel } from "../types";
 import { todayISO } from "../lib/format";
+import ErrorModal from "./ErrorModal";
 
 const types: GameType[] = ["Indoor", "Beach", "Grass"];
 const skills: SkillLevel[] = ["Beginner", "Intermediate", "Advanced", "All Levels"];
@@ -12,6 +13,28 @@ const netHeightOptions = [
   { value: "Venue Standard", label: "Venue standard" },
 ];
 const positions = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Any"];
+
+// Names of the fields the form can mark invalid, and how to say them in a
+// sentence — used to build one message out of however many fields are wrong.
+const FIELD_LABEL: Record<string, string> = {
+  title: "title",
+  date: "date",
+  location: "location",
+  players: "player counts",
+};
+
+function missingFieldsMessage(fields: string[]): string {
+  const labels = fields.map((f) => FIELD_LABEL[f] ?? f);
+  const list =
+    labels.length === 1
+      ? labels[0]
+      : labels.length === 2
+      ? `${labels[0]} and ${labels[1]}`
+      : `${labels.slice(0, -1).join(", ")}, and ${labels[labels.length - 1]}`;
+  return `Please fill in the highlighted field${labels.length > 1 ? "s" : ""} below — ${list} ${
+    labels.length > 1 ? "are" : "is"
+  } required.`;
+}
 
 export const blankGame: NewGameInput = {
   title: "",
@@ -64,37 +87,93 @@ export default function GameForm({
   );
   const totalPlayers = playersHave + playersNeed;
   const [error, setError] = useState("");
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const today = todayISO();
 
-  const set = <K extends keyof NewGameInput>(key: K, value: NewGameInput[K]) =>
+  const titleRef = useRef<HTMLInputElement>(null);
+  const dateRef = useRef<HTMLInputElement>(null);
+  const locationRef = useRef<HTMLInputElement>(null);
+  const playersRef = useRef<HTMLDivElement>(null);
+  const fieldRefs: Record<string, React.RefObject<HTMLElement>> = {
+    title: titleRef,
+    date: dateRef,
+    location: locationRef,
+    players: playersRef,
+  };
+
+  // Scrolls to and focuses the first invalid field so the user doesn't have
+  // to hunt for what's wrong — the field itself also gets a red border.
+  function focusInvalid(fields: string[]) {
+    setInvalidFields(new Set(fields));
+    const target = fields.map((f) => fieldRefs[f]?.current).find(Boolean);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (typeof (target as HTMLElement).focus === "function") {
+        (target as HTMLElement).focus({ preventScroll: true });
+      }
+    }
+  }
+
+  const set = <K extends keyof NewGameInput>(key: K, value: NewGameInput[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
+    if (invalidFields.has(key as string)) {
+      setInvalidFields((prev) => {
+        const next = new Set(prev);
+        next.delete(key as string);
+        return next;
+      });
+    }
+  };
+
+  const clearPlayersInvalid = () => {
+    if (invalidFields.has("players")) {
+      setInvalidFields((prev) => {
+        const next = new Set(prev);
+        next.delete("players");
+        return next;
+      });
+    }
+  };
+  const handlePlayersHave = (v: number) => { setPlayersHave(v); clearPlayersInvalid(); };
+  const handlePlayersNeed = (v: number) => { setPlayersNeed(v); clearPlayersInvalid(); };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim() || !form.date || !form.location.trim()) {
-      setError("Please fill in a title, date, and location.");
+    const missing = [
+      !form.title.trim() && "title",
+      !form.date && "date",
+      !form.location.trim() && "location",
+    ].filter((f): f is string => !!f);
+    if (missing.length > 0) {
+      setError(missingFieldsMessage(missing));
+      focusInvalid(missing);
       return;
     }
     if (form.date < today) {
       setError(
         "That date is in the past. Games are only listed until their date, so pick today or later."
       );
+      focusInvalid(["date"]);
       return;
     }
     if (playersHave < 1) {
       setError("You count as one player, so 'players you have' must be at least 1.");
+      focusInvalid(["players"]);
       return;
     }
     if (playersNeed < 1) {
       setError("Set at least 1 player needed — that's who others can join as.");
+      focusInvalid(["players"]);
       return;
     }
     if (totalPlayers < 2 || totalPlayers > 50) {
       setError("Total players must be between 2 and 50.");
+      focusInvalid(["players"]);
       return;
     }
     setError("");
+    setInvalidFields(new Set());
     setBusy(true);
     try {
       const totalSlots = totalPlayers;
@@ -118,10 +197,11 @@ export default function GameForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <Field label="Game title">
         <input
+          ref={titleRef}
           value={form.title}
           onChange={(e) => set("title", e.target.value)}
           placeholder="e.g. Friday Night Indoor 6s"
-          className={inputCls}
+          className={fieldCls(invalidFields.has("title"))}
         />
       </Field>
 
@@ -174,7 +254,13 @@ export default function GameForm({
       {/* Players — how many you already have (incl. you) and how many you need.
           Total capacity is calculated from the two. Steppers work on mobile,
           where native number-input arrows don't appear. */}
-      <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-800 p-3">
+      <div
+        ref={playersRef}
+        tabIndex={-1}
+        className={`space-y-3 rounded-xl border bg-slate-800 p-3 outline-none ${
+          invalidFields.has("players") ? "border-rose-500" : "border-slate-800"
+        }`}
+      >
         <div className="grid grid-cols-2 gap-3">
           <Stepper
             label="Players you have"
@@ -182,7 +268,7 @@ export default function GameForm({
             value={playersHave}
             min={1}
             max={49}
-            onChange={setPlayersHave}
+            onChange={handlePlayersHave}
           />
           <Stepper
             label="Players you need"
@@ -190,7 +276,7 @@ export default function GameForm({
             value={playersNeed}
             min={1}
             max={49}
-            onChange={setPlayersNeed}
+            onChange={handlePlayersNeed}
           />
         </div>
         <div className="flex items-center justify-between rounded-xl bg-slate-900 px-3.5 py-2.5">
@@ -220,11 +306,12 @@ export default function GameForm({
 
       <Field label="Date">
         <input
+          ref={dateRef}
           type="date"
           min={today}
           value={form.date}
           onChange={(e) => set("date", e.target.value)}
-          className={inputCls}
+          className={fieldCls(invalidFields.has("date"))}
         />
       </Field>
 
@@ -301,10 +388,11 @@ export default function GameForm({
 
       <Field label="Venue / location">
         <input
+          ref={locationRef}
           value={form.location}
           onChange={(e) => set("location", e.target.value)}
           placeholder="e.g. Westside Rec Center, Court 2"
-          className={inputCls}
+          className={fieldCls(invalidFields.has("location"))}
         />
       </Field>
 
@@ -327,11 +415,7 @@ export default function GameForm({
         />
       </Field>
 
-      {error && (
-        <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">
-          {error}
-        </p>
-      )}
+      {error && <ErrorModal message={error} onClose={() => setError("")} />}
 
       <div className="flex gap-2">
         <button
@@ -355,6 +439,16 @@ export default function GameForm({
 
 const inputCls =
   "w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm outline-none transition focus:border-slate-400";
+
+// Same as inputCls, but with a red border when the field failed validation.
+// Kept as a separate function (rather than string-concatenating both border
+// classes together) since Tailwind's generated stylesheet order — not class
+// order in the string — decides which "border-*" utility wins on a tie.
+function fieldCls(invalid: boolean): string {
+  return `w-full rounded-xl border ${
+    invalid ? "border-rose-500" : "border-slate-700"
+  } bg-slate-900 px-3 py-2.5 text-sm outline-none transition focus:border-slate-400`;
+}
 
 function Field({
   label,

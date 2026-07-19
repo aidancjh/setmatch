@@ -3,6 +3,7 @@ import { api } from "../lib/api";
 import { celebrate } from "../lib/celebrate";
 import { getUploadSignature } from "../lib/cloudinaryUpload";
 import type { Highlight } from "../types";
+import ErrorModal from "./ErrorModal";
 
 // ---------------------------------------------------------------------------
 // Cloudinary signed upload
@@ -618,9 +619,7 @@ export default function HighlightUploadModal({
                 </div>
               )}
 
-              {error && (
-                <p className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>
-              )}
+              {error && <ErrorModal message={error} onClose={() => setError("")} />}
 
               <div className="mt-4 flex gap-2">
                 <button
@@ -642,7 +641,7 @@ export default function HighlightUploadModal({
           )}
 
           {error && step !== "ready" && (
-            <p className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>
+            <ErrorModal message={error} onClose={() => setError("")} />
           )}
         </div>
 
