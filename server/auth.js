@@ -127,17 +127,21 @@ export async function verifyActiveToken(token) {
   }
 }
 
-/** Optional auth: sets req.userId if a valid token is present, else null. */
-export function optionalAuth(req, _res, next) {
+/**
+ * Like requireAuth but never rejects: sets req.userId when a valid, still-active
+ * token is present, otherwise continues anonymously with req.userId = null. Used
+ * on public read routes that want to personalize results (e.g. hide a blocked
+ * user's comments) when signed in.
+ *
+ * Uses verifyActiveToken rather than a raw jwt.verify so a suspended or revoked
+ * (password-reset-bumped token_version) session is treated as anonymous here
+ * too, matching requireAuth's status check — otherwise a suspended user's
+ * still-valid-looking JWT could keep personalizing public reads until it
+ * naturally expired.
+ */
+export async function optionalAuth(req, _res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
-  req.userId = null;
-  if (token) {
-    try {
-      req.userId = jwt.verify(token, JWT_SECRET).sub;
-    } catch {
-      /* ignore invalid token for optional routes */
-    }
-  }
+  req.userId = token ? await verifyActiveToken(token) : null;
   next();
 }

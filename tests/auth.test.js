@@ -106,23 +106,33 @@ describe("requireAuth middleware", () => {
 });
 
 describe("optionalAuth middleware", () => {
-  it("continues with userId=null when no token is present", () => {
+  it("continues with userId=null when no token is present", async () => {
     const req = { headers: {} };
     let nexted = false;
-    optionalAuth(req, {}, () => {
+    await optionalAuth(req, {}, () => {
       nexted = true;
     });
     expect(nexted).toBe(true);
     expect(req.userId).toBe(null);
   });
 
-  it("sets userId for a valid token", () => {
+  it("sets userId for a valid token", async () => {
     const req = { headers: { authorization: `Bearer ${signToken("u_opt")}` } };
     let nexted = false;
-    optionalAuth(req, {}, () => {
+    await optionalAuth(req, {}, () => {
       nexted = true;
     });
     expect(nexted).toBe(true);
     expect(req.userId).toBe("u_opt");
+  });
+
+  it("continues with userId=null for a malformed token", async () => {
+    const req = { headers: { authorization: "Bearer not.a.real.token" } };
+    let nexted = false;
+    await optionalAuth(req, {}, () => {
+      nexted = true;
+    });
+    expect(nexted).toBe(true);
+    expect(req.userId).toBe(null);
   });
 });

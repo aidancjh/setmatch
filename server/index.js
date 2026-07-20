@@ -25,7 +25,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { hashPassword, verifyPassword, signToken, requireAuth, verifyToken, verifyActiveToken, TIMING_HASH } from "./auth.js";
+import { hashPassword, verifyPassword, signToken, requireAuth, optionalAuth, verifyToken, TIMING_HASH } from "./auth.js";
 import * as repo from "./repo.js";
 import { initSchema, query } from "./db.js";
 import { seedIfEmpty, syncDemoPasswords, seedPastData } from "./seed.js";
@@ -208,24 +208,6 @@ function gameInputFrom(body) {
     preFilled: Math.max(0, Math.min(Number(body.preFilled) || 0, Number(body.totalSlots) - 1)),
     notes: String(body.notes || "").trim().slice(0, 2000),
   };
-}
-
-/**
- * Like requireAuth but never rejects: sets req.userId when a valid,
- * still-active token is present, otherwise continues anonymously. Used on
- * public read routes that want to personalize results (e.g. hide blocked
- * users) when signed in. Uses verifyActiveToken (not the raw JWT decode) so a
- * suspended or revoked (password-reset-bumped token_version) session is
- * treated as anonymous here too, matching requireAuth's status check —
- * otherwise a suspended user's still-valid-looking JWT could keep
- * personalizing public reads until it naturally expires.
- */
-async function optionalAuth(req, _res, next) {
-  const header = req.headers.authorization || "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
-  const userId = token ? await verifyActiveToken(token) : null;
-  if (userId) req.userId = userId;
-  next();
 }
 
 // --- Auth routes ----------------------------------------------------------

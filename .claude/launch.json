@@ -11,8 +11,8 @@
       "name": "api",
       "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
       "runtimeArgs": [
-        "--env-file=C:\\Users\\ebonwhale\\OneDrive\\Documents\\Claude\\Volleyball-Claude\\.env",
-        "C:\\Users\\ebonwhale\\OneDrive\\Documents\\Claude\\Volleyball-Claude\\server\\index.js"
+        "--env-file=C:\\Users\\ebonwhale\\OneDrive - Soul ways\\Claude\\Volleyball-Claude\\.env",
+        "C:\\Users\\ebonwhale\\OneDrive - Soul ways\\Claude\\Volleyball-Claude\\server\\index.js"
       ],
       "port": 4000
     },

@@ -79,8 +79,8 @@ Ordered by priority. Update status inline as these move.
 | 2 | **Route authorization audit** (~55 routes in `server/index.js`) | IDOR risk: `requireAuth` proves *who you are*, not *that this is yours*. Checks exist but are inconsistently placed (some in `index.js`, some pushed into `repo.js`). Earmarked for the hired engineers. | ~2 h | ⬜ Not started |
 | 3 | **Set `SEED_DEMO=false`** in Railway at launch + delete demo rows | `1@demo.test`…`5@demo.test` / `111111` are loginable in production today, and fake seed games/reviews are visible. Deliberate for now — keep live during testing. | 5 min | ⬜ Deferred to launch |
 | 4 | **Verify Railway backups exist AND test a restore** | An untested backup is not a backup. Unverified. | ~1 h | ⬜ Not started |
-| 5 | **`npm audit`** + clear the open Dependabot PRs | 5 Dependabot branches open on origin. | ~30 min | ⬜ Not started |
-| 6 | **Remove dead `optionalAuth` from `server/auth.js:131`** | Dead export; a weaker duplicate of the live one at `index.js:223`. Nothing imports it, but a future import would silently skip suspension/revocation checks. | 10 min | ⬜ Not started |
+| 5 | **Upgrade `vite` 5→8 and `vitest` 2→4** | `npm audit` (2026-07-20) found 5 vulns — **all dev-only**, none reach production. But two matter locally on Windows: a vite dev-server path traversal and a `launch-editor` NTLM hash disclosure, both exploitable by a malicious website while `npm run dev` is running. Both fixes are **major version bumps**, so this needs a careful pass with build + tests verified, not a blind `audit fix --force`. | ~1–2 h | ⬜ Not started |
+| 5b | **Decide on the 2 open Dependabot PRs** | PR #7 = production deps (8 updates) — merging auto-deploys to production. PR #6 = dev deps (10 updates). Needs Aidan's call. | ~30 min | ⬜ Awaiting Aidan |
 | 7 | **Write a review-scope brief for the hired engineers** | So the paid review targets auth, ownership, and data exposure rather than generic feedback. | ~1 h | ⬜ Not started |
 
 ### At launch
@@ -104,9 +104,11 @@ Ordered by priority. Update status inline as these move.
 
 | # | Issue | Status |
 |---|---|---|
-| 15 | `README.md` says demo password is `volleyball`; `CLAUDE.md` says `111111`. Also lists the old `*.up.railway.app` URL, not `coterie.com.de`. | ⬜ Needs fixing |
+| 15 | `README.md` drift — wrong demo password, stale Railway URL, wrong brand colour, claimed a local DB that doesn't exist. | ✅ Fixed 2026-07-20 |
 | 16 | The rotated-and-dead `JWT_SECRET` still sits in git history (commit `321ed9c`). Value is dead; history purge judged not worth the disruption. Accepted risk. | ✅ Accepted |
-| 17 | Stray local branch `main-aidan` (OneDrive artifact). | ⬜ Verify + delete |
+| 17 | Stray local branch `main-aidan` — confirmed fully merged into `main`, no unique commits, deleted. | ✅ Fixed 2026-07-20 |
+| 18 | **ESLint ignores `server/` and `tests/` entirely** — the whole backend has never been linted. `npm run lint` only covers `src/`. Worth widening the config. | ⬜ Not started |
+| 19 | Stale remote branches on origin: `main-aidan`, `cleanup/phases-0-2-hygiene-reliability-a11y`, `worktree-admin-split-analytics`. Deleting remote branches needs Aidan's OK. | ⬜ Awaiting Aidan |
 
 ---
 
@@ -128,8 +130,14 @@ Ordered by priority. Update status inline as these move.
   (`repo.js:851`) — covered by `tests/join-race.test.js`.
 - ✅ Ownership checks confirmed present on `updateGame` (`repo.js:1009`),
   `deleteGame` (`repo.js:1091`), `cancel-series` (`index.js:681`).
-- ✅ The live `optionalAuth` (`index.js:223`) uses `verifyActiveToken`, so suspended
-  and revoked sessions are treated as anonymous on public reads.
+- ✅ `optionalAuth` deduplicated (2026-07-20): there were two — a weak sync one
+  exported from `auth.js` and a correct async one defined privately in `index.js`.
+  The correct implementation now lives in `auth.js` and `index.js` imports it, so
+  suspended and revoked sessions are treated as anonymous on public reads and there
+  is no weaker copy to import by accident. Covered by `tests/auth.test.js`.
+- ✅ `npm audit` run 2026-07-20: **no production dependencies are vulnerable**
+  (express, pg, bcryptjs, jsonwebtoken, helmet, zod, react all clean). All 5
+  findings are dev-only — see §4 #5.
 - ✅ Cloudinary uploads switched from unsigned preset to server-signed.
 - ✅ Committed `JWT_SECRET` scrubbed from `DEPLOY.md`; **live secret already rotated.**
 - ✅ `.env` is gitignored and untracked — only `.env.example` / `.env.admin.example`

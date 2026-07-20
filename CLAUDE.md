@@ -113,4 +113,4 @@ On startup the server calls, in order: `initSchema()` → `seedIfEmpty()` → `s
 - **Auth**: JWT stored in `localStorage` as `vb.token` (see `TOKEN_KEY` in `src/lib/api.ts`). `requireAuth` middleware sets `req.userId`. `requireAdmin` checks `users.role = 'admin'`.
 - **Roles**: `user` (default) | `staff` | `admin`. Only admins can access `/api/admin/*`.
 - **Game time logic**: `date` is ISO date string (`2026-06-20`), `time`/`endTime` are 24h strings (`"18:30"`). `isPast(date)` checks if date < today.
-- **Tailwind**: Using Tailwind CSS 4.0 (Vite plugin, not PostCSS). Brand color is `text-brand` / `bg-brand` (coral `#FF6B6B` defined as CSS variable `--color-brand`).
+- **Tailwind**: Using Tailwind CSS 4.0 (Vite plugin, not PostCSS). Brand color is `text-brand` / `bg-brand` — blue `#0b6ecd`, defined as CSS variable `--color-brand` in `src/index.css` (with `--color-brand-dark: #0959a8`).
