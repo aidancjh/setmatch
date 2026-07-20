@@ -201,6 +201,22 @@ This section is the portable copy. Keep it current.)
 copies of files being edited on two machines. Git is deterministic and gives an
 audit trail. Pull first, push last — that is the whole protocol.
 
+**The repo currently lives inside OneDrive**, which works but carries three risks:
+1. Conflict copies of edited source files (hence the `*-aidan.*` rule in `.gitignore`).
+2. `node_modules` — hundreds of MB of machine-specific compiled binaries (`sharp`,
+   `esbuild`) that OneDrive syncs pointlessly and can corrupt across machines.
+3. **`.git` itself** — if OneDrive syncs it mid-write, or reconciles two machines'
+   versions, the repo can be corrupted. This is the one that loses work.
+
+Rules while it stays in OneDrive: never open the project on both machines at once;
+wait for OneDrive to show "Up to date" before switching; exclude `node_modules`,
+`dist`, `dist-admin`, and `.vite` from sync.
+
+**Clean fix (do this when setting up staging):** move the repo out of OneDrive (e.g.
+`C:\dev\Volleyball-Claude`) and clone from GitHub on each machine — git handles sync
+entirely and the whole risk class disappears. One-time cost: copy `.env` to each
+machine by hand, since it isn't in git.
+
 **Update triggers — update this file whenever anything is:**
 added · removed · changed · decided · reversed · completed · deferred · discovered.
 
