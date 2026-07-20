@@ -9,7 +9,7 @@
 > finished, scope cut. Never commit a code change without updating this file.
 > Update protocol and rationale at the bottom.
 
-**Last updated:** 2026-07-20 · **Branch:** `main` · **Head:** `dbedf8d`
+**Last updated:** 2026-07-20 · **Branch:** `main` · **Status:** deployed, in testing, not publicly launched
 
 ---
 
@@ -135,6 +135,22 @@ Ordered by priority. Update status inline as these move.
 - ✅ `.env` is gitignored and untracked — only `.env.example` / `.env.admin.example`
   are committed.
 
+**Admin suite — all 3 phases done, deployed 2026-06-24:**
+- ✅ Phase 1: expanded analytics (new 7d/30d, suspended, highlights, comments, 8-week
+  signups chart), user management (search, suspend/unsuspend, remove), content
+  moderation. `users.suspended` blocks login / `/auth/me` / Google callback. Admin
+  accounts protected from self-lockout.
+- ✅ Phase 2: feedback inbox (`feedback.resolved`) + append-only audit log
+  (`admin_audit` + `logAdminAction`) recording every admin mutation with actor.
+- ✅ Phase 3: reports queue (`reports` table, `ReportButton` on highlights/comments/
+  games) + feature flags (`feature_flags`: `maintenance_mode`, `signups_enabled`;
+  `GET /api/config` + `useAppConfig` 30 s poll; maintenance middleware 503s non-admins).
+- Admin sign-in is a single shared bcrypt password (`ADMIN_PASSWORD_HASH` +
+  `ADMIN_LOGIN_EMAIL=aidan.chongjh@gmail.com`), rate-limited 5 fails/15 min/IP. It
+  unlocks a session for that existing user row, so suspension/roles/audit still apply.
+  Google OAuth for admin was deliberately dropped 2026-07-07.
+- Deferred / possible next: broadcast announcements, 2FA, granular roles.
+
 **Infrastructure:**
 - ✅ Idle pg pool-client errors handled — a dropped DB connection no longer crashes
   the process (`db.js:49`).
@@ -146,7 +162,31 @@ Ordered by priority. Update status inline as these move.
 
 ---
 
-## 6. How to work on this project
+## 6. How Aidan works — standing preferences
+
+These apply on **both** machines and to every session. (Claude Code's per-machine
+memory lives in `C:\Users\aidan\.claude\` and does **not** sync between devices —
+it holds credentials and ~145 MB of session data, so it must not be put in OneDrive.
+This section is the portable copy. Keep it current.)
+
+- **Always commit and push to `main` after a change, without being asked.** Railway
+  auto-deploys on push (~2 min) and that is the only way Aidan can test — he uses the
+  production PWA at coterie.com.de installed on his phone, not a local dev server.
+  A fix that lives only locally reads as "still broken" to him.
+- **After a PWA change, remind him to fully close and reopen the app** (with network)
+  so the service worker picks up the new version.
+- **Claude has no access to Railway.** Anything involving env vars, services, or the
+  database dashboard is Aidan's step — give him an exact, copy-pasteable checklist.
+- **Never ask for, store, or use his account password.** He has offered it before; it
+  was declined and must stay declined.
+- **Cold starts** are currently mitigated by an UptimeRobot ping to `/healthz` every
+  ~5 min (Aidan configured it). Replace with paid always-on Railway at launch — §4 #8.
+- **He is a non-engineer.** Explain the why, not just the what. He is hiring software
+  engineers for the code review — prepare scope for them rather than doing it unasked.
+
+---
+
+## 7. How to work on this project
 
 **Every session, on either machine:**
 
