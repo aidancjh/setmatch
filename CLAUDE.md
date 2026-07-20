@@ -2,6 +2,23 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ Read PROJECT_STATE.md first
+
+**Start every session by reading [`PROJECT_STATE.md`](PROJECT_STATE.md).** This file
+(CLAUDE.md) describes how the code *works* and changes rarely. `PROJECT_STATE.md`
+tracks where the project *is* — decisions made, tasks open, work completed — and
+changes constantly.
+
+Aidan works across two Windows machines with separate Claude sessions, so nothing
+carries over between them except what is committed to git. `PROJECT_STATE.md` is
+how context survives that.
+
+**You must update `PROJECT_STATE.md` in the same turn as any change** — code added,
+removed, or changed; a decision made or reversed; a task completed, deferred, or
+dropped. Commit it together with the code. Never leave a change unrecorded.
+
+`git pull` at the start of a session; `git push` at the end.
+
 ## Commands
 
 ```bash
