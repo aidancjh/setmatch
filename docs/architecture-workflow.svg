@@ -1,72 +1,72 @@
 <svg width="680" height="726" viewBox="0 0 680 726" role="img" xmlns="http://www.w3.org/2000/svg" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif">
 <title>How Coterie works end to end</title>
 <desc>A visitor types coterie.com.de, Porkbun points them at Railway, where an Express server checks every request before reading or writing PostgreSQL. The server also calls Resend, Cloudinary, Sentry and PostHog. Separately, code pushed to GitHub triggers a Railway rebuild.</desc>
-<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9 z" fill="#4A4945"/></marker></defs>
 
 <rect x="0" y="0" width="680" height="726" fill="#FFFFFF"/>
 
-<rect x="250" y="50" width="180" height="44" rx="4" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+<rect x="250" y="50" width="180" height="44" rx="4" fill="#FAECE7" stroke="#993C1D" stroke-width="1.5"/>
 <text x="340" y="69" text-anchor="middle" font-size="14" font-weight="500" fill="#712B13">You &amp; your players</text>
 <text x="340" y="84" text-anchor="middle" font-size="12" fill="#993C1D">on their phone</text>
-<line x1="340" y1="94" x2="340" y2="120" stroke="#888780" stroke-width="0.5" marker-end="url(#arrow)"/>
+<line x1="340" y1="94" x2="340" y2="120" stroke="#4A4945" stroke-width="2" marker-end="url(#arrow)"/>
 
-<rect x="250" y="124" width="180" height="44" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-<text x="340" y="143" text-anchor="middle" font-size="14" font-weight="500" fill="#444441">Porkbun</text>
+<rect x="250" y="124" width="180" height="44" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1.5"/>
+<text x="340" y="143" text-anchor="middle" font-size="14" font-weight="500" fill="#2C2C2A">Porkbun</text>
 <text x="340" y="158" text-anchor="middle" font-size="12" fill="#5F5E5A">coterie.com.de</text>
-<line x1="340" y1="168" x2="340" y2="234" stroke="#888780" stroke-width="0.5" marker-end="url(#arrow)"/>
+<line x1="340" y1="168" x2="340" y2="234" stroke="#4A4945" stroke-width="2" marker-end="url(#arrow)"/>
 
-<rect x="40" y="198" width="600" height="262" rx="8" fill="none" stroke="#B4B2A9" stroke-width="0.5" stroke-dasharray="4 4"/>
+<rect x="40" y="198" width="600" height="262" rx="8" fill="none" stroke="#888780" stroke-width="1.5" stroke-dasharray="7 5"/>
 <text x="56" y="221" font-size="14" font-weight="500" fill="#2C2C2A">Railway — one always-on cloud computer</text>
 
-<rect x="170" y="238" width="340" height="48" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
-<text x="340" y="258" text-anchor="middle" font-size="14" font-weight="500" fill="#3C3489">Every request is checked</text>
+<rect x="170" y="238" width="340" height="48" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+<text x="340" y="258" text-anchor="middle" font-size="14" font-weight="500" fill="#26215C">Every request is checked</text>
 <text x="340" y="274" text-anchor="middle" font-size="12" fill="#534AB7">CORS · rate limit · login · validation</text>
-<path d="M340 286 L340 298 L210 298 L210 310" fill="none" stroke="#888780" stroke-width="0.5" marker-end="url(#arrow)"/>
-<path d="M340 286 L340 298 L470 298 L470 310" fill="none" stroke="#888780" stroke-width="0.5" marker-end="url(#arrow)"/>
+<path d="M340 286 L340 298 L210 298 L210 310" fill="none" stroke="#4A4945" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M340 286 L340 298 L470 298 L470 310" fill="none" stroke="#4A4945" stroke-width="2" marker-end="url(#arrow)"/>
 
-<rect x="110" y="310" width="200" height="52" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
-<text x="210" y="332" text-anchor="middle" font-size="14" font-weight="500" fill="#3C3489">Express API</text>
+<rect x="110" y="310" width="200" height="52" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+<text x="210" y="332" text-anchor="middle" font-size="14" font-weight="500" fill="#26215C">Express API</text>
 <text x="210" y="348" text-anchor="middle" font-size="12" fill="#534AB7">coterie.com.de</text>
 
-<rect x="370" y="310" width="200" height="52" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
-<text x="470" y="332" text-anchor="middle" font-size="14" font-weight="500" fill="#3C3489">Admin API</text>
+<rect x="370" y="310" width="200" height="52" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+<text x="470" y="332" text-anchor="middle" font-size="14" font-weight="500" fill="#26215C">Admin API</text>
 <text x="470" y="348" text-anchor="middle" font-size="12" fill="#534AB7">admin.coterie.com.de</text>
 
-<path d="M210 362 L210 374 L340 374 L340 386" fill="none" stroke="#888780" stroke-width="0.5" marker-end="url(#arrow)"/>
-<path d="M470 362 L470 374 L340 374 L340 386" fill="none" stroke="#888780" stroke-width="0.5" marker-end="url(#arrow)"/>
+<path d="M210 362 L210 374 L340 374 L340 386" fill="none" stroke="#4A4945" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M470 362 L470 374 L340 374 L340 386" fill="none" stroke="#4A4945" stroke-width="2" marker-end="url(#arrow)"/>
 
-<rect x="170" y="386" width="340" height="52" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-<text x="340" y="408" text-anchor="middle" font-size="14" font-weight="500" fill="#085041">PostgreSQL</text>
+<rect x="170" y="386" width="340" height="52" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.5"/>
+<text x="340" y="408" text-anchor="middle" font-size="14" font-weight="500" fill="#04342C">PostgreSQL</text>
 <text x="340" y="424" text-anchor="middle" font-size="12" fill="#0F6E56">every game, user, message</text>
 
-<line x1="340" y1="460" x2="340" y2="486" stroke="#888780" stroke-width="0.5" marker-end="url(#arrow)"/>
+<line x1="340" y1="460" x2="340" y2="486" stroke="#4A4945" stroke-width="2" marker-end="url(#arrow)"/>
 
-<rect x="40" y="490" width="600" height="100" rx="8" fill="none" stroke="#B4B2A9" stroke-width="0.5" stroke-dasharray="4 4"/>
+<rect x="40" y="490" width="600" height="100" rx="8" fill="none" stroke="#888780" stroke-width="1.5" stroke-dasharray="7 5"/>
 <text x="56" y="513" font-size="14" font-weight="500" fill="#2C2C2A">Helper services the server calls</text>
-<rect x="60" y="524" width="125" height="48" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-<text x="122" y="544" text-anchor="middle" font-size="14" font-weight="500" fill="#444441">Resend</text>
+<rect x="60" y="524" width="125" height="48" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1.5"/>
+<text x="122" y="544" text-anchor="middle" font-size="14" font-weight="500" fill="#2C2C2A">Resend</text>
 <text x="122" y="560" text-anchor="middle" font-size="12" fill="#5F5E5A">sends emails</text>
-<rect x="207" y="524" width="125" height="48" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-<text x="269" y="544" text-anchor="middle" font-size="14" font-weight="500" fill="#444441">Cloudinary</text>
+<rect x="207" y="524" width="125" height="48" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1.5"/>
+<text x="269" y="544" text-anchor="middle" font-size="14" font-weight="500" fill="#2C2C2A">Cloudinary</text>
 <text x="269" y="560" text-anchor="middle" font-size="12" fill="#5F5E5A">photos, videos</text>
-<rect x="354" y="524" width="125" height="48" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-<text x="416" y="544" text-anchor="middle" font-size="14" font-weight="500" fill="#444441">Sentry</text>
+<rect x="354" y="524" width="125" height="48" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1.5"/>
+<text x="416" y="544" text-anchor="middle" font-size="14" font-weight="500" fill="#2C2C2A">Sentry</text>
 <text x="416" y="560" text-anchor="middle" font-size="12" fill="#5F5E5A">crash alerts</text>
-<rect x="501" y="524" width="125" height="48" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-<text x="563" y="544" text-anchor="middle" font-size="14" font-weight="500" fill="#444441">PostHog</text>
+<rect x="501" y="524" width="125" height="48" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1.5"/>
+<text x="563" y="544" text-anchor="middle" font-size="14" font-weight="500" fill="#2C2C2A">PostHog</text>
 <text x="563" y="560" text-anchor="middle" font-size="12" fill="#5F5E5A">analytics</text>
 
-<rect x="40" y="606" width="600" height="100" rx="8" fill="none" stroke="#B4B2A9" stroke-width="0.5" stroke-dasharray="4 4"/>
+<rect x="40" y="606" width="600" height="100" rx="8" fill="none" stroke="#888780" stroke-width="1.5" stroke-dasharray="7 5"/>
 <text x="56" y="629" font-size="14" font-weight="500" fill="#2C2C2A">How your code gets live</text>
-<rect x="55" y="642" width="170" height="48" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-<text x="140" y="662" text-anchor="middle" font-size="14" font-weight="500" fill="#444441">Your PC or laptop</text>
+<rect x="55" y="642" width="170" height="48" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1.5"/>
+<text x="140" y="662" text-anchor="middle" font-size="14" font-weight="500" fill="#2C2C2A">Your PC or laptop</text>
 <text x="140" y="678" text-anchor="middle" font-size="12" fill="#5F5E5A">you and Claude edit</text>
-<line x1="225" y1="666" x2="251" y2="666" stroke="#888780" stroke-width="0.5" marker-end="url(#arrow)"/>
-<rect x="255" y="642" width="170" height="48" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-<text x="340" y="662" text-anchor="middle" font-size="14" font-weight="500" fill="#444441">GitHub</text>
+<line x1="225" y1="666" x2="251" y2="666" stroke="#4A4945" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="255" y="642" width="170" height="48" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1.5"/>
+<text x="340" y="662" text-anchor="middle" font-size="14" font-weight="500" fill="#2C2C2A">GitHub</text>
 <text x="340" y="678" text-anchor="middle" font-size="12" fill="#5F5E5A">git push</text>
-<line x1="425" y1="666" x2="451" y2="666" stroke="#888780" stroke-width="0.5" marker-end="url(#arrow)"/>
-<rect x="455" y="642" width="170" height="48" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-<text x="540" y="662" text-anchor="middle" font-size="14" font-weight="500" fill="#444441">Railway rebuilds</text>
+<line x1="425" y1="666" x2="451" y2="666" stroke="#4A4945" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="455" y="642" width="170" height="48" rx="4" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1.5"/>
+<text x="540" y="662" text-anchor="middle" font-size="14" font-weight="500" fill="#2C2C2A">Railway rebuilds</text>
 <text x="540" y="678" text-anchor="middle" font-size="12" fill="#5F5E5A">live in about 2 min</text>
 </svg>
