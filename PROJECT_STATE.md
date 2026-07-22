@@ -182,6 +182,9 @@ Ordered by priority. Update status inline as these move.
 - "Area / neighborhood" field removed from the form; area falls back to the
   venue string server-side, and cards/detail hide area when it repeats location.
 
+- Follow-up 2 (2026-07-22, both apps): filter panel loses the "Venue standard"
+  net-height chip and the entire Region (N/S/E/W) section. Host form keeps Venue
+  standard as its default net height.
 - Follow-up (2026-07-22, both apps): host kick removed — roster/waitlist X buttons
   gone and the /members/:id/remove endpoint deleted (promote kept). "Advanced"
   restored as the top skill grade (after High Intermediate). Filter panel now

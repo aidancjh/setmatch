@@ -15,21 +15,18 @@ import { SearchIcon, XIcon } from "../components/icons";
 // Filter options (mirror the create-game form)
 // ---------------------------------------------------------------------------
 
-const regionOptions = ["North", "South", "East", "West"];
 const typeOptions = ["Indoor", "Beach", "Grass"];
 const skillOptions = ["All Levels", "Low Beginner", "High Beginner", "Low Intermediate", "High Intermediate", "Advanced"];
-const netOptions = ["Men's (2.43m)", "Women's (2.24m)", "Mixed (2.35m)", "Venue Standard"];
+const netOptions = ["Men's (2.43m)", "Women's (2.24m)", "Mixed (2.35m)"];
 const netLabels: Record<string, string> = {
   "Men's (2.43m)": "Men's (2.43m)",
   "Women's (2.24m)": "Women's (2.24m)",
   "Mixed (2.35m)": "Mixed (2.35m)",
-  "Venue Standard": "Venue standard",
 };
 // Same list and labels the host form uses.
 const positionOptions = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero"];
 
 interface Filters {
-  regions: string[];
   type: string;
   skills: string[];
   netHeight: string;
@@ -40,7 +37,6 @@ interface Filters {
 }
 
 const DEFAULT_FILTERS: Filters = {
-  regions: [],
   type: "",
   skills: [],
   netHeight: "",
@@ -67,7 +63,6 @@ function fmtClock(min: number): string {
 
 function activeFilterCount(f: Filters): number {
   return (
-    (f.regions.length > 0 ? 1 : 0) +
     (f.type ? 1 : 0) +
     (f.skills.length > 0 ? 1 : 0) +
     (f.netHeight ? 1 : 0) +
@@ -84,7 +79,6 @@ function filtersToParams(f: Filters, search: string): URLSearchParams {
   if (search.trim()) p.set("q", search.trim());
   if (f.type) p.set("type", f.type);
   if (f.netHeight) p.set("net", f.netHeight);
-  if (f.regions.length) p.set("regions", f.regions.join(","));
   if (f.skills.length) p.set("skills", f.skills.join(","));
   if (f.positions.length) p.set("pos", f.positions.join(","));
   if (f.minTime > 0 || f.maxTime < 1440) p.set("time", `${f.minTime}-${f.maxTime}`);
@@ -108,7 +102,6 @@ function paramsToState(p: URLSearchParams): { filters: Filters; search: string }
   return {
     search: p.get("q") || "",
     filters: {
-      regions: list("regions"),
       type: p.get("type") || "",
       skills: list("skills"),
       netHeight: p.get("net") || "",
@@ -173,7 +166,6 @@ export default function BrowseGames() {
       .filter((g) => !isPast(g.date))
       .filter((g) => (f.type ? g.type === f.type : true))
       .filter((g) => (f.skills.length > 0 ? f.skills.includes(g.skill) : true))
-      .filter((g) => (f.regions.length > 0 ? f.regions.includes(g.region) : true))
       .filter((g) =>
         f.netHeight
           ? g.netHeight === f.netHeight ||
@@ -479,7 +471,6 @@ function FilterModal({
             <div className="grid grid-cols-2 gap-x-4 gap-y-4">
               <ChipGroup label="Court type" options={typeOptions} value={f.type} onChange={(v) => set({ type: v })} />
               <MultiChipGroup label="Standard" options={skillOptions} values={f.skills} onChange={(v) => set({ skills: v })} />
-              <MultiChipGroup label="Region" options={regionOptions} values={f.regions} onChange={(v) => set({ regions: v })} />
             </div>
           </div>
 
