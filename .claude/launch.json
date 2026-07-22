@@ -20,9 +20,10 @@
       "name": "coterie-preview-api",
       "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
       "runtimeArgs": [
+        "--env-file=C:\\Users\\aidan\\OneDrive - Soul ways\\Claude\\coterie-prototype\\.env",
         "C:\\Users\\aidan\\OneDrive - Soul ways\\Claude\\coterie-prototype\\server\\index.js"
       ],
-      "port": 4001
+      "port": 4000
     },
     {
       "name": "coterie-preview-web",
@@ -33,7 +34,7 @@
         "--config",
         "C:\\Users\\aidan\\OneDrive - Soul ways\\Claude\\coterie-prototype\\vite.config.ts"
       ],
-      "port": 5175
+      "port": 5173
     },
     {
       "name": "dev:admin:web",

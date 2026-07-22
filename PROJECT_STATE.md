@@ -168,7 +168,21 @@ Ordered by priority. Update status inline as these move.
 - ✅ Admin app split into its own Railway service with its own JWT + capped DB pool.
 - ✅ Build SHA exposed at `/healthz`; UptimeRobot pings it to reduce cold starts.
 
-**Coterie Preview prototype (2026-07-22):**
+**Coterie Preview prototype (2026-07-22) — now a FULL-APP FORK:**
+- ✅ Rebuilt same day at Aidan's request: the minimal prototype was replaced with a
+  **near-exact copy of the main app** (auth + demo one-tap login, browse tabs,
+  search/filters, full GameForm, game detail, chats, notifications, profiles,
+  ratings, settings). Removed: **Marketplace**, **highlight posting**, admin app.
+- Theme flipped to light/white with **red** brand (#d92632) centrally in
+  `src/index.css`: slate color scale inverted via `@theme` + `.text-white` remap —
+  component classNames untouched, so main-app changes can be re-merged easily.
+- Fork deltas: seed demo-game dates shift relative to today (`shiftDate` in
+  seed.js); Market tab → Chats tab; post sheet has only "Post a game"; light
+  splash/PWA manifest; blue hexes recolored red.
+- Same live URL + repo as below. Local dev `.env` points DATABASE_URL at the
+  preview project's Railway Postgres public URL (no local DB).
+
+**(Superseded same day — original minimal prototype:)**
 - ✅ Built a standalone no-login demo of the core loop (browse → detail → host →
   join/leave) in a **separate sibling repo**: `../coterie-prototype` (own git repo,
   not part of this one). Purpose: something simple Aidan can show/demo on the web.
