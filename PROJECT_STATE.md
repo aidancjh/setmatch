@@ -9,7 +9,7 @@
 > finished, scope cut. Never commit a code change without updating this file.
 > Update protocol and rationale at the bottom.
 
-**Last updated:** 2026-07-20 · **Branch:** `main` · **Status:** deployed, in testing, not publicly launched
+**Last updated:** 2026-07-22 · **Branch:** `main` · **Status:** deployed, in testing, not publicly launched
 
 ---
 
@@ -167,6 +167,24 @@ Ordered by priority. Update status inline as these move.
 - ✅ Sentry (front + back), PostHog analytics, Resend email, Cloudinary media.
 - ✅ Admin app split into its own Railway service with its own JWT + capped DB pool.
 - ✅ Build SHA exposed at `/healthz`; UptimeRobot pings it to reduce cold starts.
+
+**Coterie Preview prototype (2026-07-22):**
+- ✅ Built a standalone no-login demo of the core loop (browse → detail → host →
+  join/leave) in a **separate sibling repo**: `../coterie-prototype` (own git repo,
+  not part of this one). Purpose: something simple Aidan can show/demo on the web.
+- Design: light mode / white bg, **red** brand `#d92632` replacing blue, **green**
+  `#16a34a` for success states only. Mobile-first (FAB on phones), responsive
+  multi-column on desktop. Branded "coterie PREVIEW".
+- Identity: display name asked on post/join, kept in localStorage; "Continue as
+  demo player" one-tap fallback. No accounts, deliberately no edit/delete endpoints.
+- Stack mirrors main app (React 18 + TS + Vite 6 + Tailwind 4 + Express 4).
+  `server/db.js` runs on Postgres when `DATABASE_URL` is set, in-memory otherwise
+  (local dev needs no DB). Server-side validation, strict id regex, per-IP rate
+  limits (20 writes/10 min), 10 kB body cap, security headers, transactional
+  capacity check. Verified end-to-end in browser + curl probes 2026-07-22.
+- Next (Aidan's call): create GitHub repo + new Railway service + Postgres for it.
+- Side change in THIS repo: `.claude/launch.json` gained `coterie-preview-api` /
+  `coterie-preview-web` entries for local preview.
 
 ---
 
