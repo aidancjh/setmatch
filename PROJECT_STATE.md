@@ -276,8 +276,14 @@ This section is the portable copy. Keep it current.)
   naming split is flagged in-doc as an open decision); Singapore-only, volleyball-only (SEA
   years out, only if very successful locally); **no Financials section** (removed at Aidan's
   request); future features (marketplace, in-app payments, live scorecard, coaching) are
-  explicitly gated behind perfecting the host/join core loop; waitlist figure is
-  founder-reported (70+ as of 2026-07-22); the doc ends with a "What's Missing — Three
+  explicitly gated behind perfecting the host/join core loop; waitlist is ~73 —
+  62 Reddit / 7 Telegram / 4 Instagram, founder-reported 2026-07-22, driven by two
+  r/SGVolleyball problem-posts with 50k+ combined views; the doc has a
+  "Singapore scene on the ground" market section (founder interview 2026-07-22:
+  40–60 games/wk, Telegram listing vignette, ~half of games see no-shows, ~90% pay
+  after, $5–$10/player, age-segregated crews; verified: 24 ActiveSG volleyball venues,
+  14-day ballot mechanics, OCBC ~S$15/hr, Haikyu growth effect, no volleyball-native
+  SG competitor as of Jul 2026); the doc ends with a "What's Missing — Three
   Lenses" (engineer / business / investor) section that should be kept current as items
   get resolved.
 
