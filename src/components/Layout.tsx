@@ -16,6 +16,7 @@ import {
   PlusIcon,
   SearchIcon,
   SettingsIcon,
+  StarIcon,
   UserIcon,
   VolleyballIcon,
 } from "./icons";
@@ -237,6 +238,13 @@ export default function Layout() {
             aria-label="Chats"
           >
             <ChatIcon className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => navigate("/interested")}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 hover:bg-slate-800"
+            aria-label="Interested games"
+          >
+            <StarIcon className="h-5 w-5" />
           </button>
           <button
             onClick={() => navigate("/settings")}

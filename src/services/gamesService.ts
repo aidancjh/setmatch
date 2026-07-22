@@ -107,15 +107,6 @@ export async function cancelSeries(id: string): Promise<{ count: number }> {
 
 // --- Host roster management ------------------------------------------------
 
-export async function removeMember(
-  gameId: string,
-  memberId: string
-): Promise<Game> {
-  const game = await api.post<Game>(`/games/${gameId}/members/${memberId}/remove`);
-  notify();
-  return game;
-}
-
 export async function promoteMember(
   gameId: string,
   memberId: string

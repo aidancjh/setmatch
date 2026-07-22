@@ -17,31 +17,21 @@ import { SearchIcon, XIcon } from "../components/icons";
 
 const regionOptions = ["North", "South", "East", "West"];
 const typeOptions = ["Indoor", "Beach", "Grass"];
-const skillOptions = ["Low Beginner", "High Beginner", "Low Intermediate", "High Intermediate"];
-const genderOptions = ["Open", "Mixed", "Men", "Women"];
-const genderLabels: Record<string, string> = { Open: "Open", Mixed: "Mixed", Men: "Men's", Women: "Women's" };
-const netOptions = ["Men's (2.43m)", "Women's (2.24m)", "Recreational (2.35m)", "Venue Standard"];
+const skillOptions = ["All Levels", "Low Beginner", "High Beginner", "Low Intermediate", "High Intermediate", "Advanced"];
+const netOptions = ["Men's (2.43m)", "Women's (2.24m)", "Mixed (2.35m)", "Venue Standard"];
 const netLabels: Record<string, string> = {
   "Men's (2.43m)": "Men's (2.43m)",
   "Women's (2.24m)": "Women's (2.24m)",
-  "Recreational (2.35m)": "Rec (2.35m)",
-  "Venue Standard": "Venue",
+  "Mixed (2.35m)": "Mixed (2.35m)",
+  "Venue Standard": "Venue standard",
 };
-const positionOptions = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist"];
-const positionLabels: Record<string, string> = {
-  Setter: "Setter",
-  "Outside Hitter": "OH",
-  "Middle Blocker": "MB",
-  Opposite: "Opp",
-  Libero: "Libero",
-  "Defensive Specialist": "DS",
-};
+// Same list and labels the host form uses.
+const positionOptions = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero"];
 
 interface Filters {
   regions: string[];
   type: string;
   skills: string[];
-  gender: string;
   netHeight: string;
   positions: string[];
   minTime: number; // minutes since midnight, 0
@@ -53,7 +43,6 @@ const DEFAULT_FILTERS: Filters = {
   regions: [],
   type: "",
   skills: [],
-  gender: "",
   netHeight: "",
   positions: [],
   minTime: 0,
@@ -81,7 +70,6 @@ function activeFilterCount(f: Filters): number {
     (f.regions.length > 0 ? 1 : 0) +
     (f.type ? 1 : 0) +
     (f.skills.length > 0 ? 1 : 0) +
-    (f.gender ? 1 : 0) +
     (f.netHeight ? 1 : 0) +
     (f.positions.length > 0 ? 1 : 0) +
     (f.minTime > 0 || f.maxTime < 1440 ? 1 : 0) +
@@ -95,7 +83,6 @@ function filtersToParams(f: Filters, search: string): URLSearchParams {
   const p = new URLSearchParams();
   if (search.trim()) p.set("q", search.trim());
   if (f.type) p.set("type", f.type);
-  if (f.gender) p.set("gender", f.gender);
   if (f.netHeight) p.set("net", f.netHeight);
   if (f.regions.length) p.set("regions", f.regions.join(","));
   if (f.skills.length) p.set("skills", f.skills.join(","));
@@ -124,7 +111,6 @@ function paramsToState(p: URLSearchParams): { filters: Filters; search: string }
       regions: list("regions"),
       type: p.get("type") || "",
       skills: list("skills"),
-      gender: p.get("gender") || "",
       netHeight: p.get("net") || "",
       positions: list("pos"),
       minTime,
@@ -188,8 +174,12 @@ export default function BrowseGames() {
       .filter((g) => (f.type ? g.type === f.type : true))
       .filter((g) => (f.skills.length > 0 ? f.skills.includes(g.skill) : true))
       .filter((g) => (f.regions.length > 0 ? f.regions.includes(g.region) : true))
-      .filter((g) => (f.gender ? g.gender === f.gender : true))
-      .filter((g) => (f.netHeight ? g.netHeight === f.netHeight : true))
+      .filter((g) =>
+        f.netHeight
+          ? g.netHeight === f.netHeight ||
+            (f.netHeight === "Mixed (2.35m)" && g.netHeight === "Recreational (2.35m)")
+          : true
+      )
       .filter((g) =>
         f.positions.length > 0
           ? f.positions.some(
@@ -490,14 +480,13 @@ function FilterModal({
               <ChipGroup label="Court type" options={typeOptions} value={f.type} onChange={(v) => set({ type: v })} />
               <MultiChipGroup label="Standard" options={skillOptions} values={f.skills} onChange={(v) => set({ skills: v })} />
               <MultiChipGroup label="Region" options={regionOptions} values={f.regions} onChange={(v) => set({ regions: v })} />
-              <ChipGroup label="Who it's for" options={genderOptions} labels={genderLabels} value={f.gender} onChange={(v) => set({ gender: v })} />
             </div>
           </div>
 
           {/* Section 2 — Court & positions */}
           <div className="space-y-4 px-4 py-4">
             <ChipGroup label="Net height" options={netOptions} labels={netLabels} value={f.netHeight} onChange={(v) => set({ netHeight: v })} />
-            <MultiChipGroup label="Position needed" options={positionOptions} labels={positionLabels} values={f.positions} onChange={(v) => set({ positions: v })} />
+            <MultiChipGroup label="Position needed" options={positionOptions} values={f.positions} onChange={(v) => set({ positions: v })} />
           </div>
 
           {/* Section 3 — Timing */}
@@ -508,16 +497,27 @@ function FilterModal({
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Game time</p>
                 <span className="text-xs font-semibold text-slate-200">{timeLabel}</span>
               </div>
-              <DualRangeSlider
-                value1={f.minTime}
-                value2={f.maxTime}
-                onChange1={(v) => set({ minTime: v })}
-                onChange2={(v) => set({ maxTime: v })}
-              />
-              <div className="mt-2 flex justify-between text-[11px] text-slate-400">
-                <span>12:00 AM</span>
-                <span>Midnight</span>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="mb-1 block text-[11px] text-slate-400">From</span>
+                  <input
+                    type="time"
+                    value={f.minTime > 0 ? minsToHHMM(f.minTime) : ""}
+                    onChange={(e) => set({ minTime: e.target.value ? hhmmToMins(e.target.value) : 0 })}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-brand"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[11px] text-slate-400">To</span>
+                  <input
+                    type="time"
+                    value={f.maxTime < 1440 ? minsToHHMM(f.maxTime) : ""}
+                    onChange={(e) => set({ maxTime: e.target.value ? hhmmToMins(e.target.value) : 1440 })}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-brand"
+                  />
+                </label>
               </div>
+              <p className="mt-1.5 text-[11px] text-slate-400">Leave blank for any time.</p>
             </div>
 
             {/* Open spots */}
@@ -652,6 +652,14 @@ function Chip({
   );
 }
 
+
+const minsToHHMM = (m: number) =>
+  `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+const hhmmToMins = (v: string) => {
+  const [h, m] = v.split(":").map(Number);
+  return h * 60 + m;
+};
+
 function FilterIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden>
@@ -660,43 +668,3 @@ function FilterIcon({ className }: { className?: string }) {
   );
 }
 
-function DualRangeSlider({
-  value1,
-  value2,
-  onChange1,
-  onChange2,
-}: {
-  value1: number;
-  value2: number;
-  onChange1: (v: number) => void;
-  onChange2: (v: number) => void;
-}) {
-  const pct1 = (value1 / 1440) * 100;
-  const pct2 = (value2 / 1440) * 100;
-  return (
-    <div className="dual-range">
-      <div className="dual-range-track" />
-      <div className="dual-range-fill" style={{ left: `${pct1}%`, right: `${100 - pct2}%` }} />
-      <input
-        type="range"
-        min={0}
-        max={1440}
-        step={30}
-        value={value1}
-        onChange={(e) => onChange1(Math.min(Number(e.target.value), Math.max(0, value2 - 30)))}
-        style={{ zIndex: value1 > value2 - 60 ? 5 : 3 }}
-        aria-label="Earliest start time"
-      />
-      <input
-        type="range"
-        min={0}
-        max={1440}
-        step={30}
-        value={value2}
-        onChange={(e) => onChange2(Math.max(Number(e.target.value), Math.min(1440, value1 + 30)))}
-        style={{ zIndex: value1 > value2 - 60 ? 4 : 5 }}
-        aria-label="Latest start time"
-      />
-    </div>
-  );
-}

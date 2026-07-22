@@ -182,6 +182,15 @@ Ordered by priority. Update status inline as these move.
 - "Area / neighborhood" field removed from the form; area falls back to the
   venue string server-side, and cards/detail hide area when it repeats location.
 
+- Follow-up (2026-07-22, both apps): host kick removed — roster/waitlist X buttons
+  gone and the /members/:id/remove endpoint deleted (promote kept). "Advanced"
+  restored as the top skill grade (after High Intermediate). Filter panel now
+  mirrors the host form: same net-height values (Rec -> "Mixed (2.35m)", matches
+  legacy Recreational too), same position list (full names, no DS), gender
+  ("Who it's for") filter removed, dual-range time slider replaced with From/To
+  time inputs. New /interested page (games you starred) + star button in the
+  header next to Settings.
+
 **Coterie Preview prototype (2026-07-22) — now a FULL-APP FORK:**
 - ✅ Rebuilt same day at Aidan's request: the minimal prototype was replaced with a
   **near-exact copy of the main app** (auth + demo one-tap login, browse tabs,

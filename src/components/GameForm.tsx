@@ -4,7 +4,7 @@ import { todayISO } from "../lib/format";
 import ErrorModal from "./ErrorModal";
 
 const types: GameType[] = ["Indoor", "Beach", "Grass"];
-const skills: SkillLevel[] = ["All Levels", "Low Beginner", "High Beginner", "Low Intermediate", "High Intermediate"];
+const skills: SkillLevel[] = ["All Levels", "Low Beginner", "High Beginner", "Low Intermediate", "High Intermediate", "Advanced"];
 const genders: GameGender[] = ["Open", "Men", "Women"];
 const netHeightOptions = [
   { value: "Men's (2.43m)", label: "Men's (2.43m)" },

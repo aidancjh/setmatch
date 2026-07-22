@@ -62,11 +62,21 @@ const SKILL_CARDS: {
   },
   {
     level: "High Intermediate",
-    Icon: TrophyIcon,
+    Icon: ZapIcon,
     tagline: "Strong, consistent play",
     bullets: [
       "Consistent technique and accurate play",
       "Comfortable in competitive games",
+      "Rarely misses serves or easy balls",
+    ],
+  },
+  {
+    level: "Advanced",
+    Icon: TrophyIcon,
+    tagline: "Competitive experience",
+    bullets: [
+      "League or tournament experience",
+      "Reads the game and plays a position",
       "Performs well under pressure",
     ],
   },

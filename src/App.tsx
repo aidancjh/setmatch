@@ -22,6 +22,7 @@ const Onboarding  = lazy(() => import("./pages/Onboarding"));
 const Chats       = lazy(() => import("./pages/Chats"));
 const ChatRoom    = lazy(() => import("./pages/ChatRoom"));
 const Notifications = lazy(() => import("./pages/Notifications"));
+const Interested = lazy(() => import("./pages/Interested"));
 
 function PageFallback() {
   return (
@@ -66,6 +67,7 @@ export default function App() {
         <Route path="/highlights" element={<Navigate to="/profile" replace />} />
         <Route path="/chats" element={<Suspense fallback={<PageFallback />}><Chats /></Suspense>} />
         <Route path="/notifications" element={<Suspense fallback={<PageFallback />}><Notifications /></Suspense>} />
+        <Route path="/interested" element={<Suspense fallback={<PageFallback />}><Interested /></Suspense>} />
         <Route path="/chats/:id" element={<Suspense fallback={<PageFallback />}><ChatRoom /></Suspense>} />
         <Route path="/game/:id" element={<Suspense fallback={<PageFallback />}><GameDetail /></Suspense>} />
         <Route path="/user/:id" element={<Suspense fallback={<PageFallback />}><UserProfile /></Suspense>} />

@@ -827,17 +827,8 @@ app.delete(
 
 // --- Cost splitting -------------------------------------------------------
 
-// Host roster management — remove a player/waitlister or promote a waitlister.
-app.post(
-  "/api/games/:id/members/:memberId/remove",
-  requireAuth,
-  h(async (req, res) => {
-    const result = await repo.removeMember(req.params.id, req.userId, req.params.memberId);
-    if (result.ok) return res.json(result.game);
-    res.status(result.code).json({ error: result.error });
-  })
-);
-
+// Host roster management. Kicking players was removed (2026-07-22): hosts can
+// promote waitlisters into the game, but can no longer remove anyone.
 app.post(
   "/api/games/:id/members/:memberId/promote",
   requireAuth,

@@ -11,8 +11,7 @@ import {
   joinGame,
   leaveGame,
   promoteMember,
-  removeMember,
-  spotsLeft,
+    spotsLeft,
   subscribe,
   toggleInterested,
 } from "../services/gamesService";
@@ -41,7 +40,6 @@ import {
   UserIcon,
   UsersIcon,
   VolleyballIcon,
-  XIcon,
 } from "../components/icons";
 
 export default function GameDetail() {
@@ -154,12 +152,6 @@ export default function GameDetail() {
   };
   const handleInterested = guarded(() => toggleInterested(game.id));
 
-  const handleRemoveMember = (memberId: string) => {
-    setRosterError("");
-    removeMember(game.id, memberId).catch((err) =>
-      setRosterError(err instanceof Error ? err.message : "Couldn't update the roster.")
-    );
-  };
   const handlePromoteMember = (memberId: string) => {
     setRosterError("");
     promoteMember(game.id, memberId).catch((err) =>
@@ -606,7 +598,6 @@ export default function GameDetail() {
         <div className="flex flex-wrap gap-1.5">
           {game.players.map((p) => {
             const youAre = p.id === me.id;
-            const canRemove = isHost && p.id !== game.hostId;
             return (
               <span
                 key={p.id}
@@ -621,15 +612,6 @@ export default function GameDetail() {
                   {p.name}
                   {youAre && " (you)"}
                 </Link>
-                {canRemove && (
-                  <button
-                    onClick={() => handleRemoveMember(p.id)}
-                    aria-label={`Remove ${p.name} from the game`}
-                    className="-mr-0.5 ml-0.5 leading-none text-slate-400 transition hover:text-rose-500"
-                  >
-                    <XIcon className="h-3 w-3" />
-                  </button>
-                )}
               </span>
             );
           })}
@@ -665,23 +647,14 @@ export default function GameDetail() {
                     {p.id === me.id && " (you)"}
                   </Link>
                   {isHost && (
-                    <>
-                      <button
-                        onClick={() => handlePromoteMember(p.id)}
-                        aria-label={`Move ${p.name} into the game`}
-                        title="Move into game"
-                        className="ml-0.5 leading-none text-emerald-600 transition hover:text-emerald-700"
-                      >
-                        <ArrowUpIcon className="h-3 w-3" />
-                      </button>
-                      <button
-                        onClick={() => handleRemoveMember(p.id)}
-                        aria-label={`Remove ${p.name} from the waitlist`}
-                        className="-mr-0.5 leading-none text-sky-400 transition hover:text-rose-500"
-                      >
-                        <XIcon className="h-3 w-3" />
-                      </button>
-                    </>
+                    <button
+                      onClick={() => handlePromoteMember(p.id)}
+                      aria-label={`Move ${p.name} into the game`}
+                      title="Move into game"
+                      className="ml-0.5 leading-none text-emerald-600 transition hover:text-emerald-700"
+                    >
+                      <ArrowUpIcon className="h-3 w-3" />
+                    </button>
                   )}
                 </span>
               ))}
