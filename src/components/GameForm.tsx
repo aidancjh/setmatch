@@ -4,15 +4,15 @@ import { todayISO } from "../lib/format";
 import ErrorModal from "./ErrorModal";
 
 const types: GameType[] = ["Indoor", "Beach", "Grass"];
-const skills: SkillLevel[] = ["Beginner", "Intermediate", "Advanced", "All Levels"];
-const genders: GameGender[] = ["Open", "Mixed", "Men", "Women"];
+const skills: SkillLevel[] = ["All Levels", "Low Beginner", "High Beginner", "Low Intermediate", "High Intermediate"];
+const genders: GameGender[] = ["Open", "Men", "Women"];
 const netHeightOptions = [
   { value: "Men's (2.43m)", label: "Men's (2.43m)" },
   { value: "Women's (2.24m)", label: "Women's (2.24m)" },
-  { value: "Recreational (2.35m)", label: "Recreational (2.35m)" },
+  { value: "Mixed (2.35m)", label: "Mixed (2.35m)" },
   { value: "Venue Standard", label: "Venue standard" },
 ];
-const positions = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Any"];
+const positions = ["Any", "Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero"];
 
 // Names of the fields the form can mark invalid, and how to say them in a
 // sentence — used to build one message out of however many fields are wrong.
@@ -42,7 +42,7 @@ export const blankGame: NewGameInput = {
   skill: "All Levels",
   gender: "Open",
   netHeight: "Venue Standard",
-  positionsNeeded: [],
+  positionsNeeded: ["Any"],
   rotationType: "Standard",
   costPerPerson: 0,
   region: "",
@@ -90,6 +90,7 @@ export default function GameForm({
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const today = todayISO();
+  const maxDate = new Date(Date.now() + 366 * 86400000).toISOString().slice(0, 10);
 
   const titleRef = useRef<HTMLInputElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
@@ -154,6 +155,11 @@ export default function GameForm({
       setError(
         "That date is in the past. Games are only listed until their date, so pick today or later."
       );
+      focusInvalid(["date"]);
+      return;
+    }
+    if (form.date > maxDate || Number.isNaN(Date.parse(form.date))) {
+      setError("That date is too far ahead — games can be scheduled up to a year out.");
       focusInvalid(["date"]);
       return;
     }
@@ -228,7 +234,7 @@ export default function GameForm({
                   form.gender === g ? "bg-brand text-white" : "bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700"
                 }`}
               >
-                {g === "Open" ? "Open to all" : g === "Men" ? "Men's" : g === "Women" ? "Women's" : "Mixed"}
+                {g === "Open" ? "Open to all" : g === "Men" ? "Men's" : "Women's"}
               </button>
             ))}
           </div>
@@ -309,6 +315,7 @@ export default function GameForm({
           ref={dateRef}
           type="date"
           min={today}
+          max={maxDate}
           value={form.date}
           onChange={(e) => set("date", e.target.value)}
           className={fieldCls(invalidFields.has("date"))}
@@ -382,7 +389,7 @@ export default function GameForm({
               );
             })}
           </div>
-          <p className="mt-1.5 text-[11px] text-slate-400">Leave blank if any position is welcome.</p>
+          <p className="mt-1.5 text-[11px] text-slate-400">"Any" welcomes every position; pick specific ones if you need them.</p>
         </div>
       </div>
 
@@ -393,15 +400,6 @@ export default function GameForm({
           onChange={(e) => set("location", e.target.value)}
           placeholder="e.g. Westside Rec Center, Court 2"
           className={fieldCls(invalidFields.has("location"))}
-        />
-      </Field>
-
-      <Field label="Area / neighborhood (for search)">
-        <input
-          value={form.area}
-          onChange={(e) => set("area", e.target.value)}
-          placeholder="e.g. Santa Monica"
-          className={inputCls}
         />
       </Field>
 

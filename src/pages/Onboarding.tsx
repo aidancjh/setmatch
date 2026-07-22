@@ -21,9 +21,19 @@ const SKILL_CARDS: {
   bullets: string[];
 }[] = [
   {
-    level: "Beginner",
+    level: "All Levels",
+    Icon: UsersIcon,
+    tagline: "Just here to play",
+    bullets: [
+      "Happy in any game at any pace",
+      "Skill level doesn't matter to you",
+      "The more the merrier!",
+    ],
+  },
+  {
+    level: "Low Beginner",
     Icon: LeafIcon,
-    tagline: "New to the game",
+    tagline: "Brand new to the game",
     bullets: [
       "Still learning to bump, set, and serve",
       "Casual and friendly rallies",
@@ -31,7 +41,17 @@ const SKILL_CARDS: {
     ],
   },
   {
-    level: "Intermediate",
+    level: "High Beginner",
+    Icon: LeafIcon,
+    tagline: "Getting the hang of it",
+    bullets: [
+      "Basic skills are starting to stick",
+      "Can keep a rally going",
+      "Learning positions and rotations",
+    ],
+  },
+  {
+    level: "Low Intermediate",
     Icon: ZapIcon,
     tagline: "Comfortable player",
     bullets: [
@@ -41,23 +61,13 @@ const SKILL_CARDS: {
     ],
   },
   {
-    level: "Advanced",
+    level: "High Intermediate",
     Icon: TrophyIcon,
-    tagline: "Competitive experience",
+    tagline: "Strong, consistent play",
     bullets: [
       "Consistent technique and accurate play",
-      "League or tournament experience",
+      "Comfortable in competitive games",
       "Performs well under pressure",
-    ],
-  },
-  {
-    level: "All Levels",
-    Icon: UsersIcon,
-    tagline: "Just here to play",
-    bullets: [
-      "Happy in any game at any pace",
-      "Skill level doesn't matter to you",
-      "The more the merrier!",
     ],
   },
 ];

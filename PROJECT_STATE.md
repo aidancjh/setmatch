@@ -168,6 +168,20 @@ Ordered by priority. Update status inline as these move.
 - ✅ Admin app split into its own Railway service with its own JWT + capped DB pool.
 - ✅ Build SHA exposed at `/healthz`; UptimeRobot pings it to reduce cold starts.
 
+**Game-form changes (2026-07-22, in BOTH main app and preview fork):**
+- Gender options: "Mixed" removed from the form (server still accepts it so old
+  games stay editable). Net height "Recreational (2.35m)" renamed to
+  "Mixed (2.35m)" (server accepts both).
+- New skill scale, All Levels first: All Levels, Low Beginner, High Beginner,
+  Low Intermediate, High Intermediate. Legacy Beginner/Intermediate/Advanced
+  remain in types + server allowlist for existing data. Applied to GameForm,
+  Profile editor, Browse filters, Onboarding cards, Badges/SKILL_INFO maps.
+- Date validated end-to-end: client min/max (+366 d) + submit check; zod refine
+  rejects unparseable dates and anything outside ~1 year ahead (kills "22222").
+- Positions: "Any" moved first and selected by default.
+- "Area / neighborhood" field removed from the form; area falls back to the
+  venue string server-side, and cards/detail hide area when it repeats location.
+
 **Coterie Preview prototype (2026-07-22) — now a FULL-APP FORK:**
 - ✅ Rebuilt same day at Aidan's request: the minimal prototype was replaced with a
   **near-exact copy of the main app** (auth + demo one-tap login, browse tabs,

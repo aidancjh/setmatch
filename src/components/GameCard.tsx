@@ -73,7 +73,9 @@ export default function GameCard({
           <div className="flex min-w-0 items-center gap-1.5 text-xs text-slate-400">
             <MapPinIcon className="size-3.5 shrink-0 text-slate-400" />
             <span className="truncate">{game.location}</span>
-            <span className="shrink-0 text-slate-400">· {game.area}</span>
+            {game.area && game.area !== game.location && (
+              <span className="shrink-0 text-slate-400">· {game.area}</span>
+            )}
           </div>
 
           {/* Fill bar + spots */}

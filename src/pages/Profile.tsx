@@ -20,7 +20,7 @@ import {
   ZapIcon,
 } from "../components/icons";
 
-const skills: SkillLevel[] = ["Beginner", "Intermediate", "Advanced", "All Levels"];
+const skills: SkillLevel[] = ["All Levels", "Low Beginner", "High Beginner", "Low Intermediate", "High Intermediate"];
 const GENDER_OPTIONS = ["Man", "Woman", "Non-binary", "Prefer not to say"];
 const POSITION_OPTIONS = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist"];
 
@@ -50,10 +50,14 @@ function computeAge(birthdate: string | null | undefined): number | null {
 }
 
 const SKILL_INFO: Record<SkillLevel, { Icon: React.ComponentType<{ className?: string }>; desc: string }> = {
-  Beginner:       { Icon: LeafIcon, desc: "New to the game. Casual, friendly rallies — mistakes totally fine." },
-  Intermediate:   { Icon: ZapIcon, desc: "Comfortable with bumping, setting, serving. Know the rules and rotations." },
-  Advanced:       { Icon: TrophyIcon, desc: "Consistent technique. Competitive experience, performs under pressure." },
-  "All Levels":   { Icon: UsersIcon, desc: "Happy in any game at any pace. Just here to play!" },
+  "All Levels":         { Icon: UsersIcon, desc: "Happy in any game at any pace. Just here to play!" },
+  "Low Beginner":       { Icon: LeafIcon, desc: "Brand new to the game. Casual, friendly rallies — mistakes totally fine." },
+  "High Beginner":      { Icon: LeafIcon, desc: "Basics are sticking. Can keep a rally going and learning rotations." },
+  "Low Intermediate":   { Icon: ZapIcon, desc: "Comfortable with bumping, setting, serving. Know the rules and rotations." },
+  "High Intermediate":  { Icon: TrophyIcon, desc: "Consistent, accurate play. Comfortable in competitive games." },
+  Beginner:             { Icon: LeafIcon, desc: "New to the game. Casual, friendly rallies — mistakes totally fine." },
+  Intermediate:         { Icon: ZapIcon, desc: "Comfortable with bumping, setting, serving. Know the rules and rotations." },
+  Advanced:             { Icon: TrophyIcon, desc: "Consistent technique. Competitive experience, performs under pressure." },
 };
 
 // ---------------------------------------------------------------------------

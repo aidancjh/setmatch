@@ -17,7 +17,7 @@ import { SearchIcon, XIcon } from "../components/icons";
 
 const regionOptions = ["North", "South", "East", "West"];
 const typeOptions = ["Indoor", "Beach", "Grass"];
-const skillOptions = ["Beginner", "Intermediate", "Advanced"];
+const skillOptions = ["Low Beginner", "High Beginner", "Low Intermediate", "High Intermediate"];
 const genderOptions = ["Open", "Mixed", "Men", "Women"];
 const genderLabels: Record<string, string> = { Open: "Open", Mixed: "Mixed", Men: "Men's", Women: "Women's" };
 const netOptions = ["Men's (2.43m)", "Women's (2.24m)", "Recreational (2.35m)", "Venue Standard"];

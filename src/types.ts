@@ -1,4 +1,14 @@
-export type SkillLevel = "Beginner" | "Intermediate" | "Advanced" | "All Levels";
+// New grading scale (2026-07): All Levels + four grades. The legacy values
+// remain in the union so games/profiles created before the change still type.
+export type SkillLevel =
+  | "All Levels"
+  | "Low Beginner"
+  | "High Beginner"
+  | "Low Intermediate"
+  | "High Intermediate"
+  | "Beginner"
+  | "Intermediate"
+  | "Advanced";
 
 export type GameType = "Indoor" | "Beach" | "Grass";
 

@@ -544,7 +544,7 @@ export default function GameDetail() {
           <div className="flex items-start gap-2">
             <span className="flex-1">
               {game.location}
-              {game.area && <span className="text-slate-400"> · {game.area}</span>}
+              {game.area && game.area !== game.location && <span className="text-slate-400"> · {game.area}</span>}
             </span>
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([game.location, game.area].filter(Boolean).join(", "))}`}

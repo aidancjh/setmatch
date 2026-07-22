@@ -55,10 +55,21 @@ export const resetPasswordSchema = z.object({
 
 // --- Games -----------------------------------------------------------------
 
-export const SKILLS = ["Beginner", "Intermediate", "Advanced", "All Levels"];
+// New grading scale first; the legacy three stay accepted so pre-change games
+// and profiles can still be edited without tripping validation.
+export const SKILLS = [
+  "All Levels",
+  "Low Beginner",
+  "High Beginner",
+  "Low Intermediate",
+  "High Intermediate",
+  "Beginner",
+  "Intermediate",
+  "Advanced",
+];
 export const TYPES = ["Indoor", "Beach", "Grass"];
 export const GENDERS = ["Men", "Women", "Mixed", "Open"];
-export const NET_HEIGHTS = ["Men's (2.43m)", "Women's (2.24m)", "Recreational (2.35m)", "Venue Standard"];
+export const NET_HEIGHTS = ["Men's (2.43m)", "Women's (2.24m)", "Mixed (2.35m)", "Recreational (2.35m)", "Venue Standard"];
 export const POSITIONS = ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero", "Defensive Specialist", "Any"];
 export const ROTATION_TYPES = ["Standard", "No Rotation", "King of the Court", "Round Robin"];
 export const REGIONS = ["North", "South", "East", "West"];
@@ -83,7 +94,12 @@ export const gameInputSchema = z.object({
   date: z
     .string({ message: "Date is required." })
     .min(1, "Date is required.")
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (expected YYYY-MM-DD)."),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (expected YYYY-MM-DD).")
+    .refine((v) => !Number.isNaN(Date.parse(v)), "Invalid date.")
+    .refine(
+      (v) => v >= "2020-01-01" && Date.parse(v) <= Date.now() + 400 * 86400000,
+      "Date must be within roughly the next year."
+    ),
   time: z
     .string({ message: "Time is required." })
     .min(1, "Time is required.")

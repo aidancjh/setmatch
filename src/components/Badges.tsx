@@ -1,10 +1,14 @@
 import type { GameType, SkillLevel } from "../types";
 
 const skillStyles: Record<SkillLevel, string> = {
+  "All Levels": "bg-slate-800 text-slate-300 ring-slate-500/20",
+  "Low Beginner": "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
+  "High Beginner": "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
+  "Low Intermediate": "bg-sky-500/15 text-sky-300 ring-sky-500/30",
+  "High Intermediate": "bg-sky-500/15 text-sky-300 ring-sky-500/30",
   Beginner: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
   Intermediate: "bg-sky-500/15 text-sky-300 ring-sky-500/30",
   Advanced: "bg-rose-500/15 text-rose-300 ring-rose-500/30",
-  "All Levels": "bg-slate-800 text-slate-300 ring-slate-500/20",
 };
 
 export function SkillBadge({
