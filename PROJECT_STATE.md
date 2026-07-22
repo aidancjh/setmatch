@@ -268,6 +268,18 @@ This section is the portable copy. Keep it current.)
   ~5 min (Aidan configured it). Replace with paid always-on Railway at launch — §4 #8.
 - **He is a non-engineer.** Explain the why, not just the what. He is hiring software
   engineers for the code review — prepare scope for them rather than doing it unasked.
+- **Keep the business overview doc current — unprompted, on either machine.** It lives at
+  `C:\Users\aidan\OneDrive - Soul ways\Claude\Vybe-Business-Overview.docx` (one level above
+  this repo; OneDrive syncs it between machines). Whenever the product, plans, traction, or
+  context change, update the docx in the same session. Fully rewritten 2026-07-22 to match
+  the app as-built. Standing content decisions: product name stays "Vybe" (Vybe/Coterie
+  naming split is flagged in-doc as an open decision); Singapore-only, volleyball-only (SEA
+  years out, only if very successful locally); **no Financials section** (removed at Aidan's
+  request); future features (marketplace, in-app payments, live scorecard, coaching) are
+  explicitly gated behind perfecting the host/join core loop; waitlist figure is
+  founder-reported (70+ as of 2026-07-22); the doc ends with a "What's Missing — Three
+  Lenses" (engineer / business / investor) section that should be kept current as items
+  get resolved.
 
 ---
 
