@@ -179,6 +179,11 @@ Ordered by priority. Update status inline as these move.
 - Fork deltas: seed demo-game dates shift relative to today (`shiftDate` in
   seed.js); Market tab → Chats tab; post sheet has only "Post a game"; light
   splash/PWA manifest; blue hexes recolored red.
+- 2026-07-22 later: desktop layout added (header nav + 2-col browse grid on lg,
+  bottom tabs mobile-only); type/skill badges neutralized (color only for spots
+  status + brand). Custom domain **preview.coterie.com.de** created on the Railway
+  service; waiting on Aidan to add the CNAME + TXT records at **Porkbun** (DNS host
+  for coterie.com.de) — records are in the coterie-prototype README… see chat.
 - Same live URL + repo as below. Local dev `.env` points DATABASE_URL at the
   preview project's Railway Postgres public URL (no local DB).
 
