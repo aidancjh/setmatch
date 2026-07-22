@@ -21,23 +21,30 @@ import {
   VolleyballIcon,
 } from "./icons";
 
-// Which bottom-tab slot a route belongs to, or -1 if it's not one of the
-// four tab roots (e.g. a game detail page pushed on top of Browse/My Games).
+// Which tab root a route belongs to. Deep routes keep their parent tab lit:
+// a game detail is still "Browse", a user profile is still "Profile".
+function tabRootFor(pathname: string): string | null {
+  if (pathname === "/" || pathname.startsWith("/game") || pathname === "/create") return "/";
+  if (pathname.startsWith("/marketplace")) return "/marketplace";
+  if (pathname.startsWith("/notifications")) return "/notifications";
+  if (pathname.startsWith("/profile") || pathname.startsWith("/user")) return "/profile";
+  return null;
+}
+
+const TAB_SLOT: Record<string, number> = { "/": 0, "/marketplace": 1, "/notifications": 3, "/profile": 4 };
+
 function tabSlotFor(pathname: string): number {
-  if (pathname === "/") return 0;
-  if (pathname.startsWith("/marketplace")) return 1;
-  if (pathname.startsWith("/notifications")) return 3;
-  if (pathname.startsWith("/profile")) return 4;
-  return -1;
+  const root = tabRootFor(pathname);
+  return root === null ? -1 : TAB_SLOT[root];
 }
 
 const leftTabs = [
-  { to: "/", label: "Browse", Icon: SearchIcon, end: true },
-  { to: "/marketplace", label: "Market", Icon: BagIcon, end: false },
+  { to: "/", label: "Browse", Icon: SearchIcon },
+  { to: "/marketplace", label: "Market", Icon: BagIcon },
 ];
 const rightTabs = [
-  { to: "/notifications", label: "Alerts", Icon: BellIcon, end: false },
-  { to: "/profile", label: "Profile", Icon: UserIcon, end: false },
+  { to: "/notifications", label: "Alerts", Icon: BellIcon },
+  { to: "/profile", label: "Profile", Icon: UserIcon },
 ];
 
 // ---------------------------------------------------------------------------
@@ -118,23 +125,20 @@ function Tab({
   to,
   label,
   Icon,
-  end,
+  active,
 }: {
   to: string;
   label: string;
   Icon: React.ComponentType<{ className?: string }>;
-  end: boolean;
+  active: boolean;
 }) {
   return (
     <NavLink
       to={to}
-      end={end}
       aria-label={label}
-      className={({ isActive }) =>
-        `relative z-10 flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-all duration-150 active:scale-90 active:opacity-70 ${
-          isActive ? "text-white" : "text-slate-400"
-        }`
-      }
+      className={`relative z-10 flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-all duration-150 active:scale-90 active:opacity-70 ${
+        active ? "text-white" : "text-slate-400"
+      }`}
     >
       <Icon className="h-6 w-6" aria-hidden />
       {label}
@@ -333,7 +337,7 @@ export default function Layout() {
 
           {/* Left tabs */}
           {leftTabs.map((t) => (
-            <Tab key={t.to} {...t} />
+            <Tab key={t.to} {...t} active={tabRootFor(pathname) === t.to} />
           ))}
 
           {/* Center + button */}
@@ -349,7 +353,7 @@ export default function Layout() {
 
           {/* Right tabs */}
           {rightTabs.map((t) => (
-            <Tab key={t.to} {...t} />
+            <Tab key={t.to} {...t} active={tabRootFor(pathname) === t.to} />
           ))}
         </div>
       </nav>

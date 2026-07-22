@@ -182,6 +182,12 @@ Ordered by priority. Update status inline as these move.
 - "Area / neighborhood" field removed from the form; area falls back to the
   venue string server-side, and cards/detail hide area when it repeats location.
 
+- Follow-up 3 (2026-07-22): bottom-tab highlight now persists on deep routes in
+  BOTH apps (/game/* lights Browse, /user/* lights Profile) — main app included.
+  PREVIEW-ONLY: Settings loses Help & Support + Sounds & haptics (re-addable
+  later); new crisp BrandMark logo (red tile + white C) in header and
+  favicon.svg; splash/loader ball flattened (gradient + highlight smudge
+  removed). Main app Settings/branding untouched.
 - Follow-up 2 (2026-07-22, both apps): filter panel loses the "Venue standard"
   net-height chip and the entire Region (N/S/E/W) section. Host form keeps Venue
   standard as its default net height.
