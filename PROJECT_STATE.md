@@ -182,7 +182,13 @@ Ordered by priority. Update status inline as these move.
   (local dev needs no DB). Server-side validation, strict id regex, per-IP rate
   limits (20 writes/10 min), 10 kB body cap, security headers, transactional
   capacity check. Verified end-to-end in browser + curl probes 2026-07-22.
-- Next (Aidan's call): create GitHub repo + new Railway service + Postgres for it.
+- ✅ Deployed 2026-07-22: GitHub repo `aidancjh/coterie-prototype` (private),
+  Railway project `coterie-preview` (service `web` + Postgres),
+  **live at https://web-production-e0326.up.railway.app**. Railway CLI now
+  installed + authed on the PC. GitHub repo is NOT connected to Railway
+  (app lacked repo access) — deploys go via `railway up --service web --ci`
+  from the prototype folder, pushes do not auto-deploy.
+- Emoji icons replaced with stroke-only SVG line icons (2026-07-22).
 - Side change in THIS repo: `.claude/launch.json` gained `coterie-preview-api` /
   `coterie-preview-web` entries for local preview.
 
