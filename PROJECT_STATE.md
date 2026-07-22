@@ -179,6 +179,7 @@ Ordered by priority. Update status inline as these move.
 - Fork deltas: seed demo-game dates shift relative to today (`shiftDate` in
   seed.js); Market tab → Chats tab; post sheet has only "Post a game"; light
   splash/PWA manifest; blue hexes recolored red.
+- 2026-07-22 later-3: preview renamed Vybe -> Coterie everywhere user-facing; desktop header nav enlarged (18px); Browse/Upcoming/Hosting/Past switcher reverted to compact.
 - 2026-07-22 later-2: browse desktop polish — games-count moved out of the grid (was eating a card slot), Host button moved from header to the page heading row, view tabs enlarged on lg.
 - 2026-07-22 later: desktop layout added (header nav + 2-col browse grid on lg,
   bottom tabs mobile-only); type/skill badges neutralized (color only for spots
