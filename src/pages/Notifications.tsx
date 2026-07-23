@@ -80,7 +80,7 @@ export default function Notifications() {
 
   return (
     <div>
-      {/* Same h1 + subtitle block every top-level page uses (Browse, Marketplace,
+      {/* Same h1 + subtitle block every top-level page uses (Browse, Chats,
           Chats) so the header sits at the same height when swiping between
           tabs — this page was previously missing the subtitle line. */}
       <div className="mb-4 flex items-start justify-between gap-3">

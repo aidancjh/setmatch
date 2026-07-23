@@ -1,14 +1,17 @@
 import type { GameType, SkillLevel } from "../types";
 
+// Preview: badges are informational, not status — keep them neutral so the
+// only colors on a card are the brand red and the green/amber/rose spots signal.
+const NEUTRAL_BADGE = "bg-slate-800 text-slate-300 ring-slate-500/20";
 const skillStyles: Record<SkillLevel, string> = {
-  "All Levels": "bg-slate-800 text-slate-300 ring-slate-500/20",
-  "Low Beginner": "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
-  "High Beginner": "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
-  "Low Intermediate": "bg-sky-500/15 text-sky-300 ring-sky-500/30",
-  "High Intermediate": "bg-sky-500/15 text-sky-300 ring-sky-500/30",
-  Beginner: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
-  Intermediate: "bg-sky-500/15 text-sky-300 ring-sky-500/30",
-  Advanced: "bg-rose-500/15 text-rose-300 ring-rose-500/30",
+  "All Levels": NEUTRAL_BADGE,
+  "Low Beginner": NEUTRAL_BADGE,
+  "High Beginner": NEUTRAL_BADGE,
+  "Low Intermediate": NEUTRAL_BADGE,
+  "High Intermediate": NEUTRAL_BADGE,
+  Beginner: NEUTRAL_BADGE,
+  Intermediate: NEUTRAL_BADGE,
+  Advanced: NEUTRAL_BADGE,
 };
 
 export function SkillBadge({
@@ -63,12 +66,12 @@ export function StarRating({
  */
 export function RatingHero({ avg, count }: { avg: number; count: number }) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-blue-600/25 to-blue-500/10 p-4 ring-1 ring-blue-500/30">
+    <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-brand/15 to-brand/5 p-4 ring-1 ring-brand/25">
       <div className="shrink-0 text-center">
-        <div className="text-4xl font-extrabold leading-none text-white">
+        <div className="text-4xl font-extrabold leading-none text-slate-50">
           {avg.toFixed(1)}
         </div>
-        <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-blue-300/80">
+        <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-brand">
           out of 5
         </div>
       </div>
@@ -102,9 +105,9 @@ export function RatingEmpty() {
 }
 
 const typeStyles: Record<GameType, string> = {
-  Indoor: "bg-sky-500/15 text-sky-300 ring-sky-500/30",
-  Beach: "bg-amber-500/15 text-amber-300 ring-amber-500/30",
-  Grass: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
+  Indoor: NEUTRAL_BADGE,
+  Beach: NEUTRAL_BADGE,
+  Grass: NEUTRAL_BADGE,
 };
 
 export function TypeBadge({ type }: { type: GameType }) {
@@ -117,15 +120,15 @@ export function TypeBadge({ type }: { type: GameType }) {
 
 /** Spots-left pill that turns urgent (amber/red) as a game fills up. */
 export function SpotsBadge({ left, total }: { left: number; total: number }) {
-  let cls = "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30";
+  let cls = "bg-emerald-500/15 text-emerald-700 ring-emerald-500/30";
   let label = `${left} spot${left === 1 ? "" : "s"} left`;
   if (left === 0) {
     cls = "bg-slate-700 text-slate-300 ring-slate-500/20";
     label = "Full · join waitlist";
   } else if (left <= 2) {
-    cls = "bg-rose-500/15 text-rose-300 ring-rose-500/30";
+    cls = "bg-rose-500/15 text-rose-700 ring-rose-500/30";
   } else if (left <= 4) {
-    cls = "bg-amber-500/15 text-amber-300 ring-amber-500/30";
+    cls = "bg-amber-500/15 text-amber-700 ring-amber-500/30";
   }
   return (
     <span

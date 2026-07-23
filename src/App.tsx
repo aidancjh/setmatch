@@ -13,8 +13,6 @@ const BrowseGames = lazy(() => import("./pages/BrowseGames"));
 const GameDetail  = lazy(() => import("./pages/GameDetail"));
 const CreateGame  = lazy(() => import("./pages/CreateGame"));
 const EditGame    = lazy(() => import("./pages/EditGame"));
-const Marketplace = lazy(() => import("./pages/Marketplace"));
-const MarketplaceItem = lazy(() => import("./pages/MarketplaceItem"));
 const Profile     = lazy(() => import("./pages/Profile"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Settings    = lazy(() => import("./pages/Settings"));
@@ -73,8 +71,7 @@ export default function App() {
         <Route path="/user/:id" element={<Suspense fallback={<PageFallback />}><UserProfile /></Suspense>} />
         <Route path="/game/:id/edit" element={<Suspense fallback={<PageFallback />}><EditGame /></Suspense>} />
         <Route path="/create" element={<Suspense fallback={<PageFallback />}><CreateGame /></Suspense>} />
-        <Route path="/marketplace" element={<Suspense fallback={<PageFallback />}><Marketplace /></Suspense>} />
-        <Route path="/marketplace/:id" element={<Suspense fallback={<PageFallback />}><MarketplaceItem /></Suspense>} />
+
         {/* My Games merged into Browse's pill switcher — keep the old path working */}
         <Route path="/my-games" element={<Navigate to="/?view=upcoming" replace />} />
         <Route path="/profile" element={<Suspense fallback={<PageFallback />}><Profile /></Suspense>} />

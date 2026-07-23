@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getUserHighlights } from "../services/gamesService";
 import { api } from "../lib/api";
 import { getUploadSignature } from "../lib/cloudinaryUpload";
 import type { Highlight, SkillLevel } from "../types";
-import HighlightUploadModal from "../components/HighlightUploadModal";
 import { SkillBadge, RatingHero, RatingEmpty } from "../components/Badges";
 import {
   CameraIcon,
@@ -199,10 +197,8 @@ function BannerCropper({
 
 function HighlightGrid({
   highlights,
-  onAdd,
 }: {
   highlights: Highlight[];
-  onAdd: () => void;
 }) {
   const [playing, setPlaying] = useState<Highlight | null>(null);
 
@@ -215,12 +211,6 @@ function HighlightGrid({
             <ClapperIcon className="h-6 w-6" />
           </IconChip>
           <p className="mt-1 text-sm text-slate-400">No highlights yet</p>
-          <button
-            onClick={onAdd}
-            className="mt-3 rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-white"
-          >
-            Share your first clip
-          </button>
         </div>
       </div>
     );
@@ -232,9 +222,6 @@ function HighlightGrid({
         <p className="text-sm font-semibold text-white">
           My Highlights <span className="font-normal text-slate-400">({highlights.length})</span>
         </p>
-        <button onClick={onAdd} className="text-xs font-semibold text-brand">
-          + Add
-        </button>
       </div>
 
       <div className="grid grid-cols-4 gap-0.5 overflow-hidden rounded-2xl">
@@ -242,7 +229,7 @@ function HighlightGrid({
           <button
             key={h.id}
             onClick={() => setPlaying(h)}
-            className="relative aspect-square bg-slate-900"
+            className="relative aspect-square bg-black"
           >
             {h.thumbUrl || h.mediaType === "photo" ? (
               <img src={h.thumbUrl || h.videoUrl} alt={h.caption} className="h-full w-full object-cover" />
@@ -303,22 +290,10 @@ function HighlightGrid({
 
 export default function Profile() {
   const { user, updateProfile } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
 
   const [editing, setEditing] = useState(false);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
-  const [showUpload, setShowUpload] = useState(false);
   const [stats, setStats] = useState<{ gamesHosted: number; gamesPlayed: number } | null>(null);
-
-  // Opened from the "+" post sheet (navigates to /profile?upload=1) — auto-open
-  // the highlight upload sheet, then strip the param so a refresh won't re-open.
-  useEffect(() => {
-    if (new URLSearchParams(location.search).get("upload") === "1") {
-      setShowUpload(true);
-      navigate("/profile", { replace: true });
-    }
-  }, [location.search, navigate]);
 
   // Banner customization
   const [bannerColor, setBannerColor] = useState(user?.bannerColor || "");
@@ -687,7 +662,7 @@ export default function Profile() {
                   onClick={() => handleColorSelect("")}
                   className="aspect-square w-full rounded-xl transition active:scale-90"
                   style={{
-                    background: "linear-gradient(135deg, #0b6ecd, #38bdf8)",
+                    background: "linear-gradient(135deg, #d92632, #f4746d)",
                     outline: !bannerColor && !bannerImage ? "3px solid rgba(255,255,255,0.55)" : "none",
                     outlineOffset: "2px",
                   }}
@@ -788,18 +763,7 @@ export default function Profile() {
       </div>
 
       {/* Highlights — the user's own clips, posted from here */}
-      <HighlightGrid
-        highlights={highlights}
-        onAdd={() => setShowUpload(true)}
-      />
-
-      {/* Highlight upload sheet */}
-      {showUpload && (
-        <HighlightUploadModal
-          onClose={() => setShowUpload(false)}
-          onUploaded={(hl) => setHighlights((prev) => [hl, ...prev])}
-        />
-      )}
+      <HighlightGrid highlights={highlights} />
 
       {/* Banner image cropper modal */}
       {bannerCropSrc && (

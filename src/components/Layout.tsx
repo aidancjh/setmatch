@@ -7,11 +7,9 @@ import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { refreshAll } from "../services/gamesService";
 import {
   ArrowUpIcon,
-  BagIcon,
   BellIcon,
   CalendarIcon,
   ChatIcon,
-  ClapperIcon,
   IconChip,
   PlusIcon,
   SearchIcon,
@@ -19,19 +17,21 @@ import {
   StarIcon,
   UserIcon,
   VolleyballIcon,
+  BrandMark,
 } from "./icons";
 
 // Which tab root a route belongs to. Deep routes keep their parent tab lit:
-// a game detail is still "Browse", a user profile is still "Profile".
+// a game detail is still "Browse", a chat room is still "Chats", a user
+// profile is still "Profile".
 function tabRootFor(pathname: string): string | null {
   if (pathname === "/" || pathname.startsWith("/game") || pathname === "/create") return "/";
-  if (pathname.startsWith("/marketplace")) return "/marketplace";
+  if (pathname.startsWith("/chats")) return "/chats";
   if (pathname.startsWith("/notifications")) return "/notifications";
   if (pathname.startsWith("/profile") || pathname.startsWith("/user")) return "/profile";
   return null;
 }
 
-const TAB_SLOT: Record<string, number> = { "/": 0, "/marketplace": 1, "/notifications": 3, "/profile": 4 };
+const TAB_SLOT: Record<string, number> = { "/": 0, "/chats": 1, "/notifications": 3, "/profile": 4 };
 
 function tabSlotFor(pathname: string): number {
   const root = tabRootFor(pathname);
@@ -40,7 +40,7 @@ function tabSlotFor(pathname: string): number {
 
 const leftTabs = [
   { to: "/", label: "Browse", Icon: SearchIcon },
-  { to: "/marketplace", label: "Market", Icon: BagIcon },
+  { to: "/chats", label: "Chats", Icon: ChatIcon },
 ];
 const rightTabs = [
   { to: "/notifications", label: "Alerts", Icon: BellIcon },
@@ -60,12 +60,6 @@ function PostSheet({ onClose }: { onClose: () => void }) {
       label: "Post a game",
       sub: "Schedule a volleyball game and invite players",
       action: () => { navigate("/create"); onClose(); },
-    },
-    {
-      Icon: ClapperIcon,
-      label: "Share a highlight",
-      sub: "Post a sports clip to your profile",
-      action: () => { navigate("/profile?upload=1"); onClose(); },
     },
   ];
 
@@ -137,7 +131,7 @@ function Tab({
       to={to}
       aria-label={label}
       className={`relative z-10 flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-all duration-150 active:scale-90 active:opacity-70 ${
-        active ? "text-white" : "text-slate-400"
+        active ? "text-[#ffffff]" : "text-slate-400"
       }`}
     >
       <Icon className="h-6 w-6" aria-hidden />
@@ -207,7 +201,7 @@ export default function Layout() {
           We'll be right back
         </h1>
         <p className="text-sm text-slate-400">
-          Vybe is down for a quick bit of maintenance. Please check back shortly —
+          Coterie is down for a quick bit of maintenance. Please check back shortly —
           thanks for your patience!
         </p>
       </div>
@@ -216,12 +210,12 @@ export default function Layout() {
 
   return (
     <div
-      className="relative mx-auto flex h-screen max-w-md flex-col overflow-hidden bg-black shadow-sm"
+      className="relative mx-auto flex h-screen w-full max-w-md flex-col overflow-hidden bg-white shadow-sm lg:max-w-none lg:shadow-none"
       style={{ height: "100svh" }}
     >
       {/* Top bar — logo left, quick actions right */}
       <header
-        className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-black/90 px-4 py-3 backdrop-blur"
+        className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-white/90 px-4 py-3 backdrop-blur"
         style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
       >
         <button
@@ -229,16 +223,36 @@ export default function Layout() {
           className="flex items-center gap-2 text-left transition-all duration-150 active:scale-95 active:opacity-70"
           aria-label="Go to home"
         >
-          <VolleyballIcon className="h-6 w-6 text-brand" />
+          <BrandMark className="h-7 w-7" />
           <span className="text-lg font-extrabold tracking-tight text-white">
-            Vybe
+            Coterie
           </span>
         </button>
+
+        {/* Desktop nav — replaces the bottom tab bar on large screens */}
+        <div className="hidden items-center gap-1 lg:flex">
+          {[
+            { to: "/", label: "Browse" },
+            { to: "/chats", label: "Chats" },
+            { to: "/notifications", label: "Alerts" },
+            { to: "/profile", label: "Profile" },
+          ].map((l) => (
+            <NavLink
+              key={l.to}
+              to={l.to}
+              className={`rounded-full px-6 py-2.5 text-lg font-semibold transition ${
+                tabRootFor(pathname) === l.to ? "bg-brand text-white" : "text-slate-300 hover:bg-slate-800"
+              }`}
+            >
+              {l.label}
+            </NavLink>
+          ))}
+        </div>
 
         <div className="flex items-center gap-0.5">
           <button
             onClick={() => navigate("/chats")}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-800 active:scale-90"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-800 active:scale-90 lg:hidden"
             aria-label="Chats"
           >
             <ChatIcon className="h-5 w-5" />
@@ -261,7 +275,7 @@ export default function Layout() {
       </header>
 
       {config.maintenanceMode && isAdmin && (
-        <div className="bg-sky-600 px-4 py-1.5 text-center text-xs font-semibold text-white">
+        <div className="bg-brand px-4 py-1.5 text-center text-xs font-semibold text-white">
           Maintenance mode is ON — only admins can use the app
         </div>
       )}
@@ -269,6 +283,7 @@ export default function Layout() {
       {/* Page content — the only scrolling region, so the nav below always
           stays pinned to the bottom regardless of how short the page is. */}
       <main ref={mainRef} className="relative flex-1 overflow-y-auto px-4 pb-6 pt-4">
+        <div className={`mx-auto w-full ${pathname === "/" ? "lg:max-w-5xl" : "lg:max-w-2xl"}`}>
         {/* Pull-to-refresh indicator (touch). Fades/rotates in as you pull. */}
         {(pull > 0 || refreshing) && (
           <div
@@ -296,6 +311,7 @@ export default function Layout() {
         >
           <Outlet />
         </div>
+        </div>
       </main>
 
       {/* Back-to-top — floats above the nav, only once the page is scrolled. */}
@@ -318,7 +334,7 @@ export default function Layout() {
           positioning mis-renders on short pages in iOS standalone PWAs). */}
       <nav
         aria-label="Main navigation"
-        className="z-10 shrink-0 border-t border-slate-800 bg-black/95 backdrop-blur"
+        className="z-10 shrink-0 border-t border-slate-800 bg-white/95 backdrop-blur lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="relative flex items-end">

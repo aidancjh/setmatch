@@ -1,4 +1,4 @@
-// Vybe API server — Express + PostgreSQL.
+// Coterie API server — Express + PostgreSQL.
 // Local dev:  node --env-file=.env server/index.js   (see package.json scripts)
 // Production: node server/index.js                    (host provides env vars)
 import * as Sentry from "@sentry/node";
@@ -129,7 +129,7 @@ app.use("/api", async (req, res, next) => {
     if (userId && (await repo.getRole(userId)) === "admin") return next();
     return res
       .status(503)
-      .json({ error: "Vybe is down for maintenance. We'll be back shortly.", maintenance: true });
+      .json({ error: "Coterie is down for maintenance. We'll be back shortly.", maintenance: true });
   } catch {
     next(); // never let the gate take the whole API down
   }
@@ -491,7 +491,7 @@ app.get(
         body: JSON.stringify({
           from: MAIL_FROM,
           to: [user.email],
-          subject: "Vybe — email test",
+          subject: "Coterie — email test",
           html: "<p>If you see this, email delivery is working!</p>",
         }),
       });
@@ -1090,10 +1090,10 @@ function buildICS(game, appUrl) {
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Vybe//Games//EN",
+    "PRODID:-//Coterie//Games//EN",
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
-    `UID:${game.id}@vybe`,
+    `UID:${game.id}@coterie`,
     `SUMMARY:${esc545(game.title)}`,
     `DTSTART:${start}`,
     `DTEND:${end}`,
@@ -1177,7 +1177,7 @@ app.post("/api/waitlist", waitlistLimiter, async (req, res) => {
   // auto-fill every input set it — silently accept (don't reveal the trap) and
   // drop the request without writing anything.
   if (typeof company === "string" && company.trim() !== "") {
-    return res.json({ ok: true, message: "You're on the list! We'll let you know when Vybe launches in Singapore." });
+    return res.json({ ok: true, message: "You're on the list! We'll let you know when Coterie launches in Singapore." });
   }
   if (!email || typeof email !== "string") return res.status(400).json({ error: "Email is required." });
   const trimmed = email.trim();
@@ -1187,7 +1187,7 @@ app.post("/api/waitlist", waitlistLimiter, async (req, res) => {
   const safeSource = normaliseWaitlistSource(source);
   const result = await repo.addWaitlistEntry(trimmed, safeName, safeSource);
   if (result.alreadyExists) return res.json({ ok: true, message: "You're already on the list — we'll be in touch!" });
-  res.json({ ok: true, message: "You're on the list! We'll let you know when Vybe launches in Singapore." });
+  res.json({ ok: true, message: "You're on the list! We'll let you know when Coterie launches in Singapore." });
 });
 
 // Unknown API routes → JSON 404 (never HTML).
@@ -1206,10 +1206,10 @@ app.use((err, _req, res, _next) => {
 });
 
 function injectMeta(html, base, title, desc) {
-  const fullTitle = `${title} · Vybe`;
+  const fullTitle = `${title} · Coterie`;
   const tags = `
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Vybe" />
+    <meta property="og:site_name" content="Coterie" />
     <meta property="og:title" content="${esc(fullTitle)}" />
     <meta property="og:description" content="${esc(desc)}" />
     <meta property="og:image" content="${base}/og-image.png" />
@@ -1270,7 +1270,7 @@ async function start() {
   if (!process.env.RESEND_API_KEY) console.warn("[email] RESEND_API_KEY not set — join confirmation emails will be skipped");
   if (!process.env.SENTRY_DSN) console.warn("[sentry] SENTRY_DSN not set — errors will only be logged to the console, not reported to Sentry");
   app.listen(PORT, () => {
-    console.log(`[api] Vybe API listening on http://localhost:${PORT}`);
+    console.log(`[api] Coterie API listening on http://localhost:${PORT}`);
   });
 }
 

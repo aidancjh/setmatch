@@ -383,3 +383,20 @@ export function AlertTriangleIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+/** Coterie brand mark — flat red tile with a bold "C". Pure vector, no fine
+ *  strokes, so it stays crisp at any size (header, favicon, splash). */
+export function BrandMark({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <rect x="0.5" y="0.5" width="23" height="23" rx="6.5" fill="#d92632" />
+      <path
+        d="M16.6 8.4 A 5.8 5.8 0 1 0 16.6 15.6"
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}

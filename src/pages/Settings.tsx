@@ -2,15 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import {
-  submitFeedback,
   deleteAccount,
   getBlocked,
   unblockUser,
   type BlockedUser,
 } from "../services/gamesService";
 import { setToken } from "../lib/api";
-import { feedbackEnabled, setFeedbackEnabled, playSound } from "../lib/feedback";
-import { CheckIcon, IconChip } from "../components/icons";
 import ErrorModal from "../components/ErrorModal";
 
 // ---------------------------------------------------------------------------
@@ -138,28 +135,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function ToggleRow({ label, sub, on, onToggle }: { label: string; sub?: string; on: boolean; onToggle: () => void }) {
-  return (
-    <div className="flex w-full items-center justify-between px-4 py-3.5 text-left border-b border-slate-50 last:border-0">
-      <div className="pr-3">
-        <p className="text-sm font-medium text-slate-100">{label}</p>
-        {sub && <p className="text-xs text-slate-400">{sub}</p>}
-      </div>
-      <button
-        role="switch"
-        aria-checked={on}
-        aria-label={label}
-        onClick={onToggle}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${on ? "bg-brand" : "bg-slate-700"}`}
-      >
-        <span
-          className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-slate-900 shadow transition-transform duration-200"
-          style={{ transform: on ? "translateX(20px)" : "translateX(0)" }}
-        />
-      </button>
-    </div>
-  );
-}
 
 function Row({ label, sub, onClick, danger }: { label: string; sub?: string; onClick?: () => void; danger?: boolean }) {
   return (
@@ -180,76 +155,6 @@ function Row({ label, sub, onClick, danger }: { label: string; sub?: string; onC
 // Feedback form
 // ---------------------------------------------------------------------------
 
-function FeedbackForm({ type, label, onDone }: { type: "feedback" | "bug"; label: string; onDone: () => void }) {
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState("");
-  const [bodyInvalid, setBodyInvalid] = useState(false);
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
-
-  async function handleSend() {
-    if (!body.trim()) {
-      setError("Please write a message.");
-      setBodyInvalid(true);
-      bodyRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      bodyRef.current?.focus({ preventScroll: true });
-      return;
-    }
-    setBusy(true); setError(""); setBodyInvalid(false);
-    try {
-      await submitFeedback(type, subject, body);
-      setDone(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  if (done) return (
-    <div className="flex flex-col items-center px-4 py-6 text-center">
-      <IconChip size="lg" className="mb-2">
-        <CheckIcon className="h-6 w-6" />
-      </IconChip>
-      <p className="font-semibold text-slate-100">Thanks! We got your {type === "bug" ? "report" : "feedback"}.</p>
-      <button onClick={onDone} className="mt-3 text-sm text-brand font-medium">Done</button>
-    </div>
-  );
-
-  return (
-    <div className="px-4 py-4 space-y-3">
-      <p className="text-sm font-semibold text-slate-100">{label}</p>
-      <input
-        value={subject}
-        onChange={(e) => setSubject(e.target.value.slice(0, 200))}
-        placeholder="Subject (optional)"
-        className="w-full rounded-xl border border-slate-700 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
-      />
-      <textarea
-        ref={bodyRef}
-        value={body}
-        onChange={(e) => {
-          setBody(e.target.value.slice(0, 2000));
-          if (bodyInvalid) setBodyInvalid(false);
-        }}
-        placeholder="Describe in detail…"
-        rows={4}
-        className={`w-full resize-none rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-slate-400 ${
-          bodyInvalid ? "border-rose-500" : "border-slate-700"
-        }`}
-      />
-      {error && <ErrorModal message={error} onClose={() => setError("")} />}
-      <div className="flex gap-2">
-        <button onClick={onDone} className="flex-1 rounded-xl border border-slate-700 py-2.5 text-sm font-semibold text-slate-400">Cancel</button>
-        <button onClick={handleSend} disabled={busy} className="flex-1 rounded-xl bg-brand py-2.5 text-sm font-semibold text-white disabled:opacity-50">
-          {busy ? "Sending…" : "Send"}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Main page
@@ -259,15 +164,8 @@ export default function Settings() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [panel, setPanel] = useState<"feedback" | "bug" | "delete" | null>(null);
-  const [soundOn, setSoundOn] = useState(feedbackEnabled());
   const [deleting, setDeleting] = useState(false);
 
-  function toggleSound() {
-    const next = !soundOn;
-    setSoundOn(next);
-    setFeedbackEnabled(next);
-    if (next) playSound("success"); // let them hear it turn on
-  }
   const [deleteError, setDeleteError] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
   const [deletePasswordInvalid, setDeletePasswordInvalid] = useState(false);
@@ -320,43 +218,6 @@ export default function Settings() {
             <FAQItem key={item.q} {...item} />
           ))}
         </div>
-      </Section>
-
-      {/* Help & Support */}
-      <Section title="Help & Support">
-        {panel === "feedback" ? (
-          <FeedbackForm type="feedback" label="Send feedback" onDone={() => setPanel(null)} />
-        ) : panel === "bug" ? (
-          <FeedbackForm type="bug" label="Report a bug" onDone={() => setPanel(null)} />
-        ) : (
-          <>
-            <Row
-              label="Contact support"
-              sub="support@coterie.app"
-              onClick={() => window.open("mailto:support@coterie.app", "_self")}
-            />
-            <Row
-              label="Send feedback"
-              sub="Suggestions or ideas"
-              onClick={() => setPanel("feedback")}
-            />
-            <Row
-              label="Report a bug"
-              sub="Something not working?"
-              onClick={() => setPanel("bug")}
-            />
-          </>
-        )}
-      </Section>
-
-      {/* Preferences */}
-      <Section title="Preferences">
-        <ToggleRow
-          label="Sounds & haptics"
-          sub="Play a sound and vibrate on wins like joining or posting"
-          on={soundOn}
-          onToggle={toggleSound}
-        />
       </Section>
 
       {/* Blocked users */}

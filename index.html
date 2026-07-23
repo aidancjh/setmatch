@@ -8,15 +8,15 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
-    <title>Vybe — Find your players. Fill your games.</title>
+    <title>Coterie — Find your players. Fill your games.</title>
     <meta
       name="description"
-      content="Vybe helps you find players and fill your volleyball games. Post a game, set your slots, and fill the open spots."
+      content="Coterie helps you find players and fill your volleyball games. Post a game, set your slots, and fill the open spots."
     />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#ffffff" />
     <!-- Public Sans — the app typeface -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -26,8 +26,8 @@
     />
     <!-- iOS: allow "Add to Home Screen" to open full-screen like an app -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Vybe" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Coterie" />
     <!-- Instant splash so the first paint is never a blank white screen while
          the JS bundle downloads. React replaces #root's contents on mount. -->
     <style>
@@ -39,7 +39,7 @@
         align-items: center;
         justify-content: center;
         gap: 28px;
-        background: #000000;
+        background: #ffffff;
         font-family: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
       #app-splash .stage { position: relative; width: 84px; height: 140px; }
@@ -65,7 +65,7 @@
         bottom: 4px;
         width: 56px;
         height: 11px;
-        background: #000;
+        background: #0f172a;
         border-radius: 50%;
         transform-origin: center;
         animation: splash-shadow 1.05s infinite;
@@ -75,7 +75,7 @@
         font-weight: 700;
         letter-spacing: 0.22em;
         text-transform: uppercase;
-        color: #2e86d9;
+        color: #d92632;
       }
       @keyframes splash-bounce {
         0%   { transform: translateY(-72px) scaleX(1)    scaleY(1);    animation-timing-function: cubic-bezier(0.6, 0.02, 0.9, 0.4); }
@@ -96,7 +96,7 @@
       }
     </style>
   </head>
-  <body class="app-dark">
+  <body>
     <div id="root">
       <div id="app-splash">
         <div class="stage">
@@ -104,14 +104,9 @@
           <div class="ball">
             <svg viewBox="0 0 120 120" role="img" aria-label="Volleyball" xmlns="http://www.w3.org/2000/svg">
               <defs>
-                <radialGradient id="vbSplashFill" cx="38%" cy="32%" r="72%">
-                  <stop offset="0%" stop-color="#6faee8" />
-                  <stop offset="55%" stop-color="#0b6ecd" />
-                  <stop offset="100%" stop-color="#0959a8" />
-                </radialGradient>
                 <clipPath id="vbSplashClip"><circle cx="60" cy="60" r="54" /></clipPath>
               </defs>
-              <circle cx="60" cy="60" r="54" fill="url(#vbSplashFill)" />
+              <circle cx="60" cy="60" r="54" fill="#d92632" />
               <g clip-path="url(#vbSplashClip)" fill="none" stroke="#ffffff" stroke-width="3.6" stroke-linecap="round" opacity="0.96">
                 <path d="M70 58 C 52 64, 40 82, 36 112" />
                 <path d="M82 56 C 66 66, 56 86, 54 114" />
@@ -120,11 +115,10 @@
                 <path d="M70 58 C 74 40, 70 22, 58 4" />
                 <path d="M82 56 C 90 40, 90 22, 82 6" />
               </g>
-              <ellipse cx="42" cy="38" rx="16" ry="11" fill="#ffffff" opacity="0.18" />
             </svg>
           </div>
         </div>
-        <div class="wordmark">Vybe</div>
+        <div class="wordmark">Coterie</div>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>

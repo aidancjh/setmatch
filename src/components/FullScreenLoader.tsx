@@ -9,16 +9,11 @@ function VolleyballBall() {
   return (
     <svg viewBox="0 0 120 120" width="100%" height="100%" role="img" aria-label="Volleyball" style={{ display: "block" }}>
       <defs>
-        <radialGradient id="vbFill" cx="38%" cy="32%" r="72%">
-          <stop offset="0%" stopColor="#6faee8" />
-          <stop offset="55%" stopColor="#0b6ecd" />
-          <stop offset="100%" stopColor="#0959a8" />
-        </radialGradient>
         <clipPath id="vbClip">
           <circle cx="60" cy="60" r="54" />
         </clipPath>
       </defs>
-      <circle cx="60" cy="60" r="54" fill="url(#vbFill)" />
+      <circle cx="60" cy="60" r="54" fill="#d92632" />
       <g
         clipPath="url(#vbClip)"
         fill="none"
@@ -36,14 +31,13 @@ function VolleyballBall() {
         <path d="M70 58 C 74 40, 70 22, 58 4" />
         <path d="M82 56 C 90 40, 90 22, 82 6" />
       </g>
-      <ellipse cx="42" cy="38" rx="16" ry="11" fill="#fff" opacity="0.18" />
     </svg>
   );
 }
 
 export default function FullScreenLoader() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-7 bg-black">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-7 bg-white">
       <div className="relative" style={{ width: 84, height: 140 }}>
         {/* shadow is painted first so the ball sits on top of it at rest */}
         <div
@@ -59,7 +53,7 @@ export default function FullScreenLoader() {
           </div>
         </div>
       </div>
-      <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand">Vybe</p>
+      <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand">Coterie</p>
     </div>
   );
 }

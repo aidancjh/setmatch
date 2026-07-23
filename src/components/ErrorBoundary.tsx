@@ -89,7 +89,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           onClick={this.handleReload}
           className="rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white transition active:scale-95"
         >
-          Reload Vybe
+          Reload Coterie
         </button>
       </div>
     );

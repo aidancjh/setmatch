@@ -56,6 +56,7 @@ Full detail lives in `CLAUDE.md`. Ops/env vars in `OPERATIONS.md`. Deploy in `DE
 
 | Decision | Rationale | Date |
 |---|---|---|
+| **Main app IS Coterie now** — red/light preview frontend adopted wholesale; Vybe name retired everywhere (UI, PWA, emails, OG). Marketplace + highlight posting removed to match the preview exactly. Resolves the Vybe/Coterie naming split. | Aidan prefers the preview's UI; one look across both apps. | 2026-07-23 |
 | **Keep the custom Express backend** — do NOT move to Supabase/Firebase | The client can never reach the DB, so a missed rule is one buggy route, not a world-readable table. Fails closed by default. | 2026-07-20 |
 | **Do NOT add Postgres RLS** | RLS needs per-request DB roles; the app connects as one owner role for every request, and owners bypass RLS. High complexity in the hot path, defends a threat already closed structurally. | 2026-07-20 |
 | **Do NOT move the database off Railway** | Not required for launch. | 2026-06-23 |
@@ -167,6 +168,31 @@ Ordered by priority. Update status inline as these move.
 - ✅ Sentry (front + back), PostHog analytics, Resend email, Cloudinary media.
 - ✅ Admin app split into its own Railway service with its own JWT + capped DB pool.
 - ✅ Build SHA exposed at `/healthz`; UptimeRobot pings it to reduce cold starts.
+
+**Main app rebranded to Coterie — preview frontend adopted (2026-07-23):**
+- Copied the preview fork's entire frontend into the main app: red brand
+  `#d92632`, light theme (slate-scale inversion in `src/index.css`), BrandMark
+  logo (red tile + white C), desktop header nav + 2-col browse grid, neutral
+  badges, white splash/manifest, Chats bottom tab.
+- **Removed to match the preview exactly** (Aidan's explicit choice):
+  Marketplace (pages + mock catalog + art), highlight *posting*
+  (HighlightUploadModal, "+ Add", post-sheet entry — viewing stays), Settings'
+  Help & Support forms and Sounds & haptics toggles. Note: in-app
+  feedback/bug-report submission is gone with Help & Support; the admin
+  feedback inbox still works for old rows.
+- **Vybe → Coterie everywhere**: UI strings, index.html/meta, PWA manifest
+  (name "Coterie — Find your players", white theme), emails (`server/email.js`
+  incl. MAIL_FROM default), maintenance message, ICS PRODID/UID, share/OG
+  text, admin heading. ⚠️ Railway env `MAIL_FROM` may still say "Vybe" —
+  Aidan must update it in Railway Variables.
+- **All PNG icons regenerated red** via rewritten `scripts/generate-icons.mjs`
+  (BrandMark-based: pwa-192/512, maskable, apple-touch, favicon-32, og-image).
+  The preview fork still has the old blue PNGs — regenerate there if wanted.
+- **Admin app keeps its dark/blue theme**: old `index.css` preserved as
+  `src/admin/admin.css`, `src/admin-main.tsx` imports it. Admin is otherwise
+  untouched (build passes).
+- Verified: `npm run build` (consumer + admin) clean, 101 tests pass, local
+  Vite smoke test shows white/red Coterie auth page.
 
 **Demo data localized to Singapore (2026-07-23, BOTH main app and preview fork):**
 - All seed data moved from LA to Singapore: SG names (mostly Chinese, some

@@ -162,7 +162,7 @@ export default function GameDetail() {
   const handleShare = async () => {
     const text = `${game.title} — ${formatDate(game.date)} at ${formatTime(
       game.time
-    )}, ${game.location}. ${left} spots left! Join us on Vybe.`;
+    )}, ${game.location}. ${left} spots left! Join us on Coterie.`;
     try {
       if (navigator.share) {
         await navigator.share({ title: game.title, text });
@@ -338,7 +338,7 @@ export default function GameDetail() {
             )}
 
             <p className="py-5 text-center text-[11px] font-semibold uppercase tracking-widest text-slate-300">
-              Vybe
+              Coterie
             </p>
         </Modal>
       )}
@@ -398,7 +398,7 @@ export default function GameDetail() {
               </button>
             </div>
             <p className="py-5 text-center text-[11px] font-semibold uppercase tracking-widest text-slate-300">
-              Vybe
+              Coterie
             </p>
         </Modal>
       )}
@@ -447,7 +447,7 @@ export default function GameDetail() {
             </button>
           </div>
           <p className="py-5 text-center text-[11px] font-semibold uppercase tracking-widest text-slate-300">
-            Vybe
+            Coterie
           </p>
         </Modal>
       )}
@@ -486,7 +486,7 @@ export default function GameDetail() {
             </button>
           </div>
           <p className="py-5 text-center text-[11px] font-semibold uppercase tracking-widest text-slate-300">
-            Vybe
+            Coterie
           </p>
         </Modal>
       )}

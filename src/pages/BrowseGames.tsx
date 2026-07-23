@@ -222,11 +222,19 @@ export default function BrowseGames() {
 
   return (
     <div>
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold tracking-tight text-white">
-          Find a game
-        </h1>
-        <p className="text-sm text-slate-400">{VIEW_SUBTITLE[view]}</p>
+      <div className="mb-4 flex items-end justify-between gap-4 lg:mb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-white lg:text-4xl">
+            Find a game
+          </h1>
+          <p className="text-sm text-slate-400 lg:mt-1 lg:text-base">{VIEW_SUBTITLE[view]}</p>
+        </div>
+        <button
+          onClick={() => navigate("/create")}
+          className="hidden shrink-0 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark lg:block"
+        >
+          + Host a game
+        </button>
       </div>
 
       {/* View switcher — Browse + your games (upcoming / hosting / past) */}
@@ -245,7 +253,7 @@ export default function BrowseGames() {
             key={v.key}
             onClick={() => setView(v.key)}
             className={`relative z-10 flex-1 rounded-lg py-1.5 text-sm font-medium transition-colors duration-150 ${
-              view === v.key ? "text-white" : "text-slate-400"
+              view === v.key ? "text-[#ffffff]" : "text-slate-400"
             }`}
           >
             {v.label}
@@ -282,7 +290,7 @@ export default function BrowseGames() {
 
           {/* Results */}
           {loading ? (
-            <div className="space-y-3">
+            <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
               {slow && (
                 <p className="text-center text-xs text-slate-400">
                   ⏳ Waking up the server — hang tight…
@@ -322,21 +330,23 @@ export default function BrowseGames() {
               )}
             </div>
           ) : (
-            <div className="space-y-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+            <>
+              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">
                 {visible.length} game{visible.length === 1 ? "" : "s"}
               </p>
-              {visible.map((g) => (
-                <GameCard key={g.id} game={g} youAreIn={isInGame(g, me.id)} />
-              ))}
-            </div>
+              <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+                {visible.map((g) => (
+                  <GameCard key={g.id} game={g} youAreIn={isInGame(g, me.id)} />
+                ))}
+              </div>
+            </>
           )}
         </>
       )}
 
       {view !== "browse" &&
         (loading ? (
-          <div className="space-y-3">
+          <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
             <GameCardSkeleton />
             <GameCardSkeleton />
           </div>
@@ -376,7 +386,7 @@ export default function BrowseGames() {
             )}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
             {myList.map((g) => {
               const canReview =
                 view === "past" && g.hostId !== me.id && pendingIds.has(g.id);

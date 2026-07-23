@@ -1,13 +1,4 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background -->
-  <rect width="512" height="512" rx="112" fill="#0b6ecd"/>
-  <!-- Volleyball -->
-  <g transform="translate(256,256)">
-    <circle r="150" fill="#ffffff"/>
-    <g fill="none" stroke="#0b6ecd" stroke-width="14" stroke-linecap="round">
-      <path d="M 0 -150 C -55 -70, -55 70, 0 150"/>
-      <path d="M 130 -75 C 40 -45, -75 25, -130 75"/>
-      <path d="M 130 75 C 40 45, -75 -25, -130 -75"/>
-    </g>
-  </g>
+  <rect width="512" height="512" rx="120" fill="#d92632"/>
+  <path d="M352 180 A 122 122 0 1 0 352 332" fill="none" stroke="#ffffff" stroke-width="62" stroke-linecap="round"/>
 </svg>

@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
-/* Brand theme — Coterie. Sapphire Sky blue is the single signature color, used
+/* Brand theme — Vybe. Sapphire Sky blue is the single signature color, used
    for the logo, primary actions, active states, and links. Change these two
    values to re-skin the whole app. */
 @theme {
-  --color-brand: #d92632;
-  --color-brand-dark: #b31e29;
+  --color-brand: #0b6ecd;
+  --color-brand-dark: #0959a8;
   --font-sans: "Public Sans", ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
@@ -20,54 +20,9 @@ body,
   height: 100%;
 }
 
-
-/* ---- Light-theme inversion (Coterie Preview) -------------------------------
-   The app's components are written with dark-slate utilities. Instead of
-   editing every className, invert the slate scale: what was a dark surface
-   becomes a light one, what was light text becomes dark ink. */
-@theme {
-  --color-slate-950: #f8fafc;
-  --color-slate-900: #ffffff;   /* card surfaces */
-  --color-slate-800: #f1f5f9;   /* raised surfaces, inputs */
-  --color-slate-700: #e2e8f0;   /* borders, handles */
-  --color-slate-600: #cbd5e1;
-  --color-slate-500: #94a3b8;
-  --color-slate-400: #64748b;   /* muted text */
-  --color-slate-300: #475569;
-  --color-slate-200: #334155;
-  --color-slate-100: #1e293b;
-  --color-slate-50: #0f172a;
-}
-
-/* text-white means "primary text" in the dark app -> dark ink on light.
-   Unlayered rules outrank Tailwind's layered utilities, so these win. */
-.text-white { color: #0f172a; }
-.hover\:text-white:hover { color: #0f172a; }
-
-/* ...except on colored surfaces, where white must stay white. */
-[class*="bg-brand"] .text-white, [class*="bg-brand"].text-white,
-[class*="bg-rose"] .text-white, [class*="bg-rose"].text-white,
-[class*="bg-red"] .text-white, [class*="bg-red"].text-white,
-[class*="bg-emerald"] .text-white, [class*="bg-emerald"].text-white,
-[class*="bg-green"] .text-white, [class*="bg-green"].text-white,
-[class*="bg-amber"] .text-white, [class*="bg-amber"].text-white,
-[class*="bg-black"] .text-white, [class*="bg-black"].text-white,
-[class*="bg-gradient"] .text-white, [class*="bg-gradient"].text-white {
-  color: #ffffff;
-}
-[class*="bg-brand"] .hover\:text-white:hover,
-[class*="bg-black"] .hover\:text-white:hover,
-[class*="bg-gradient"] .hover\:text-white:hover {
-  color: #ffffff;
-}
-[class*="hover:bg-brand"]:hover.text-white,
-[class*="hover:bg-brand"]:hover .text-white {
-  color: #ffffff;
-}
-
 body {
   margin: 0;
-  background: #ffffff;
+  background: #f7f8fa;
   color: #1a1a1a;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;

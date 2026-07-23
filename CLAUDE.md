@@ -86,15 +86,20 @@ capped connection pool (`DB_POOL_MAX`) so admin traffic can never starve the con
 Pages: `BrowseGames` (includes the Upcoming/Hosting/Past views), `GameDetail`,
 `CreateGame`, `EditGame`, `Interested` (starred games), `Chats`, `ChatRoom`,
 `Notifications`, `UserProfile`, `Profile`, `Settings`, `Auth`, `Onboarding`,
-`Marketplace`, `MarketplaceItem`, `Privacy`, `Waitlist*`.
+`Privacy`, `Waitlist*`. (Marketplace and highlight *posting* were removed
+2026-07-23 when the app adopted the preview's frontend; highlight *viewing*
+remains.)
 
-**Preview fork:** a tester-facing near-copy of this app (light/red theme, no
-marketplace or highlight posting, no admin) lives in a separate repo,
-`aidancjh/coterie-prototype`, deployed to its own Railway project
-(`coterie-preview`) at https://preview.coterie.com.de. It does NOT auto-deploy
-on push — deploy from that folder with `railway up --service web --ci`. When
-changing shared behavior here (forms, validation, endpoints), mirror the change
-there; see PROJECT_STATE.md for what has been kept in sync so far.
+**Preview fork:** a tester-facing near-copy of this app (no admin, separate
+DB) lives in a separate repo, `aidancjh/coterie-prototype`, deployed to its
+own Railway project (`coterie-preview`) at https://preview.coterie.com.de.
+Since 2026-07-23 the main app uses the SAME frontend (Coterie name, red/light
+theme, desktop nav) — the fork's remaining deltas are infrastructure (own
+Railway project + Postgres, no admin, seed date-shifting). It does NOT
+auto-deploy on push — deploy from that folder with
+`railway up --service web --ci`. When changing shared behavior here (forms,
+validation, endpoints, UI), mirror the change there; see PROJECT_STATE.md for
+what has been kept in sync so far.
 
 `GameDetail.tsx` fetches `/api/games/:id/ratables` when the game is in the past and the user was a player — renders inline star pickers to rate teammates using `api.post` directly (not via gamesService).
 
@@ -124,4 +129,5 @@ On startup the server calls, in order: `initSchema()` → `seedIfEmpty()` → `s
 - **Auth**: JWT stored in `localStorage` as `vb.token` (see `TOKEN_KEY` in `src/lib/api.ts`). `requireAuth` middleware sets `req.userId`. `requireAdmin` checks `users.role = 'admin'`.
 - **Roles**: `user` (default) | `staff` | `admin`. Only admins can access `/api/admin/*`.
 - **Game time logic**: `date` is ISO date string (`2026-06-20`), `time`/`endTime` are 24h strings (`"18:30"`). `isPast(date)` checks if date < today.
-- **Tailwind**: Using Tailwind CSS 4.0 (Vite plugin, not PostCSS). Brand color is `text-brand` / `bg-brand` — blue `#0b6ecd`, defined as CSS variable `--color-brand` in `src/index.css` (with `--color-brand-dark: #0959a8`).
+- **Tailwind**: Using Tailwind CSS 4.0 (Vite plugin, not PostCSS). Brand color is `text-brand` / `bg-brand` — **red `#d92632`**, defined as CSS variable `--color-brand` in `src/index.css` (with `--color-brand-dark: #b31e29`). The app is **light-themed**: components still use dark-slate utility classes, but `src/index.css` inverts the slate scale via `@theme` and remaps `.text-white` to dark ink (white stays white on colored surfaces). The **admin app keeps the old dark/blue theme** via its own stylesheet `src/admin/admin.css` (imported by `src/admin-main.tsx`), so consumer theme changes don't touch admin.
+- **Branding**: the product is **Coterie** everywhere (UI, PWA manifest, emails, ICS, OG tags) as of 2026-07-23 — the Vybe name is retired. Logo is `BrandMark` in `src/components/icons.tsx` (red tile + white C); PNG icons regenerate via `node scripts/generate-icons.mjs`.
