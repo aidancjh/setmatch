@@ -12,24 +12,17 @@ function VolleyballBall() {
         <clipPath id="vbClip">
           <circle cx="60" cy="60" r="54" />
         </clipPath>
+        {/* one seam arm; reused at 120°/240° so the pinwheel is perfectly symmetric */}
+        <g id="vbArm" fill="none" stroke="#ffffff" strokeWidth="3.6" strokeLinecap="round">
+          <path d="M60 60 C 48 76, 46 96, 56 118" />
+          <path d="M78 66 C 68 82, 68 102, 76 118" />
+        </g>
       </defs>
       <circle cx="60" cy="60" r="54" fill="#d92632" />
-      <g
-        clipPath="url(#vbClip)"
-        fill="none"
-        stroke="#ffffff"
-        strokeWidth="3.6"
-        strokeLinecap="round"
-        opacity="0.96"
-      >
-        {/* classic volleyball pinwheel: three seams meeting off-centre, each
-            paired with a companion groove */}
-        <path d="M70 58 C 52 64, 40 82, 36 112" />
-        <path d="M82 56 C 66 66, 56 86, 54 114" />
-        <path d="M70 58 C 50 50, 28 50, 4 60" />
-        <path d="M71 47 C 52 38, 26 36, 2 44" />
-        <path d="M70 58 C 74 40, 70 22, 58 4" />
-        <path d="M82 56 C 90 40, 90 22, 82 6" />
+      <g clipPath="url(#vbClip)" opacity="0.96">
+        <use href="#vbArm" />
+        <use href="#vbArm" transform="rotate(120 60 60)" />
+        <use href="#vbArm" transform="rotate(240 60 60)" />
       </g>
     </svg>
   );

@@ -169,6 +169,15 @@ Ordered by priority. Update status inline as these move.
 - ✅ Admin app split into its own Railway service with its own JWT + capped DB pool.
 - ✅ Build SHA exposed at `/healthz`; UptimeRobot pings it to reduce cold starts.
 
+**Loader ball seams made symmetric (2026-07-23, BOTH apps):**
+- The volleyball's six seam paths all radiated from a hub at (70,58) toward
+  the LEFT side only — one pinwheel arm was effectively missing (Aidan
+  spotted it). Rebuilt as ONE arm (2 paths) in `<defs>` reused via
+  `<use transform="rotate(120/240 60 60)">`, so 3-fold symmetry is
+  structural, not hand-drawn. Applied in `index.html` splash +
+  `FullScreenLoader.tsx` in both apps; design verified by rendering to PNG
+  with sharp before shipping.
+
 **Loader ball squash removed (2026-07-23, BOTH apps + admin.css):**
 - The bouncing-ball loader's impact squash (`scaleX(1.18) scaleY(0.82)`)
   read as a broken oval ball in stills — Aidan flagged it. Keyframes in

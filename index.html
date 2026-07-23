@@ -102,15 +102,17 @@
             <svg viewBox="0 0 120 120" role="img" aria-label="Volleyball" xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <clipPath id="vbSplashClip"><circle cx="60" cy="60" r="54" /></clipPath>
+                <!-- one seam arm; reused at 120°/240° so the pinwheel is perfectly symmetric -->
+                <g id="vbSplashArm" fill="none" stroke="#ffffff" stroke-width="3.6" stroke-linecap="round">
+                  <path d="M60 60 C 48 76, 46 96, 56 118" />
+                  <path d="M78 66 C 68 82, 68 102, 76 118" />
+                </g>
               </defs>
               <circle cx="60" cy="60" r="54" fill="#d92632" />
-              <g clip-path="url(#vbSplashClip)" fill="none" stroke="#ffffff" stroke-width="3.6" stroke-linecap="round" opacity="0.96">
-                <path d="M70 58 C 52 64, 40 82, 36 112" />
-                <path d="M82 56 C 66 66, 56 86, 54 114" />
-                <path d="M70 58 C 50 50, 28 50, 4 60" />
-                <path d="M71 47 C 52 38, 26 36, 2 44" />
-                <path d="M70 58 C 74 40, 70 22, 58 4" />
-                <path d="M82 56 C 90 40, 90 22, 82 6" />
+              <g clip-path="url(#vbSplashClip)" opacity="0.96">
+                <use href="#vbSplashArm" />
+                <use href="#vbSplashArm" transform="rotate(120 60 60)" />
+                <use href="#vbSplashArm" transform="rotate(240 60 60)" />
               </g>
             </svg>
           </div>
