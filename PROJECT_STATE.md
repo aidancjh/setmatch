@@ -334,11 +334,13 @@ This section is the portable copy. Keep it current.)
 - **He is a non-engineer.** Explain the why, not just the what. He is hiring software
   engineers for the code review — prepare scope for them rather than doing it unasked.
 - **Keep the business overview doc current — unprompted, on either machine.** It lives at
-  `C:\Users\aidan\OneDrive - Soul ways\Claude\Vybe-Business-Overview.docx` (one level above
+  `C:\Users\aidan\OneDrive - Soul ways\Claude\Coterie-Business-Overview.docx` (one level above
   this repo; OneDrive syncs it between machines). Whenever the product, plans, traction, or
-  context change, update the docx in the same session. Fully rewritten 2026-07-22 to match
-  the app as-built. Standing content decisions: product name stays "Vybe" (Vybe/Coterie
-  naming split is flagged in-doc as an open decision); Singapore-only, volleyball-only (SEA
+  context change, update the docx in the same session. Fully rewritten 2026-07-22; renamed
+  from Vybe-Business-Overview.docx and rebranded 2026-07-23 to match the app-wide Coterie
+  rebrand (doc accent color now Coterie red; marketplace-preview and highlights-feed
+  references removed to match the adopted frontend). Standing content decisions: product
+  name is Coterie everywhere; Singapore-only, volleyball-only (SEA
   years out, only if very successful locally); **no Financials section** (removed at Aidan's
   request); future features (marketplace, in-app payments, live scorecard, coaching) are
   explicitly gated behind perfecting the host/join core loop; waitlist is ~73 —
