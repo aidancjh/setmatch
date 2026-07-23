@@ -115,6 +115,16 @@ Ordered by priority. Update status inline as these move.
 
 ## 5. Completed — do not redo
 
+**Customer discovery dashboard (2026-07-23):**
+- ✅ `Coterie_Interview_Dashboard.xlsx` (30 interview writeups + live-formula
+  dashboard + charts) moved from the OneDrive `Claude/` folder into this repo so it
+  syncs across both machines. Dashboard sheet reflowed from one 132-row strip into
+  a two-column layout (left A–D / right F–I, notes in their own column, full-width
+  banners); chart data labels fixed — pies show percent-only, bars value-only (was
+  "Series1; category; value; %" overlapping spam). Chart refs remapped to moved
+  tables; all formulas recalc clean in Excel. Note: Excel COM crashes saving
+  directly to the OneDrive path — edit via openpyxl or save through a temp copy.
+
 **Security hardening (verified in code, 2026-07-20):**
 - ✅ SQL injection closed — every query in `repo.js` is parameterized (`$1`, `$2`).
 - ✅ Server **refuses to boot** on a missing/placeholder `JWT_SECRET` (`auth.js:26`),
