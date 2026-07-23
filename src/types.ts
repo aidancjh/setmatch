@@ -40,7 +40,7 @@ export interface Game {
   time: string;
   endTime: string;
   location: string;
-  /** Free-text area/neighborhood used for search, e.g. "Santa Monica" */
+  /** Free-text area/neighborhood used for search, e.g. "Tampines" */
   area: string;
   totalSlots: number;
   /** Pre-filled spots from friends the host is already bringing (not registered users). */

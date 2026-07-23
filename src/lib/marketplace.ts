@@ -43,7 +43,7 @@ export const MARKET_ITEMS: MarketItem[] = [
       "Worn for one indoor season, tons of life left. Excellent lateral support and grip. Size US 10 / EU 44. No box.",
     condition: "Like new",
     sellerId: "user_theo",
-    sellerName: "Theo R.",
+    sellerName: "Wei Jie L.",
   },
   {
     id: "mk_shoe_2",
@@ -55,7 +55,7 @@ export const MARKET_ITEMS: MarketItem[] = [
       "Bought the wrong size — never worn, still in the original box with tags. Top-tier attacking shoe. Size US 9 / EU 42.5.",
     condition: "New",
     sellerId: "user_dre",
-    sellerName: "Dre M.",
+    sellerName: "Arjun N.",
   },
   {
     id: "mk_shoe_3",
@@ -67,7 +67,7 @@ export const MARKET_ITEMS: MarketItem[] = [
       "Reliable everyday indoor shoe. Some sole wear but plenty of grip left. Size US 11 / EU 45.",
     condition: "Used — good",
     sellerId: "user_maria",
-    sellerName: "Maria L.",
+    sellerName: "Jia Min T.",
   },
   {
     id: "mk_shoe_4",
@@ -79,7 +79,7 @@ export const MARKET_ITEMS: MarketItem[] = [
       "Mid-cut for extra ankle stability. Worn a handful of times, clean and cared for. Size US 8.5 / EU 42.",
     condition: "Like new",
     sellerId: "user_nina",
-    sellerName: "Nina K.",
+    sellerName: "Hui Wen O.",
   },
 
   // --- Volleyballs ---
@@ -93,7 +93,7 @@ export const MARKET_ITEMS: MarketItem[] = [
       "The official FIVB indoor game ball. Brand new, never inflated. The gold standard for competitive indoor play.",
     condition: "New",
     sellerId: "user_grace",
-    sellerName: "Grace P.",
+    sellerName: "Nur Aisyah B.",
   },
   {
     id: "mk_ball_2",
@@ -105,7 +105,7 @@ export const MARKET_ITEMS: MarketItem[] = [
       "Premium indoor ball with flight-stability panels. Used for two sessions, basically new. Great touch.",
     condition: "Like new",
     sellerId: "user_theo",
-    sellerName: "Theo R.",
+    sellerName: "Wei Jie L.",
   },
   {
     id: "mk_ball_3",
@@ -117,7 +117,7 @@ export const MARKET_ITEMS: MarketItem[] = [
       "Official AVP beach ball, soft-touch cover that holds up outdoors. Some sand wear, plays great.",
     condition: "Used — good",
     sellerId: "user_dre",
-    sellerName: "Dre M.",
+    sellerName: "Arjun N.",
   },
   {
     id: "mk_ball_4",
@@ -129,48 +129,48 @@ export const MARKET_ITEMS: MarketItem[] = [
       "The official FIVB beach ball. Brand new. Dimpled cover for grip and stable flight in the wind.",
     condition: "New",
     sellerId: "user_maria",
-    sellerName: "Maria L.",
+    sellerName: "Jia Min T.",
   },
 
   // --- Courts (resold booked slots) ---
   {
     id: "mk_court_1",
     category: "courts",
-    name: "Indoor Court — Westside Rec",
-    price: 40,
+    name: "Indoor Court — Bedok Sports Hall",
+    price: 20,
     blurb: "Sat 6–8 PM · take my slot",
     description:
-      "I booked this court but can't make it — buy the slot and host your own game. Full-size indoor court, nets set up, parking on site.",
-    venue: "Westside Rec Center, Court 2 · Santa Monica",
+      "Booked via ActiveSG but can't make it — buy the slot and host your own game. Full-size indoor court, nets set up, 5 min from Bedok MRT.",
+    venue: "Bedok Sports Hall (ActiveSG), Court 2 · Bedok",
     when: "Sat, Jun 27 · 6:00–8:00 PM",
     sellerId: "user_maria",
-    sellerName: "Maria L.",
+    sellerName: "Jia Min T.",
   },
   {
     id: "mk_court_2",
     category: "courts",
-    name: "Beach Court — Ocean Park",
+    name: "Beach Court — Siloso Beach",
     price: 25,
     blurb: "Sun morning · 2 hrs",
     description:
-      "Reserved beach court I can't use this weekend. Great sand, close to parking. Grab it and run your own session.",
-    venue: "Ocean Park, Net 4 · Venice",
+      "Reserved beach court I can't use this weekend. Great sand, right by the beach bars. Grab it and run your own session.",
+    venue: "Siloso Beach, Sentosa · Net 4",
     when: "Sun, Jun 28 · 10:00 AM–12:00 PM",
     sellerId: "user_theo",
-    sellerName: "Theo R.",
+    sellerName: "Wei Jie L.",
   },
   {
     id: "mk_court_3",
     category: "courts",
-    name: "Indoor Court — Iron Court",
-    price: 55,
+    name: "Indoor Court — OCBC Arena",
+    price: 30,
     blurb: "Fri 7–9 PM · premium hall",
     description:
-      "Premium indoor court at Iron Court Athletics. Sprung floor, pro nets. Booked it for a game that fell through — it's yours.",
-    venue: "Iron Court Athletics · Culver City",
+      "Premium indoor court at OCBC Arena, Sports Hub. Pro flooring, pro nets. Booked it for a game that fell through — it's yours.",
+    venue: "OCBC Arena · Kallang",
     when: "Fri, Jul 3 · 7:00–9:00 PM",
     sellerId: "user_dre",
-    sellerName: "Dre M.",
+    sellerName: "Arjun N.",
   },
 ];
 

@@ -9,7 +9,7 @@
 > finished, scope cut. Never commit a code change without updating this file.
 > Update protocol and rationale at the bottom.
 
-**Last updated:** 2026-07-22 · **Branch:** `main` · **Status:** deployed, in testing, not publicly launched
+**Last updated:** 2026-07-23 · **Branch:** `main` · **Status:** deployed, in testing, not publicly launched
 
 ---
 
@@ -167,6 +167,25 @@ Ordered by priority. Update status inline as these move.
 - ✅ Sentry (front + back), PostHog analytics, Resend email, Cloudinary media.
 - ✅ Admin app split into its own Railway service with its own JWT + capped DB pool.
 - ✅ Build SHA exposed at `/healthz`; UptimeRobot pings it to reduce cold starts.
+
+**Demo data localized to Singapore (2026-07-23, main app):**
+- All seed data moved from LA to Singapore: SG names (mostly Chinese, some
+  Malay/Indian — main 5 are now Jia Min T. / Wei Jie L. / Nur Aisyah B. /
+  Arjun N. / Hui Wen O., same 1–5@demo.test logins), real venues (ActiveSG
+  sports halls, OCBC Arena, Siloso/Tanjong Beach Sentosa, West/East Coast
+  Park), SG neighborhoods as home areas, realistic titles ("Friday Night 6s
+  @ Bedok"). Touched: `server/seed.js`, `src/pages/Auth.tsx` (demo login
+  list), `src/lib/marketplace.ts` (sellers + court listings, SG-ish prices),
+  `src/components/GameForm.tsx` placeholder, `store-assets/*.mjs`, CLAUDE.md.
+- **New `syncDemoData()` in seed.js, runs every startup** (wired in
+  `start()`): UPDATEs existing demo rows (users + demo games by static id)
+  in place, since `seedIfEmpty` never re-runs on a populated DB.
+  `seedPastData` games/reviews became upserts for the same reason. p0–p23
+  demo emails migrate too (e.g. jordan@ → junwei@demo.test); password sync
+  is unchanged. Note: only game_demo_1–5 still exist in prod (6–10 were
+  deleted at some point) — the sync respects deletions, updates only.
+- Six older screenshot-script games (random ids, US venues) were patched
+  live via the API as their demo hosts after deploy.
 
 **Game-form changes (2026-07-22, in BOTH main app and preview fork):**
 - Gender options: "Mixed" removed from the form (server still accepts it so old

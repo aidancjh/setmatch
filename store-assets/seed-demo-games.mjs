@@ -4,12 +4,12 @@
 const API = "https://coterie.com.de/api";
 
 const GAMES = [
-  { host: "2@demo.test", title: "Tuesday Night Indoor 6s", type: "Indoor", skill: "Intermediate", date: "2026-06-24", time: "19:00", endTime: "21:00", location: "Eastside Sports Hall", area: "Bedok", totalSlots: 12, preFilled: 7, notes: "Regular weekly run. Nets up at 7. Bring light + dark." },
-  { host: "5@demo.test", title: "Sunset Beach 4s", type: "Beach", skill: "All Levels", date: "2026-06-25", time: "17:30", endTime: "19:30", location: "Marina Beach Courts", area: "Marina", totalSlots: 8, preFilled: 5, notes: "Casual doubles as the sun goes down. All welcome." },
-  { host: "3@demo.test", title: "Saturday Grass Social", type: "Grass", skill: "Beginner", date: "2026-06-27", time: "10:00", endTime: "12:00", location: "Riverside Park, big field", area: "Riverside", totalSlots: 10, preFilled: 4, notes: "Beginner-friendly. We'll teach the basics + play games." },
-  { host: "4@demo.test", title: "Advanced Indoor Scrimmage", type: "Indoor", skill: "Advanced", date: "2026-06-28", time: "20:00", endTime: "22:00", location: "Downtown Arena, Court 2", area: "Downtown", totalSlots: 12, preFilled: 9, notes: "Competitive 6s. Please only join if you can pass/set/hit." },
-  { host: "1@demo.test", title: "Midweek Beach Doubles", type: "Beach", skill: "Intermediate", date: "2026-07-01", time: "18:00", endTime: "20:00", location: "Bayfront Sand Courts", area: "Bayfront", totalSlots: 8, preFilled: 3, notes: "Rotating doubles, king-of-the-court style." },
-  { host: "2@demo.test", title: "Friday Indoor Mixed 6s", type: "Indoor", skill: "All Levels", date: "2026-07-03", time: "19:30", endTime: "21:30", location: "Community Rec Center", area: "Central", totalSlots: 12, preFilled: 6, notes: "Mixed social game to end the week. Drinks after." },
+  { host: "2@demo.test", title: "Tuesday Night 6s @ Bedok", type: "Indoor", skill: "Intermediate", date: "2026-06-24", time: "19:00", endTime: "21:00", location: "Bedok Sports Hall (ActiveSG), Court 1", area: "Bedok", totalSlots: 12, preFilled: 7, notes: "Regular weekly run. Nets up at 7. Bring light + dark." },
+  { host: "5@demo.test", title: "Sunset Beach 4s @ Siloso", type: "Beach", skill: "All Levels", date: "2026-06-25", time: "17:30", endTime: "19:30", location: "Siloso Beach, Sentosa", area: "Sentosa", totalSlots: 8, preFilled: 5, notes: "Casual doubles as the sun goes down. All welcome." },
+  { host: "3@demo.test", title: "Saturday Grass Social", type: "Grass", skill: "Beginner", date: "2026-06-27", time: "10:00", endTime: "12:00", location: "West Coast Park, Grand Lawn", area: "West Coast", totalSlots: 10, preFilled: 4, notes: "Beginner-friendly. We'll teach the basics + play games." },
+  { host: "4@demo.test", title: "Advanced Indoor Scrimmage", type: "Indoor", skill: "Advanced", date: "2026-06-28", time: "20:00", endTime: "22:00", location: "OCBC Arena, Hall 2", area: "Kallang", totalSlots: 12, preFilled: 9, notes: "Competitive 6s. Please only join if you can pass/set/hit." },
+  { host: "1@demo.test", title: "Midweek Beach Doubles", type: "Beach", skill: "Intermediate", date: "2026-07-01", time: "18:00", endTime: "20:00", location: "Tanjong Beach, Sentosa", area: "Sentosa", totalSlots: 8, preFilled: 3, notes: "Rotating doubles, king-of-the-court style." },
+  { host: "2@demo.test", title: "Friday Mixed 6s @ Toa Payoh", type: "Indoor", skill: "All Levels", date: "2026-07-03", time: "19:30", endTime: "21:30", location: "Toa Payoh Sports Hall (ActiveSG)", area: "Toa Payoh", totalSlots: 12, preFilled: 6, notes: "Mixed social game to end the week. Makan after." },
 ];
 
 async function token(email) {

@@ -10,11 +10,11 @@ type Mode = "signup" | "login" | "forgot" | "reset";
 
 // Public demo accounts for quick testing (all share password "111111").
 const DEMO_USERS = [
-  { email: "1@demo.test", name: "Maria L.", level: "Intermediate" },
-  { email: "2@demo.test", name: "Theo R.", level: "Advanced" },
-  { email: "3@demo.test", name: "Grace P.", level: "Beginner" },
-  { email: "4@demo.test", name: "Dre M.", level: "Advanced" },
-  { email: "5@demo.test", name: "Nina K.", level: "All Levels" },
+  { email: "1@demo.test", name: "Jia Min T.", level: "Intermediate" },
+  { email: "2@demo.test", name: "Wei Jie L.", level: "Advanced" },
+  { email: "3@demo.test", name: "Nur Aisyah B.", level: "Beginner" },
+  { email: "4@demo.test", name: "Arjun N.", level: "Advanced" },
+  { email: "5@demo.test", name: "Hui Wen O.", level: "All Levels" },
 ];
 
 export default function Auth() {

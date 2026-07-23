@@ -9,9 +9,9 @@ const BASE = "https://coterie.com.de";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const REMAINING = [
-  { host: "4@demo.test", title: "Advanced Indoor Scrimmage", type: "Indoor", skill: "Advanced", date: "2026-06-28", time: "20:00", endTime: "22:00", location: "Downtown Arena, Court 2", area: "Downtown", totalSlots: 12, preFilled: 9, notes: "Competitive 6s. Please only join if you can pass/set/hit." },
-  { host: "1@demo.test", title: "Midweek Beach Doubles", type: "Beach", skill: "Intermediate", date: "2026-07-01", time: "18:00", endTime: "20:00", location: "Bayfront Sand Courts", area: "Bayfront", totalSlots: 8, preFilled: 3, notes: "Rotating doubles, king-of-the-court style." },
-  { host: "2@demo.test", title: "Friday Indoor Mixed 6s", type: "Indoor", skill: "All Levels", date: "2026-07-03", time: "19:30", endTime: "21:30", location: "Community Rec Center", area: "Central", totalSlots: 12, preFilled: 6, notes: "Mixed social game to end the week. Drinks after." },
+  { host: "4@demo.test", title: "Advanced Indoor Scrimmage", type: "Indoor", skill: "Advanced", date: "2026-06-28", time: "20:00", endTime: "22:00", location: "OCBC Arena, Hall 2", area: "Kallang", totalSlots: 12, preFilled: 9, notes: "Competitive 6s. Please only join if you can pass/set/hit." },
+  { host: "1@demo.test", title: "Midweek Beach Doubles", type: "Beach", skill: "Intermediate", date: "2026-07-01", time: "18:00", endTime: "20:00", location: "Tanjong Beach, Sentosa", area: "Sentosa", totalSlots: 8, preFilled: 3, notes: "Rotating doubles, king-of-the-court style." },
+  { host: "2@demo.test", title: "Friday Mixed 6s @ Toa Payoh", type: "Indoor", skill: "All Levels", date: "2026-07-03", time: "19:30", endTime: "21:30", location: "Toa Payoh Sports Hall (ActiveSG)", area: "Toa Payoh", totalSlots: 12, preFilled: 6, notes: "Mixed social game to end the week. Makan after." },
 ];
 
 const tokenCache = {};

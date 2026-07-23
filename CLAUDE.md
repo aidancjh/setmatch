@@ -102,11 +102,11 @@ there; see PROJECT_STATE.md for what has been kept in sync so far.
 
 | Email | Password | Name | Role |
 |-------|----------|------|------|
-| 1@demo.test | 111111 | Maria L. | Intermediate |
-| 2@demo.test | 111111 | Theo R. | Advanced |
-| 3@demo.test | 111111 | Grace P. | Beginner |
-| 4@demo.test | 111111 | Dre M. | Advanced |
-| 5@demo.test | 111111 | Nina K. | All Levels |
+| 1@demo.test | 111111 | Jia Min T. | Intermediate |
+| 2@demo.test | 111111 | Wei Jie L. | Advanced |
+| 3@demo.test | 111111 | Nur Aisyah B. | Beginner |
+| 4@demo.test | 111111 | Arjun N. | Advanced |
+| 5@demo.test | 111111 | Hui Wen O. | All Levels |
 
 `syncDemoPasswords()` resets all `@demo.test` passwords to `111111` on every server startup.
 

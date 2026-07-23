@@ -28,7 +28,7 @@ import { fileURLToPath } from "node:url";
 import { hashPassword, verifyPassword, signToken, requireAuth, optionalAuth, verifyToken, TIMING_HASH } from "./auth.js";
 import * as repo from "./repo.js";
 import { initSchema, query } from "./db.js";
-import { seedIfEmpty, syncDemoPasswords, seedPastData } from "./seed.js";
+import { seedIfEmpty, syncDemoPasswords, syncDemoData, seedPastData } from "./seed.js";
 import {
   validateBody,
   signupSchema,
@@ -1231,6 +1231,7 @@ async function start() {
   if (process.env.SEED_DEMO !== "false") {
     await seedIfEmpty();
     await syncDemoPasswords();
+    await syncDemoData();
     await seedPastData();
   } else {
     console.log("[seed] SEED_DEMO=false — skipping demo users and sample data");

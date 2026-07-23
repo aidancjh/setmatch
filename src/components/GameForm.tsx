@@ -398,7 +398,7 @@ export default function GameForm({
           ref={locationRef}
           value={form.location}
           onChange={(e) => set("location", e.target.value)}
-          placeholder="e.g. Westside Rec Center, Court 2"
+          placeholder="e.g. Bedok Sports Hall, Court 2"
           className={fieldCls(invalidFields.has("location"))}
         />
       </Field>
