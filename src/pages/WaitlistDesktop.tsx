@@ -21,8 +21,8 @@ type Particle = {
 };
 
 const PALETTE = [
-  "#0B6ECD", "#3F8FDB", "#6FAEE8", "#E11D48", "#7CB8ED",
-  "#0A58A4", "#4D97DE", "#A8CDF0", "#2E86D9",
+  "#D92632", "#E4535D", "#EC7A82", "#8F141D", "#EF8A91",
+  "#B31E29", "#E0424D", "#F5B6BA", "#DB3540",
 ];
 const MOTION_INTENSITY = 4.5; // slightly slower than design default of 6 (1–10)
 const BASE_LINE_COUNT = 84; // design default
@@ -32,11 +32,11 @@ const BASE_LINE_COUNT = 84; // design default
 // blocks — these read as real profile pictures while making zero network
 // requests (no external dependency, no privacy leak, no broken images).
 const PLAYERS = [
-  { bg: "#D9E9F7", skin: "#F1C7A2", hair: "#2A3648", shirt: "#3F8FDB" },
-  { bg: "#DBEAF8", skin: "#C68642", hair: "#0F1622", shirt: "#0A58A4" },
-  { bg: "#D3E5F6", skin: "#8D5524", hair: "#182131", shirt: "#7CB8ED" },
-  { bg: "#E8F1FB", skin: "#C6DDF3", hair: "#7A4E2A", shirt: "#4D97DE" },
-  { bg: "#E6F0FA", skin: "#E8B07D", hair: "#C98A3C", shirt: "#2E86D9" },
+  { bg: "#F7D9DC", skin: "#F1C7A2", hair: "#2A3648", shirt: "#E4535D" },
+  { bg: "#F8DBDE", skin: "#C68642", hair: "#0F1622", shirt: "#B31E29" },
+  { bg: "#F6D3D7", skin: "#8D5524", hair: "#182131", shirt: "#EF8A91" },
+  { bg: "#FBE8EA", skin: "#F3C6CB", hair: "#7A4E2A", shirt: "#E0424D" },
+  { bg: "#FAE6E8", skin: "#E8B07D", hair: "#C98A3C", shirt: "#DB3540" },
 ];
 
 // FAQ content for the top-right accordion. Kept in sync with the mobile modal
@@ -68,7 +68,7 @@ function PlayerAvatar({ p, i }: { p: (typeof PLAYERS)[number]; i: number }) {
         height: "clamp(32px,2.6vw,48px)",
         borderRadius: "50%",
         marginLeft: i === 0 ? 0 : "clamp(-10px,-0.8vw,-13px)",
-        border: "2.5px solid #FAFCFE",
+        border: "2.5px solid #FEFAFA",
         boxShadow: "0 2px 6px rgba(13,20,30,0.14)",
       }}
     >
@@ -90,7 +90,7 @@ function PlayerAvatar({ p, i }: { p: (typeof PLAYERS)[number]; i: number }) {
 
 // The value prop shown under the headline. Joiner-first, clear and direct:
 // discovery ("find a game") + the payoff ("play"), with the mid-clause picked
-// out in brand blue so the line has a focal point without a box around it.
+// out in brand red so the line has a focal point without a box around it.
 
 export default function WaitlistDesktop() {
   const [email, setEmail] = useState("");
@@ -285,7 +285,7 @@ export default function WaitlistDesktop() {
         width: "100%",
         overflow: "hidden",
         background:
-          "radial-gradient(120% 90% at 50% 30%, #FFFFFF 0%, #FAFCFE 55%, #F0F6FC 100%)",
+          "radial-gradient(120% 90% at 50% 30%, #FFFFFF 0%, #FEFAFA 55%, #FCF0F1 100%)",
         display: "flex",
         flexDirection: "column",
         fontFamily: "'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
@@ -293,29 +293,29 @@ export default function WaitlistDesktop() {
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap');
-        /* Email box — soft pulsing blue glow (no hard outline rings) */
+        /* Email box — soft pulsing red glow (no hard outline rings) */
         .wl-box { position:relative; border-radius:18px; background:#fff; padding:7px; }
         @keyframes wl-glow {
-          0%,100% { box-shadow:0 6px 22px rgba(11,110,205,0.18), 0 0 16px rgba(11,110,205,0.16); }
-          50%     { box-shadow:0 10px 34px rgba(11,110,205,0.32), 0 0 30px rgba(11,110,205,0.28); }
+          0%,100% { box-shadow:0 6px 22px rgba(217,38,50,0.18), 0 0 16px rgba(217,38,50,0.16); }
+          50%     { box-shadow:0 10px 34px rgba(217,38,50,0.32), 0 0 30px rgba(217,38,50,0.28); }
         }
         .wl-box-1 { animation: wl-glow 2.8s ease-in-out infinite; }
-        .wl-email:focus { border-color:#3F8FDB !important; box-shadow:0 0 0 4px rgba(63,143,219,0.16) !important; }
-        .wl-cta:hover:not(:disabled) { background:#0959A8; transform:translateY(-1px); box-shadow:0 10px 24px rgba(11,110,205,0.42); }
+        .wl-email:focus { border-color:#E4535D !important; box-shadow:0 0 0 4px rgba(228,83,93,0.16) !important; }
+        .wl-cta:hover:not(:disabled) { background:#B31E29; transform:translateY(-1px); box-shadow:0 10px 24px rgba(217,38,50,0.42); }
         .wl-cta:active:not(:disabled) { transform:translateY(0); }
         /* Top-right FAQ accordion (desktop only) */
         .wl-faq { position:absolute; top:clamp(72px,7vw,104px); right:clamp(16px,3vw,56px); z-index:4;
                   width:clamp(240px,20vw,300px); background:rgba(255,255,255,0.92); backdrop-filter:blur(12px);
-                  -webkit-backdrop-filter:blur(12px); border:1px solid #DCE6F0; border-radius:18px;
+                  -webkit-backdrop-filter:blur(12px); border:1px solid #F0DCDE; border-radius:18px;
                   padding:14px 18px 4px; box-shadow:0 12px 44px rgba(15,22,34,0.12); text-align:left; }
-        .wl-faq-title { font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:#33689E; margin-bottom:4px; }
-        .wl-faq-item { border-top:1px solid #DCE6F0; }
+        .wl-faq-title { font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:#9E333B; margin-bottom:4px; }
+        .wl-faq-item { border-top:1px solid #F0DCDE; }
         .wl-faq-item:first-of-type { border-top:none; }
         .wl-faq-q { width:100%; display:flex; align-items:center; justify-content:space-between; gap:12px;
                     background:none; border:none; cursor:pointer; padding:13px 0; font-family:inherit;
                     font-size:14.5px; font-weight:700; color:#232D3C; text-align:left; line-height:1.3; }
-        .wl-faq-q:hover { color:#33689E; }
-        .wl-faq-chev { flex:none; color:#33689E; font-size:15px; transition:transform .25s ease; }
+        .wl-faq-q:hover { color:#9E333B; }
+        .wl-faq-chev { flex:none; color:#9E333B; font-size:15px; transition:transform .25s ease; }
         .wl-faq-chev.open { transform:rotate(180deg); }
         .wl-faq-a { display:grid; grid-template-rows:0fr; transition:grid-template-rows .26s ease; }
         .wl-faq-a.open { grid-template-rows:1fr; }
@@ -325,7 +325,7 @@ export default function WaitlistDesktop() {
           .wl-faq-a, .wl-faq-chev { transition:none !important; }
         }
         /* Design 1 — bold player silhouettes grounded in the bottom corners */
-        .wl-fig { position:absolute; bottom:-2px; z-index:2; color:#0B6ECD; opacity:.95; pointer-events:none; height:auto; }
+        .wl-fig { position:absolute; bottom:-2px; z-index:2; color:#D92632; opacity:.95; pointer-events:none; height:auto; }
         .wl-spiker { left:clamp(-32px, -1.5vw, 0px); width:clamp(220px, 26vw, 560px); }
         .wl-digger { right:clamp(-32px, -1.5vw, 0px); width:clamp(240px, 28vw, 600px); }
         @media (max-width: 760px) {
@@ -342,7 +342,7 @@ export default function WaitlistDesktop() {
           .wl-digger { width:140px; right:-26px; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .wl-box-1 { animation: none !important; box-shadow:0 8px 26px rgba(11,110,205,0.22), 0 0 22px rgba(11,110,205,0.18) !important; }
+          .wl-box-1 { animation: none !important; box-shadow:0 8px 26px rgba(217,38,50,0.22), 0 0 22px rgba(217,38,50,0.18) !important; }
         }
       `}</style>
 
@@ -387,12 +387,12 @@ export default function WaitlistDesktop() {
               width: "clamp(22px,2.4vw,40px)",
               height: "clamp(22px,2.4vw,40px)",
               borderRadius: "50%",
-              background: "conic-gradient(from 210deg, #0B6ECD, #4D97DE, #A8CDF0, #E11D48, #0B6ECD)",
-              boxShadow: "0 2px 10px rgba(11,110,205,0.35)",
+              background: "conic-gradient(from 210deg, #D92632, #E0424D, #F5B6BA, #8F141D, #D92632)",
+              boxShadow: "0 2px 10px rgba(217,38,50,0.35)",
             }}
           />
           <span style={{ fontSize: "clamp(17px,1.8vw,30px)", fontWeight: 700, letterSpacing: "-0.02em", color: "#141B28" }}>
-            vybe
+            Coterie
           </span>
         </div>
         <span style={{ fontSize: "clamp(12.5px,1.1vw,18px)", fontWeight: 600, letterSpacing: "0.04em", color: "#8795A6" }}>
@@ -448,7 +448,7 @@ export default function WaitlistDesktop() {
             alignItems: "center",
             gap: 10,
             padding: "clamp(9px,0.9vw,15px) clamp(18px,1.7vw,30px)",
-            border: "1px solid #CCDEF0",
+            border: "1px solid #F0CCD0",
             background: "rgba(240,246,252,0.8)",
             borderRadius: 100,
             marginBottom: "clamp(26px,2.6vw,46px)",
@@ -459,7 +459,7 @@ export default function WaitlistDesktop() {
               fontSize: "clamp(13px,1vw,18px)",
               fontWeight: 700,
               letterSpacing: "0.14em",
-              color: "#33689E",
+              color: "#9E333B",
               textTransform: "uppercase",
             }}
           >
@@ -483,7 +483,7 @@ export default function WaitlistDesktop() {
         </h1>
 
         {/* Tagline — borderless kicker line under the headline. No box; the
-            mid-clause is picked out in brand blue as the line's focal point. */}
+            mid-clause is picked out in brand red as the line's focal point. */}
         <p
           style={{
             margin: "clamp(20px,2.1vw,34px) 0 0",
@@ -496,7 +496,7 @@ export default function WaitlistDesktop() {
             lineHeight: 1.4,
           }}
         >
-          Find a game near you, <span style={{ color: "#0B6ECD" }}>grab your spot</span>, and play
+          Find a game near you, <span style={{ color: "#D92632" }}>grab your spot</span>, and play
         </p>
 
         {/* Form / success */}
@@ -509,8 +509,8 @@ export default function WaitlistDesktop() {
                 justifyContent: "center",
                 gap: 11,
                 padding: "clamp(16px,1.4vw,24px) clamp(20px,2vw,30px)",
-                background: "#EAF3FC",
-                border: "1px solid #CCDEF0",
+                background: "#FBEAEC",
+                border: "1px solid #F0CCD0",
                 borderRadius: 14,
               }}
             >
@@ -519,7 +519,7 @@ export default function WaitlistDesktop() {
                   width: "clamp(24px,1.8vw,32px)",
                   height: "clamp(24px,1.8vw,32px)",
                   borderRadius: "50%",
-                  background: "#0B6ECD",
+                  background: "#D92632",
                   color: "#fff",
                   display: "inline-flex",
                   alignItems: "center",
@@ -569,7 +569,7 @@ export default function WaitlistDesktop() {
                     fontWeight: 500,
                     color: "#0F1B2D",
                     background: "#fff",
-                    border: `1px solid ${status === "error" ? "#E11D48" : "transparent"}`,
+                    border: `1px solid ${status === "error" ? "#8F141D" : "transparent"}`,
                     borderRadius: 12,
                     outline: "none",
                   }}
@@ -586,12 +586,12 @@ export default function WaitlistDesktop() {
                     fontWeight: 700,
                     letterSpacing: "-0.01em",
                     color: "#fff",
-                    background: "#0B6ECD",
+                    background: "#D92632",
                     border: "none",
                     borderRadius: 12,
                     cursor: status === "loading" ? "not-allowed" : "pointer",
                     opacity: status === "loading" ? 0.85 : 1,
-                    boxShadow: "0 6px 18px rgba(11,110,205,0.35)",
+                    boxShadow: "0 6px 18px rgba(217,38,50,0.35)",
                     transition: "transform .15s ease, box-shadow .15s ease, background .15s ease",
                   }}
                 >
@@ -601,7 +601,7 @@ export default function WaitlistDesktop() {
             </div>
           )}
           {status === "error" && (
-            <p style={{ margin: "12px 2px 0", fontSize: "clamp(13.5px,0.95vw,16px)", fontWeight: 600, color: "#0A58A4", textAlign: "left" }}>
+            <p style={{ margin: "12px 2px 0", fontSize: "clamp(13.5px,0.95vw,16px)", fontWeight: 600, color: "#B31E29", textAlign: "left" }}>
               {message}
             </p>
           )}
@@ -615,12 +615,12 @@ export default function WaitlistDesktop() {
             ))}
           </div>
           <span style={{ fontSize: "clamp(13.5px,1vw,17px)", fontWeight: 600, color: "#5B6B7E" }}>
-            Join 40+ players already on the list
+            Join 100+ players already on the list
           </span>
         </div>
 
         {/* Positioning line — plain text, styled like the old subtitle.
-            vybe is the app name, so this frames what it is, not who made it. */}
+            Coterie is the app name, so this frames what it is, not who made it. */}
         <p
           style={{
             margin: "clamp(30px,3vw,50px) 0 0",
@@ -630,7 +630,7 @@ export default function WaitlistDesktop() {
             color: "#5B6B7E",
           }}
         >
-          <strong style={{ color: "#0B6ECD", fontWeight: 700 }}>Coterie</strong> · Play volleyball in Singapore
+          <strong style={{ color: "#D92632", fontWeight: 700 }}>Coterie</strong> · Play volleyball in Singapore
         </p>
       </main>
     </section>

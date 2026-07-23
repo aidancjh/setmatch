@@ -115,6 +115,20 @@ Ordered by priority. Update status inline as these move.
 
 ## 5. Completed — do not redo
 
+**Waitlist page rebranded to Coterie red (2026-07-23, both apps):**
+- ✅ `WaitlistDesktop.tsx` + `WaitlistMobile.tsx`: "vybe" → "Coterie"; entire blue
+  palette swapped to luminance-matched reds (brand `#D92632` / dark `#B31E29`,
+  tints `#E4535D`→`#F5B6BA`, warm-tinted whites/borders, mobile dark hero warmed
+  from blue-slate to red-tinted darks). Social proof copy now "100+ players
+  already on the list" (was 40+) — per Aidan, waitlist-page-only claim.
+- ✅ `server/email.js`: footer wordmark VYBE → COTERIE; email accent `brand` was a
+  stale orange `#E8734A`, now brand red `#d92632`.
+- ✅ `src/admin/admin.css` comment renamed (admin deliberately KEEPS the blue theme).
+- ✅ Mirrored 1:1 into `coterie-prototype` (incl. its ICS `UID:@vybe` → `@coterie`).
+- Left alone on purpose: internal storage keys `vybe.welcomed`,
+  `vybe:last-chunk-reload`, dev-only `vybe-admin-dev-secret-change-me` — renaming
+  would re-trigger the welcome modal for existing testers for zero user-visible gain.
+
 **Customer discovery dashboard (2026-07-23):**
 - ✅ `Coterie_Interview_Dashboard.xlsx` (30 interview writeups + live-formula
   dashboard + charts) moved from the OneDrive `Claude/` folder into this repo so it

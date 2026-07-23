@@ -17,9 +17,9 @@ import { initPostHog, captureEvent } from "../lib/posthog";
 // blocks — these read as real profile pictures while making zero network
 // requests (no external dependency, no privacy leak, no broken images).
 const PLAYERS = [
-  { bg: "#D9E9F7", skin: "#F1C7A2", hair: "#2A3648", shirt: "#3F8FDB" },
-  { bg: "#DBEAF8", skin: "#C68642", hair: "#0F1622", shirt: "#0A58A4" },
-  { bg: "#D3E5F6", skin: "#8D5524", hair: "#182131", shirt: "#7CB8ED" },
+  { bg: "#F7D9DC", skin: "#F1C7A2", hair: "#2A3648", shirt: "#E4535D" },
+  { bg: "#F8DBDE", skin: "#C68642", hair: "#0F1622", shirt: "#B31E29" },
+  { bg: "#F6D3D7", skin: "#8D5524", hair: "#182131", shirt: "#EF8A91" },
 ];
 
 // FAQ content shown in the centered modal. Kept in sync with the desktop
@@ -188,8 +188,8 @@ export default function WaitlistMobile() {
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap');
-        .wl-page { min-height:100vh; min-height:100dvh; width:100%; background:#E8EEF5; display:flex; }
-        .wl-card { position:relative; width:100%; min-height:100vh; min-height:100dvh; margin:0; background:#0A0F16; overflow:hidden; }
+        .wl-page { min-height:100vh; min-height:100dvh; width:100%; background:#F5E8EA; display:flex; }
+        .wl-card { position:relative; width:100%; min-height:100vh; min-height:100dvh; margin:0; background:#160A0C; overflow:hidden; }
         @media (min-width:640px) {
           .wl-card { width:min(94vw,430px); min-height:0; height:min(860px,92dvh); margin:auto; border-radius:36px; box-shadow:0 30px 80px rgba(15,22,34,.28); }
         }
@@ -201,9 +201,9 @@ export default function WaitlistMobile() {
            The hero is a size container so the digger can adapt to the one
            thing that truly varies: the hero's height. */
         .wl-hero { position:absolute; top:0; left:0; right:0; height:47%; overflow:hidden; container-type:size;
-                   background:linear-gradient(160deg, #1B2534 0%, #101724 55%, #0A0F16 100%); }
-        .wl-glow { position:absolute; inset:0; z-index:1; background:radial-gradient(80% 60% at 78% 70%, rgba(11,110,205,.22) 0%, transparent 65%); pointer-events:none; }
-        .wl-fig { position:absolute; z-index:1; color:#0B6ECD; pointer-events:none; }
+                   background:linear-gradient(160deg, #341B1F 0%, #241014 55%, #160A0C 100%); }
+        .wl-glow { position:absolute; inset:0; z-index:1; background:radial-gradient(80% 60% at 78% 70%, rgba(217,38,50,.22) 0%, transparent 65%); pointer-events:none; }
+        .wl-fig { position:absolute; z-index:1; color:#D92632; pointer-events:none; }
         /* Spiker: hero art, bottom-right, raised so the legs sit higher and
            more transparent (client-tuned composition). 212px at the 394px
            reference width; below that it scales with the viewport
@@ -232,26 +232,26 @@ export default function WaitlistMobile() {
            the inline style). */
         @media (max-width:340px) { .wl-hero h1 { font-size:33px !important; } }
         .wl-hd { position:relative; z-index:3; display:flex; align-items:center; justify-content:space-between; padding:20px 22px; }
-        .wl-logo-dot { width:24px; height:24px; border-radius:50%; background:conic-gradient(from 210deg,#0B6ECD,#4D97DE,#A8CDF0,#E11D48,#0B6ECD); }
+        .wl-logo-dot { width:24px; height:24px; border-radius:50%; background:conic-gradient(from 210deg,#D92632,#E0424D,#F5B6BA,#8F141D,#D92632); }
         .wl-sheet { position:absolute; top:43%; left:0; right:0; bottom:0; background:#FFF; border-radius:30px 30px 0 0;
                     box-shadow:0 -12px 40px rgba(15,22,34,.14); padding:30px 26px 26px; display:flex; flex-direction:column; overflow-y:auto; }
         .wl-chk { display:flex; gap:11px; align-items:flex-start; font-size:15px; font-weight:600; color:#2F3A4C; line-height:1.35; }
-        .wl-chk-icon { width:24px; height:24px; border-radius:50%; background:#EAF3FC; color:#0B6ECD;
+        .wl-chk-icon { width:24px; height:24px; border-radius:50%; background:#FBEAEC; color:#D92632;
                        display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; flex:none; }
-        .wl-accent { color:#0B6ECD; }
+        .wl-accent { color:#D92632; }
         .wl-box { position:relative; border-radius:18px; background:#fff; padding:6px; }
         @keyframes wl-glow-pulse {
-          0%,100% { box-shadow:0 6px 22px rgba(11,110,205,0.18), 0 0 16px rgba(11,110,205,0.16); }
-          50%     { box-shadow:0 10px 34px rgba(11,110,205,0.32), 0 0 30px rgba(11,110,205,0.28); }
+          0%,100% { box-shadow:0 6px 22px rgba(217,38,50,0.18), 0 0 16px rgba(217,38,50,0.16); }
+          50%     { box-shadow:0 10px 34px rgba(217,38,50,0.32), 0 0 30px rgba(217,38,50,0.28); }
         }
         .wl-box-1 { animation: wl-glow-pulse 2.8s ease-in-out infinite; }
-        .wl-email:focus { border-color:#3F8FDB !important; box-shadow:0 0 0 4px rgba(63,143,219,0.16) !important; }
-        .wl-cta:hover:not(:disabled) { background:#0959A8; transform:translateY(-1px); box-shadow:0 10px 24px rgba(11,110,205,0.42); }
+        .wl-email:focus { border-color:#E4535D !important; box-shadow:0 0 0 4px rgba(228,83,93,0.16) !important; }
+        .wl-cta:hover:not(:disabled) { background:#B31E29; transform:translateY(-1px); box-shadow:0 10px 24px rgba(217,38,50,0.42); }
         .wl-cta:active:not(:disabled) { transform:translateY(0); }
         .wl-faq-btn { flex:none; margin-left:auto; padding:6px 13px; font-family:inherit; font-size:11.5px; font-weight:700;
-                      color:#33689E; background:#EAF3FC; border:1px solid #CCDEF0; border-radius:100px; cursor:pointer;
+                      color:#9E333B; background:#FBEAEC; border:1px solid #F0CCD0; border-radius:100px; cursor:pointer;
                       white-space:nowrap; }
-        .wl-faq-btn:hover { background:#E4EFFA; }
+        .wl-faq-btn:hover { background:#FAE4E7; }
         .wl-faq-backdrop { position:fixed; inset:0; z-index:50; background:rgba(9,15,24,0.55); display:flex;
                            align-items:center; justify-content:center; padding:20px;
                            animation: wl-faq-fade .16s ease-out; }
@@ -259,13 +259,13 @@ export default function WaitlistMobile() {
                       background:#FFF; border-radius:20px; padding:26px 22px 22px; box-shadow:0 30px 70px rgba(13,20,30,0.35);
                       animation: wl-faq-pop .16s ease-out; }
         .wl-faq-close { position:absolute; top:14px; right:14px; width:28px; height:28px; border-radius:50%; border:none;
-                        background:#EFF3F8; color:#5B6B7E; font-size:16px; font-weight:700; cursor:pointer;
+                        background:#F8EFF1; color:#5B6B7E; font-size:16px; font-weight:700; cursor:pointer;
                         display:flex; align-items:center; justify-content:center; line-height:1; }
-        .wl-faq-close:hover { background:#E8EEF5; }
+        .wl-faq-close:hover { background:#F5E8EA; }
         @keyframes wl-faq-fade { from { opacity:0; } to { opacity:1; } }
         @keyframes wl-faq-pop { from { opacity:0; transform:scale(.96); } to { opacity:1; transform:scale(1); } }
         @media (prefers-reduced-motion: reduce) {
-          .wl-box-1 { animation: none !important; box-shadow:0 8px 26px rgba(11,110,205,0.22), 0 0 22px rgba(11,110,205,0.18) !important; }
+          .wl-box-1 { animation: none !important; box-shadow:0 8px 26px rgba(217,38,50,0.22), 0 0 22px rgba(217,38,50,0.18) !important; }
           .wl-faq-backdrop, .wl-faq-box { animation: none !important; }
         }
       `}</style>
@@ -280,7 +280,7 @@ export default function WaitlistMobile() {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div className="wl-logo-dot" />
               <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", color: "#FFF" }}>
-                vybe
+                Coterie
               </span>
             </div>
             <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", color: "#7A8899" }}>
@@ -294,9 +294,9 @@ export default function WaitlistMobile() {
                 display: "inline-flex",
                 padding: "6px 14px",
                 borderRadius: 100,
-                background: "rgba(11,110,205,.16)",
-                border: "1px solid rgba(63,143,219,.45)",
-                color: "#3F8FDB",
+                background: "rgba(217,38,50,.16)",
+                border: "1px solid rgba(228,83,93,.45)",
+                color: "#E4535D",
                 fontSize: 10.5,
                 fontWeight: 800,
                 letterSpacing: "0.14em",
@@ -356,7 +356,7 @@ export default function WaitlistMobile() {
               ))}
             </div>
             <span style={{ fontSize: 13, fontWeight: 600, color: "#5B6B7E" }}>
-              40+ players already on the list
+              100+ players already on the list
             </span>
             <button type="button" onClick={() => setFaqOpen(true)} className="wl-faq-btn">
               FAQ
@@ -371,8 +371,8 @@ export default function WaitlistMobile() {
                 justifyContent: "center",
                 gap: 11,
                 padding: "17px 22px",
-                background: "#EAF3FC",
-                border: "1px solid #CCDEF0",
+                background: "#FBEAEC",
+                border: "1px solid #F0CCD0",
                 borderRadius: 14,
               }}
             >
@@ -381,7 +381,7 @@ export default function WaitlistMobile() {
                   width: 24,
                   height: 24,
                   borderRadius: "50%",
-                  background: "#0B6ECD",
+                  background: "#D92632",
                   color: "#fff",
                   display: "inline-flex",
                   alignItems: "center",
@@ -429,7 +429,7 @@ export default function WaitlistMobile() {
                     fontWeight: 500,
                     color: "#0F1B2D",
                     background: "#fff",
-                    border: `1px solid ${status === "error" ? "#E11D48" : "transparent"}`,
+                    border: `1px solid ${status === "error" ? "#8F141D" : "transparent"}`,
                     borderRadius: 12,
                     outline: "none",
                   }}
@@ -445,12 +445,12 @@ export default function WaitlistMobile() {
                     fontWeight: 700,
                     letterSpacing: "-0.01em",
                     color: "#fff",
-                    background: "#0B6ECD",
+                    background: "#D92632",
                     border: "none",
                     borderRadius: 12,
                     cursor: status === "loading" ? "not-allowed" : "pointer",
                     opacity: status === "loading" ? 0.85 : 1,
-                    boxShadow: "0 6px 18px rgba(11,110,205,0.35)",
+                    boxShadow: "0 6px 18px rgba(217,38,50,0.35)",
                     transition: "transform .15s ease, box-shadow .15s ease, background .15s ease",
                   }}
                 >
@@ -460,7 +460,7 @@ export default function WaitlistMobile() {
             </div>
           )}
           {status === "error" && (
-            <p style={{ margin: "10px 2px 0", fontSize: 13.5, fontWeight: 600, color: "#0A58A4", textAlign: "left" }}>
+            <p style={{ margin: "10px 2px 0", fontSize: 13.5, fontWeight: 600, color: "#B31E29", textAlign: "left" }}>
               {message}
             </p>
           )}

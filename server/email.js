@@ -73,7 +73,7 @@ export function sendJoinConfirmationEmail({ user, game, appUrl, calLink }) {
   const timeDisplay = game.endTime
     ? `${prettyTime(game.time)} – ${prettyTime(game.endTime)}`
     : prettyTime(game.time);
-  const brand = "#E8734A";
+  const brand = "#d92632"; // Coterie brand red — matches --color-brand in src/index.css
   const row = (label, value) =>
     `<tr><td style="padding:6px 0;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#9ca3af;">${label}</td>` +
     `<td style="padding:6px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">${value}</td></tr>`;
@@ -102,7 +102,7 @@ export function sendJoinConfirmationEmail({ user, game, appUrl, calLink }) {
     `<div style="padding:0 32px 24px;">`,
     `<a href="${appUrl}/game/${game.id}" style="display:block;border:1.5px solid #e5e7eb;color:#374151;text-decoration:none;text-align:center;padding:13px;border-radius:12px;font-size:14px;font-weight:500;">View Game Details</a>`,
     `</div>`,
-    `<p style="text-align:center;padding:0 0 20px;margin:0;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#d1d5db;">VYBE</p>`,
+    `<p style="text-align:center;padding:0 0 20px;margin:0;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#d1d5db;">COTERIE</p>`,
     `</div></body></html>`,
   ].join("");
   console.log(`[email] sending join confirmation to ${user.email} for "${game.title}"`);
