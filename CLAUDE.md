@@ -83,7 +83,18 @@ capped connection pool (`DB_POOL_MAX`) so admin traffic can never starve the con
 | `hooks/useProfile.ts` | Returns profile of logged-in user from context |
 | `lib/format.ts` | `formatDate`, `formatTime`, `formatTimeRange`, `isPast`, `relativeDay` |
 
-Pages: `BrowseGames`, `GameDetail`, `CreateGame`, `EditGame`, `MyGames`, `UserProfile`, `Profile`, `Settings`, `Admin`, `Auth`, `Onboarding`, `Highlights`, `Privacy`.
+Pages: `BrowseGames` (includes the Upcoming/Hosting/Past views), `GameDetail`,
+`CreateGame`, `EditGame`, `Interested` (starred games), `Chats`, `ChatRoom`,
+`Notifications`, `UserProfile`, `Profile`, `Settings`, `Auth`, `Onboarding`,
+`Marketplace`, `MarketplaceItem`, `Privacy`, `Waitlist*`.
+
+**Preview fork:** a tester-facing near-copy of this app (light/red theme, no
+marketplace or highlight posting, no admin) lives in a separate repo,
+`aidancjh/coterie-prototype`, deployed to its own Railway project
+(`coterie-preview`) at https://preview.coterie.com.de. It does NOT auto-deploy
+on push — deploy from that folder with `railway up --service web --ci`. When
+changing shared behavior here (forms, validation, endpoints), mirror the change
+there; see PROJECT_STATE.md for what has been kept in sync so far.
 
 `GameDetail.tsx` fetches `/api/games/:id/ratables` when the game is in the past and the user was a player — renders inline star pickers to rate teammates using `api.post` directly (not via gamesService).
 
