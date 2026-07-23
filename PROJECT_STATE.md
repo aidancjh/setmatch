@@ -168,7 +168,7 @@ Ordered by priority. Update status inline as these move.
 - ✅ Admin app split into its own Railway service with its own JWT + capped DB pool.
 - ✅ Build SHA exposed at `/healthz`; UptimeRobot pings it to reduce cold starts.
 
-**Demo data localized to Singapore (2026-07-23, main app):**
+**Demo data localized to Singapore (2026-07-23, BOTH main app and preview fork):**
 - All seed data moved from LA to Singapore: SG names (mostly Chinese, some
   Malay/Indian — main 5 are now Jia Min T. / Wei Jie L. / Nur Aisyah B. /
   Arjun N. / Hui Wen O., same 1–5@demo.test logins), real venues (ActiveSG
@@ -185,7 +185,11 @@ Ordered by priority. Update status inline as these move.
   is unchanged. Note: only game_demo_1–5 still exist in prod (6–10 were
   deleted at some point) — the sync respects deletions, updates only.
 - Six older screenshot-script games (random ids, US venues) were patched
-  live via the API as their demo hosts after deploy.
+  live via the API as their demo hosts after deploy. Live data on BOTH apps
+  verified clean of US references 2026-07-23.
+- Preview fork mirrored (seed.js ported with its shiftDate kept, index.js
+  wiring, Auth demo list, placeholder, types comment) and deployed via
+  `railway up --service web --ci`.
 
 **Game-form changes (2026-07-22, in BOTH main app and preview fork):**
 - Gender options: "Mixed" removed from the form (server still accepts it so old
