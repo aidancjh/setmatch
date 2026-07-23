@@ -169,6 +169,13 @@ Ordered by priority. Update status inline as these move.
 - ✅ Admin app split into its own Railway service with its own JWT + capped DB pool.
 - ✅ Build SHA exposed at `/healthz`; UptimeRobot pings it to reduce cold starts.
 
+**Loader ball squash removed (2026-07-23, BOTH apps + admin.css):**
+- The bouncing-ball loader's impact squash (`scaleX(1.18) scaleY(0.82)`)
+  read as a broken oval ball in stills — Aidan flagged it. Keyframes in
+  `index.html` (splash), `src/index.css` (ball-bounce), and the frozen
+  `src/admin/admin.css` now animate translateY only; the ball stays a
+  perfect circle. Mirrored to the preview fork and deployed.
+
 **Main app rebranded to Coterie — preview frontend adopted (2026-07-23):**
 - Copied the preview fork's entire frontend into the main app: red brand
   `#d92632`, light theme (slate-scale inversion in `src/index.css`), BrandMark

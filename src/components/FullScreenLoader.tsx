@@ -1,6 +1,6 @@
 /**
- * Full-screen branded loader: a detailed volleyball bouncing with squash and a
- * pulsing ground shadow. Shown while auth resolves so the app never flashes a
+ * Full-screen branded loader: a detailed volleyball bouncing over a pulsing
+ * ground shadow (no squash — the ball stays a perfect circle). Shown while auth resolves so the app never flashes a
  * blank screen. The animation classes live in index.css (ball-bounce / -spin /
  * -shadow) and respect prefers-reduced-motion.
  */
